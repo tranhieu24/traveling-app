@@ -34,6 +34,10 @@ export class AuthController {
         updates.push(`avatar_url = $${index++}`);
         values.push(avatarUrl);
       }
+      if (phoneNumber !== undefined) {
+        updates.push(`phone_number = $${index++}`);
+        values.push(phoneNumber);
+      }
 
       if (updates.length === 0) {
         return sendSuccess(res, req.user);
@@ -46,7 +50,7 @@ export class AuthController {
         UPDATE users 
         SET ${updates.join(', ')} 
         WHERE id = $${index} 
-        RETURNING id, email, full_name, avatar_url, role
+        RETURNING id, email, full_name, avatar_url, phone_number, role, created_at, updated_at
       `;
       const result = await pool.query(sql, values);
 

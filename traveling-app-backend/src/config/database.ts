@@ -1,4 +1,4 @@
-import { Pool } from 'pg';
+import { Pool, QueryResultRow } from 'pg';
 import { ENV } from './env';
 
 export const pool = new Pool({
@@ -13,7 +13,7 @@ pool.on('error', (err) => {
   console.error('[PostgreSQL Pool Error]:', err);
 });
 
-export const query = async <T = any>(text: string, params?: any[]) => {
+export const query = async <T extends QueryResultRow = any>(text: string, params?: any[]) => {
   const start = Date.now();
   const res = await pool.query<T>(text, params);
   const duration = Date.now() - start;

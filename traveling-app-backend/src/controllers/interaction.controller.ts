@@ -53,28 +53,13 @@ export class InteractionController {
         throw new AppError('Unauthorized', 401, 'UNAUTHORIZED');
       }
       const { id: listingId } = req.params;
-      const {
-        rating,
-        comment,
-        cleanlinessRating,
-        accuracyRating,
-        checkinRating,
-        communicationRating,
-        locationRating,
-        valueRating,
-      } = req.body;
+      const { rating, comment } = req.body;
 
       const newReview = await reviewRepository.createReview({
         listingId,
         userId: req.user.id,
         rating,
         comment,
-        cleanlinessRating,
-        accuracyRating,
-        checkinRating,
-        communicationRating,
-        locationRating,
-        valueRating,
       });
 
       return sendSuccess(res, newReview, 201);

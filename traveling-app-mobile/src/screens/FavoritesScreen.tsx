@@ -4,6 +4,7 @@ import {
   Text,
   FlatList,
   SafeAreaView,
+  TouchableOpacity,
   RefreshControl,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -15,7 +16,6 @@ import { apiClient } from '../services/apiClient';
 import { useAuth } from '../context/AuthContext';
 import { ListingCard } from '../components/common/ListingCard';
 import { SkeletonListingList } from '../components/common/SkeletonLoader';
-import { EmptyState } from '../components/common/EmptyState';
 
 export const FavoritesScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -36,61 +36,65 @@ export const FavoritesScreen: React.FC = () => {
     enabled: !!user,
   });
 
-  if (!user) {
-    return (
-      <SafeAreaView className="flex-1 bg-white">
-        <EmptyState
-          icon={<Heart size={48} color="#FF5A5F" />}
-          title="Sign in to see your favorites"
-          description="Save the places you love so you can easily find them later."
-          actionTitle="Sign In"
-          onAction={() => navigation.navigate('Login')}
-        />
-      </SafeAreaView>
-    );
-  }
+  const renderEmptyState = () => (
+    <View className="bg-gray-50 flex-1 justify-center items-center px-6">
+      <Heart size={64} color="#FF5A5F" fill="#FF5A5F" />
+      <Text className="text-2xl font-bold text-gray-800 mt-4 mb-2 text-center">
+        Wishlists
+      </Text>
+      <Text className="text-sm text-gray-500 text-center max-w-xs leading-5">
+        Save places you love so you can easily find them later.
+      </Text>
+      <TouchableOpacity
+        onPress={() => navigation.navigate('MainTabs')}
+        activeOpacity={0.85}
+        className="bg-[#00BCD4] py-3 px-8 rounded-xl shadow-sm mt-6"
+      >
+        <Text className="text-white font-semibold text-base text-center">
+          Explore places
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
 
   return (
     <SafeAreaView className="flex-1 bg-white">
-      <View className="px-5 py-4 border-b border-gray-100">
-        <Text className="text-2xl font-extrabold text-dark">
-          Wishlists
-        </Text>
-        <Text className="text-xs text-dark-muted mt-0.5">
-          {favorites.length} saved places
-        </Text>
-      </View>
-
       {isLoading ? (
-        <SkeletonListingList count={2} />
-      ) : favorites.length === 0 ? (
-        <EmptyState
-          icon={<Heart size={48} color="#FF5A5F" />}
-          title="No favorites yet"
-          description="As you search, tap the heart icon to save your favorite stays to your wishlist."
-          actionTitle="Explore Homes"
-          onAction={() => navigation.navigate('MainTabs')}
-        />
+        <View className="flex-1 p-4 bg-white">
+          <SkeletonListingList count={2} />
+        </View>
+      ) : !user || favorites.length === 0 ? (
+        renderEmptyState()
       ) : (
-        <FlatList
-          data={favorites}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ padding: 16 }}
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefetching}
-              onRefresh={refetch}
-              tintColor="#00BCD4"
-            />
-          }
-          renderItem={({ item }) => (
-            <ListingCard
-              listing={item}
-              onPress={() => navigation.navigate('ListingDetail', { listingId: item.id })}
-              onFavoriteToggle={() => refetch()}
-            />
-          )}
-        />
+        <>
+          <View className="px-5 py-4 border-b border-gray-100 bg-white">
+            <Text className="text-2xl font-bold text-gray-900">
+              Wishlists
+            </Text>
+            <Text className="text-xs text-gray-500 mt-0.5">
+              {favorites.length} saved places
+            </Text>
+          </View>
+          <FlatList
+            data={favorites}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={{ padding: 16 }}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefetching}
+                onRefresh={refetch}
+                tintColor="#00BCD4"
+              />
+            }
+            renderItem={({ item }) => (
+              <ListingCard
+                listing={item}
+                onPress={() => navigation.navigate('ListingDetail', { listingId: item.id })}
+                onFavoriteToggle={() => refetch()}
+              />
+            )}
+          />
+        </>
       )}
     </SafeAreaView>
   );

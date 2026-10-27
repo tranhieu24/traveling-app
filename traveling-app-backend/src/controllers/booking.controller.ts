@@ -42,7 +42,7 @@ export class BookingController {
         checkOutDate,
         guests,
         specialRequests,
-        paymentMethod: paymentMethod || 'credit_card',
+        paymentMethod: paymentMethod || 'mock_credit_card',
         mockCardLast4: mockCardLast4 || '4242',
       });
 
@@ -115,25 +115,31 @@ export class BookingController {
         throw new AppError('Receipt is only available for confirmed bookings', 400, 'INVALID_BOOKING_STATUS');
       }
 
+      const pricePerNight = parseFloat(booking.price_per_night);
+      const totalNights = booking.total_nights;
+      const basePriceTotal = parseFloat(
+        booking.base_price_total || (pricePerNight * totalNights).toFixed(2)
+      );
+
       pdfService.generateReceipt(res, {
         bookingCode: booking.booking_code,
         transactionReference: booking.transaction_reference || `TXN-${booking.id.slice(0, 8)}`,
         guestName: booking.guest_name || req.user.full_name || 'Traveler',
         guestEmail: booking.guest_email || req.user.email,
         listingTitle: booking.listing_title,
-        listingAddress: booking.listing_address || 'Address on file',
+        listingAddress: booking.listing_address || `${booking.listing_city}, ${booking.listing_country}`,
         city: booking.listing_city,
         country: booking.listing_country,
         checkInDate: new Date(booking.check_in_date).toISOString().split('T')[0],
         checkOutDate: new Date(booking.check_out_date).toISOString().split('T')[0],
-        totalNights: booking.total_nights,
+        totalNights,
         guests: booking.number_of_guests,
-        pricePerNight: parseFloat(booking.price_per_night),
-        basePriceTotal: parseFloat(booking.base_price_total),
+        pricePerNight,
+        basePriceTotal,
         cleaningFee: parseFloat(booking.cleaning_fee || '0'),
         serviceFee: parseFloat(booking.service_fee || '0'),
         totalPrice: parseFloat(booking.total_price),
-        paymentMethod: booking.payment_method || 'credit_card',
+        paymentMethod: booking.payment_method || 'mock_credit_card',
         cardLast4: booking.mock_card_last4 || '4242',
         paidAt: booking.paid_at || booking.created_at,
         status: booking.booking_status,

@@ -70,7 +70,7 @@ export class ListingRepository {
       values.push(filters.bathrooms);
     }
 
-    // Lọc theo khoảng ngày check-in / check-out: LOẠI TRỪ các listing bị trùng lịch
+    // Lọc theo khoảng ngày check-in / check-out: LOẠI TRỪ các listing đã có booking còn hiệu lực trùng lịch
     if (filters.checkIn && filters.checkOut) {
       const checkInIndex = paramIndex++;
       const checkOutIndex = paramIndex++;
@@ -135,12 +135,13 @@ export class ListingRepository {
 
     const listingsSql = `
       SELECT 
-        l.id, l.title, l.property_type, l.room_type,
-        l.city, l.state_province, l.country, l.region,
+        l.id, l.title, l.description, l.property_type, l.room_type,
+        l.address, l.city, NULL::text AS state_province, l.country, l.region,
         l.latitude, l.longitude,
         l.price_per_night, l.cleaning_fee, l.service_fee,
         l.max_guests, l.bedrooms, l.beds, l.bathrooms,
-        l.rating_avg, l.review_count,
+        l.check_in_time, l.check_out_time,
+        l.rating_avg, l.review_count, l.is_active,
         c.name AS category_name, c.slug AS category_slug,
         lp.photo_url AS cover_photo,
         ${favoriteSelect}
@@ -180,8 +181,9 @@ export class ListingRepository {
     const listingSql = `
       SELECT 
         l.*,
+        NULL::text AS state_province,
         c.name AS category_name, c.slug AS category_slug,
-        u.full_name AS host_name, u.avatar_url AS host_avatar, u.email AS host_email,
+        u.full_name AS host_name, u.avatar_url AS host_avatar, u.email AS host_email, u.phone_number AS host_phone,
         ${favSelect}
       FROM listings l
       LEFT JOIN categories c ON c.id = l.category_id
@@ -193,9 +195,9 @@ export class ListingRepository {
 
     const listing = listingRes.rows[0];
 
-    // Lấy photos
+    // Lấy photos từ listing_photos (schema.sql)
     const photosSql = `
-      SELECT id, photo_url, caption, display_order, is_cover 
+      SELECT id, listing_id, photo_url, caption, display_order, is_cover 
       FROM listing_photos 
       WHERE listing_id = $1 
       ORDER BY is_cover DESC, display_order ASC
@@ -203,13 +205,19 @@ export class ListingRepository {
     const photosRes = await pool.query(photosSql, [id]);
     listing.photos = photosRes.rows;
 
-    // Lấy amenities
+    // Lấy amenities từ listing_amenities + amenities (schema.sql)
     const amenitiesSql = `
-      SELECT a.id, a.name, a.icon, a.category
+      SELECT 
+        a.id, 
+        a.name, 
+        a.icon_name, 
+        a.icon_name AS icon, 
+        a.group_name, 
+        a.group_name AS category
       FROM amenities a
       INNER JOIN listing_amenities la ON la.amenity_id = a.id
       WHERE la.listing_id = $1
-      ORDER BY a.category ASC, a.name ASC
+      ORDER BY a.group_name ASC, a.name ASC
     `;
     const amenitiesRes = await pool.query(amenitiesSql, [id]);
     listing.amenities = amenitiesRes.rows;

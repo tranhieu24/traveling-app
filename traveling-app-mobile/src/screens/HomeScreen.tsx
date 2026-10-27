@@ -89,7 +89,7 @@ export const HomeScreen: React.FC = () => {
   });
 
   const renderSearchHeader = () => (
-    <View className="px-4 py-3 bg-white flex-row items-center space-x-2">
+    <View className="flex-row items-center px-4 py-3 bg-white gap-2">
       {/* Search Pill Bar */}
       <TouchableOpacity
         onPress={() => navigation.navigate('SearchSheet')}
@@ -97,11 +97,11 @@ export const HomeScreen: React.FC = () => {
         className="flex-1 flex-row items-center bg-gray-50 border border-gray-200 rounded-full px-4 py-3 shadow-sm"
       >
         <Search size={18} color="#00BCD4" />
-        <View className="ml-3 flex-1">
-          <Text className="text-xs font-bold text-dark">
+        <View className="flex-1 ml-3">
+          <Text className="text-xs font-bold text-gray-900">
             {region ? region : 'Anywhere in the World'}
           </Text>
-          <Text className="text-[11px] text-dark-muted" numberOfLines={1}>
+          <Text className="text-[11px] text-gray-500 mt-0.5" numberOfLines={1}>
             {checkInDate ? `${checkInDate} • ${guests} guests` : 'Any week • Add guests'}
           </Text>
         </View>
@@ -111,14 +111,12 @@ export const HomeScreen: React.FC = () => {
       <TouchableOpacity
         onPress={() => navigation.navigate('FilterSheet')}
         activeOpacity={0.8}
-        className="relative w-11 h-11 rounded-full border border-gray-200 bg-white items-center justify-center shadow-sm"
+        className="w-11 h-11 rounded-full border border-gray-200 bg-white items-center justify-center shadow-sm relative"
       >
         <SlidersHorizontal size={18} color={filterCount > 0 ? '#00BCD4' : '#222222'} />
         {filterCount > 0 && (
-          <View className="absolute -top-1 -right-1 bg-primary rounded-full w-5 h-5 items-center justify-center">
-            <Text className="text-[10px] font-bold text-white">
-              {filterCount}
-            </Text>
+          <View className="absolute -top-1 -right-1 bg-[#00BCD4] rounded-full w-4 h-4 items-center justify-center">
+            <Text className="text-[10px] font-bold text-white">{filterCount}</Text>
           </View>
         )}
       </TouchableOpacity>
@@ -152,12 +150,12 @@ export const HomeScreen: React.FC = () => {
           data={listings}
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ padding: 16 }}
+          showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
               refreshing={isRefetching}
               onRefresh={refetch}
               tintColor="#00BCD4"
-              colors={['#00BCD4']}
             />
           }
           renderItem={({ item }) => (

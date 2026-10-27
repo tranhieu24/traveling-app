@@ -5,10 +5,10 @@ export class FavoriteRepository {
     const sql = `
       SELECT 
         l.id, l.title, l.property_type, l.room_type,
-        l.city, l.state_province, l.country, l.region,
+        l.address, l.city, NULL::text AS state_province, l.country, l.region,
         l.price_per_night, l.cleaning_fee, l.service_fee,
         l.rating_avg, l.review_count,
-        c.name AS category_name,
+        c.name AS category_name, c.slug AS category_slug,
         lp.photo_url AS cover_photo,
         true AS is_favorite,
         f.created_at AS favorited_at
@@ -30,7 +30,8 @@ export class FavoriteRepository {
   }
 
   async toggleFavorite(userId: string, listingId: string): Promise<boolean> {
-    const checkSql = `SELECT id FROM favorites WHERE user_id = $1 AND listing_id = $2`;
+    // favorites có composite primary key (user_id, listing_id) - không có cột id riêng
+    const checkSql = `SELECT 1 FROM favorites WHERE user_id = $1 AND listing_id = $2`;
     const checkRes = await pool.query(checkSql, [userId, listingId]);
 
     if (checkRes.rows.length > 0) {
@@ -38,7 +39,7 @@ export class FavoriteRepository {
       return false;
     } else {
       await pool.query(
-        `INSERT INTO favorites (id, user_id, listing_id, created_at) VALUES (gen_random_uuid(), $1, $2, NOW())`,
+        `INSERT INTO favorites (user_id, listing_id, created_at) VALUES ($1, $2, NOW())`,
         [userId, listingId]
       );
       return true;

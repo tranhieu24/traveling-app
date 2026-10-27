@@ -22,8 +22,8 @@ const runSeed = async () => {
     await pool.end();
     process.exit(0);
   } catch (error) {
-    console.error('❌ [Seed Thất Bại]:', error);
-    await pool.end();
+    console.error('❌ [Seed Thất Bại]:', error); +
+      await pool.end();
     process.exit(1);
   }
 };

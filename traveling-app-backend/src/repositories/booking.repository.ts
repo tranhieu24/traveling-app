@@ -23,7 +23,7 @@ export class BookingRepository {
     const start = new Date(checkIn);
     const end = new Date(checkOut);
     const diffTime = end.getTime() - start.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
   }
 
@@ -66,7 +66,7 @@ export class BookingRepository {
       );
     }
 
-    // Kiểm tra xem khoảng ngày này có bị trùng với đơn khác không
+    // Kiểm tra lịch trống (dựa trên constraint bookings_no_overlap)
     const overlapSql = `
       SELECT id FROM bookings 
       WHERE listing_id = $1 
@@ -148,7 +148,7 @@ export class BookingRepository {
         );
       }
 
-      // 2. CHỐNG OVERBOOKING VỚI TRANSACTION VÀ SELECT FOR UPDATE
+      // 2. Chống overbooking (chỉ tính booking còn hiệu lực)
       const conflictRes = await client.query(
         `SELECT id FROM bookings 
          WHERE listing_id = $1 
@@ -166,30 +166,31 @@ export class BookingRepository {
         );
       }
 
-      // 3. Tính toán giá tiền
+      // 3. Tính toán giá tiền đảm bảo thỏa mãn chk_total_price:
+      // total_price = price_per_night * (check_out_date - check_in_date) + cleaning_fee + service_fee
       const pricePerNight = parseFloat(listing.price_per_night);
       const cleaningFee = parseFloat(listing.cleaning_fee || '0');
       const serviceFee = parseFloat(listing.service_fee || '0');
       const basePriceTotal = parseFloat((pricePerNight * totalNights).toFixed(2));
       const totalPrice = parseFloat((basePriceTotal + cleaningFee + serviceFee).toFixed(2));
 
-      // 4. Sinh mã Booking Code ngẫu nhiên duy nhất
-      const randomPart = Math.floor(100000 + Math.random() * 900000);
-      const bookingCode = `BK-${randomPart}`;
+      // 4. Sinh mã Booking Code ngắn gọn (<20 chars theo schema)
+      const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+      const bookingCode = `TRV-${Date.now().toString().slice(-4)}${randomSuffix}`;
 
-      // 5. Thêm Booking mới
+      // 5. Thêm Booking mới (total_nights là STORED GENERATED ALWAYS, KHÔNG chèn thủ công)
       const insertBookingSql = `
         INSERT INTO bookings (
           id, booking_code, listing_id, guest_id, check_in_date, check_out_date,
-          total_nights, number_of_guests, base_price_total, cleaning_fee, service_fee, total_price,
-          booking_status, payment_status, special_requests, created_at, updated_at
+          number_of_guests, price_per_night, cleaning_fee, service_fee, total_price,
+          booking_status, special_requests, created_at, updated_at
         )
         VALUES (
           gen_random_uuid(), $1, $2, $3, $4::date, $5::date,
-          $6, $7, $8, $9, $10, $11,
-          'confirmed', 'paid', $12, NOW(), NOW()
+          $6, $7, $8, $9, $10,
+          'confirmed', $11, NOW(), NOW()
         )
-        RETURNING *
+        RETURNING *, (price_per_night * total_nights) AS base_price_total
       `;
       const bookingRes = await client.query(insertBookingSql, [
         bookingCode,
@@ -197,9 +198,8 @@ export class BookingRepository {
         data.guestId,
         data.checkInDate,
         data.checkOutDate,
-        totalNights,
         data.guests,
-        basePriceTotal,
+        pricePerNight,
         cleaningFee,
         serviceFee,
         totalPrice,
@@ -207,8 +207,10 @@ export class BookingRepository {
       ]);
       const createdBooking = bookingRes.rows[0];
 
-      // 6. Thêm bản ghi Payment (Giả lập thanh toán thành công)
-      const txnRef = `TXN-${Date.now()}-${randomPart}`;
+      // 6. Thêm bản ghi Payment (payment_status in ('pending','succeeded','failed','refunded'))
+      const txnRef = `TXN-${Date.now()}-${randomSuffix}`;
+      const paymentMethod = data.paymentMethod || 'mock_credit_card';
+
       const insertPaymentSql = `
         INSERT INTO payments (
           id, booking_id, user_id, amount, currency, payment_method,
@@ -224,20 +226,30 @@ export class BookingRepository {
         createdBooking.id,
         data.guestId,
         totalPrice,
-        data.paymentMethod,
+        paymentMethod,
         txnRef,
-        data.mockCardLast4,
+        data.mockCardLast4 || '4242',
       ]);
       const createdPayment = paymentRes.rows[0];
 
       await client.query('COMMIT');
 
+      // Gắn kèm payment_status và base_price_total cho client
+      createdBooking.payment_status = 'paid';
+
       return {
         booking: createdBooking,
         payment: createdPayment,
       };
-    } catch (error) {
+    } catch (error: any) {
       await client.query('ROLLBACK');
+      if (error.code === '23P01') {
+        throw new AppError(
+          'Conflict detected: The accommodation is already booked for these dates.',
+          409,
+          'DATES_ALREADY_BOOKED'
+        );
+      }
       throw error;
     } finally {
       client.release();
@@ -255,7 +267,33 @@ export class BookingRepository {
 
     const sql = `
       SELECT 
-        b.*,
+        b.id,
+        b.booking_code,
+        b.listing_id,
+        b.guest_id,
+        b.check_in_date,
+        b.check_out_date,
+        b.total_nights,
+        b.number_of_guests,
+        b.price_per_night,
+        (b.price_per_night * b.total_nights) AS base_price_total,
+        b.cleaning_fee,
+        b.service_fee,
+        b.total_price,
+        b.booking_status,
+        b.special_requests,
+        b.cancelled_at,
+        b.cancellation_reason,
+        b.created_at,
+        b.updated_at,
+        CASE 
+          WHEN p.payment_status = 'succeeded' THEN 'paid' 
+          ELSE COALESCE(p.payment_status, 'pending') 
+        END AS payment_status,
+        p.transaction_reference,
+        p.payment_method,
+        p.mock_card_last4,
+        p.paid_at,
         l.title AS listing_title,
         l.city AS listing_city,
         l.country AS listing_country,
@@ -263,6 +301,7 @@ export class BookingRepository {
         lp.photo_url AS cover_photo
       FROM bookings b
       JOIN listings l ON l.id = b.listing_id
+      LEFT JOIN payments p ON p.booking_id = b.id
       LEFT JOIN LATERAL (
         SELECT photo_url 
         FROM listing_photos 
@@ -280,7 +319,25 @@ export class BookingRepository {
   async getBookingDetail(bookingId: string, userId: string) {
     const sql = `
       SELECT 
-        b.*,
+        b.id,
+        b.booking_code,
+        b.listing_id,
+        b.guest_id,
+        b.check_in_date,
+        b.check_out_date,
+        b.total_nights,
+        b.number_of_guests,
+        b.price_per_night,
+        (b.price_per_night * b.total_nights) AS base_price_total,
+        b.cleaning_fee,
+        b.service_fee,
+        b.total_price,
+        b.booking_status,
+        b.special_requests,
+        b.cancelled_at,
+        b.cancellation_reason,
+        b.created_at,
+        b.updated_at,
         l.title AS listing_title,
         l.description AS listing_description,
         l.address AS listing_address,
@@ -288,13 +345,17 @@ export class BookingRepository {
         l.country AS listing_country,
         l.latitude AS listing_latitude,
         l.longitude AS listing_longitude,
-        l.price_per_night,
+        l.property_type,
         u_host.full_name AS host_name,
         u_host.avatar_url AS host_avatar,
         u_host.phone_number AS host_phone,
         u_guest.full_name AS guest_name,
         u_guest.email AS guest_email,
         lp.photo_url AS cover_photo,
+        CASE 
+          WHEN p.payment_status = 'succeeded' THEN 'paid' 
+          ELSE COALESCE(p.payment_status, 'pending') 
+        END AS payment_status,
         p.transaction_reference,
         p.payment_status AS detailed_payment_status,
         p.payment_method,
@@ -340,16 +401,19 @@ export class BookingRepository {
         throw new AppError('Booking is already cancelled', 400, 'ALREADY_CANCELLED');
       }
 
-      // Cập nhật trạng thái booking thành cancelled
+      // Cập nhật trạng thái booking thành cancelled và ghi nhận thời gian hủy
       const updateBooking = await client.query(
         `UPDATE bookings 
-         SET booking_status = 'cancelled', payment_status = 'refunded', updated_at = NOW() 
+         SET booking_status = 'cancelled', 
+             cancelled_at = NOW(), 
+             cancellation_reason = 'Cancelled by guest', 
+             updated_at = NOW() 
          WHERE id = $1 
-         RETURNING *`,
+         RETURNING *, (price_per_night * total_nights) AS base_price_total`,
         [bookingId]
       );
 
-      // Cập nhật trạng thái payment thành refunded
+      // Cập nhật trạng thái payment thành refunded (theo check constraint schema.sql)
       await client.query(
         `UPDATE payments 
          SET payment_status = 'refunded' 
@@ -358,7 +422,9 @@ export class BookingRepository {
       );
 
       await client.query('COMMIT');
-      return updateBooking.rows[0];
+      const updated = updateBooking.rows[0];
+      updated.payment_status = 'refunded';
+      return updated;
     } catch (error) {
       await client.query('ROLLBACK');
       throw error;

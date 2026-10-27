@@ -28,25 +28,26 @@ export const requireAuth = async (
 
     const authUser = authData.user;
 
-    // Lấy thông tin user từ PostgreSQL DB để có role, full_name, avatar_url
+    // Lấy thông tin user từ PostgreSQL public.users (schema.sql)
     const userResult = await pool.query(
-      `SELECT id, email, full_name, avatar_url, role 
+      `SELECT id, email, full_name, avatar_url, phone_number, role, created_at, updated_at 
        FROM users 
        WHERE id = $1`,
       [authUser.id]
     );
 
     if (userResult.rows.length === 0) {
-      // Tự động tạo bản ghi user trong DB nếu đăng ký qua Supabase Auth mà chưa có trong bảng users
+      // Tự động tạo bản ghi user trong DB nếu chưa có
       const newUser = await pool.query(
-        `INSERT INTO users (id, email, full_name, avatar_url, role, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, 'guest', NOW(), NOW())
-         RETURNING id, email, full_name, avatar_url, role`,
+        `INSERT INTO users (id, email, full_name, avatar_url, phone_number, role, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, 'guest', NOW(), NOW())
+         RETURNING id, email, full_name, avatar_url, phone_number, role, created_at, updated_at`,
         [
           authUser.id,
           authUser.email || '',
           authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'Traveler',
           authUser.user_metadata?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80',
+          authUser.user_metadata?.phone_number || null,
         ]
       );
       req.user = newUser.rows[0];
@@ -60,7 +61,7 @@ export const requireAuth = async (
   }
 };
 
-// Middleware tùy chọn cho phép khách xem thông tin, nhưng nếu có gửi Token thì đọc thông tin user (ví dụ kiểm tra đã favorite chưa)
+// Middleware tùy chọn cho phép khách xem thông tin, nhưng nếu có gửi Token thì đọc thông tin user
 export const optionalAuth = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -73,7 +74,9 @@ export const optionalAuth = async (
       const { data: authData } = await supabaseAdmin.auth.getUser(token);
       if (authData?.user) {
         const userResult = await pool.query(
-          `SELECT id, email, full_name, avatar_url, role FROM users WHERE id = $1`,
+          `SELECT id, email, full_name, avatar_url, phone_number, role, created_at, updated_at 
+           FROM users 
+           WHERE id = $1`,
           [authData.user.id]
         );
         if (userResult.rows.length > 0) {
@@ -83,7 +86,6 @@ export const optionalAuth = async (
     }
     next();
   } catch (error) {
-    // Không chặn request, cho phép đi tiếp dưới tư cách guest
     next();
   }
 };

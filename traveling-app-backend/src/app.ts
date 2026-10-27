@@ -52,6 +52,15 @@ export const createApp = () => {
     }
   });
 
+  // Bổ sung Health Check API đúng prefix /api/v1
+  app.get('/api/v1/health', (req, res) => {
+    res.status(200).json({
+      success: true,
+      message: 'Backend API server is operating normally',
+      timestamp: new Date().toISOString(),
+    });
+  });
+
   // REST API v1
   app.use('/api/v1', apiRouter);
 

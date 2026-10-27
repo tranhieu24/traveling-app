@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import * as SecureStore from 'expo-secure-store';
 import { createClient } from '@supabase/supabase-js';
 import Constants from 'expo-constants';
 import { apiClient } from '../services/apiClient';
+import { storage } from '../utils/storage';
 import { User } from '../types';
+
+const AUTH_TOKEN_KEY = 'traveling_auth_token';
 
 interface AuthContextType {
   user: User | null;
@@ -17,16 +19,19 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
-// Mobile client CHỈ dùng ANON_KEY theo đúng yêu cầu bảo mật
-const supabaseUrl = Constants.expoConfig?.extra?.supabaseUrl || 'https://your-project.supabase.co';
-const supabaseAnonKey = Constants.expoConfig?.extra?.supabaseAnonKey || 'placeholder-anon-key';
+// --- Supabase client with cross-platform session storage ---
+const supabaseUrl =
+  Constants.expoConfig?.extra?.supabaseUrl || 'https://your-project.supabase.co';
+const supabaseAnonKey =
+  Constants.expoConfig?.extra?.supabaseAnonKey || 'placeholder-anon-key';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
+    // Use `storage` wrapper so Supabase session persists on both Web & native
     storage: {
-      getItem: (key) => SecureStore.getItemAsync(key),
-      setItem: (key, value) => SecureStore.setItemAsync(key, value),
-      removeItem: (key) => SecureStore.deleteItemAsync(key),
+      getItem: (key) => storage.getItem(key),
+      setItem: (key, value) => storage.setItem(key, value),
+      removeItem: (key) => storage.removeItem(key),
     },
     autoRefreshToken: true,
     persistSession: true,
@@ -34,33 +39,35 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 });
 
+// --- Provider ---
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchProfile = async (currentToken?: string) => {
+  const fetchProfile = async (_currentToken?: string) => {
     try {
       const res = await apiClient.get('/auth/me');
       if (res.data.success) {
         setUser(res.data.data);
       }
     } catch (e) {
-      console.warn('Could not fetch user profile:', e);
+      console.warn('[AuthContext] Could not fetch user profile:', e);
       setUser(null);
     }
   };
 
+  // Restore session on app launch
   useEffect(() => {
     const bootstrapAsync = async () => {
       try {
-        const savedToken = await SecureStore.getItemAsync('traveling_auth_token');
+        const savedToken = await storage.getItem(AUTH_TOKEN_KEY);
         if (savedToken) {
           setToken(savedToken);
           await fetchProfile(savedToken);
         }
       } catch (e) {
-        console.error('Failed to restore session token:', e);
+        console.error('[AuthContext] Failed to restore session token:', e);
       } finally {
         setIsLoading(false);
       }
@@ -72,15 +79,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       if (data.session) {
         const sessionToken = data.session.access_token;
-        await SecureStore.setItemAsync('traveling_auth_token', sessionToken);
+        await storage.setItem(AUTH_TOKEN_KEY, sessionToken);
         setToken(sessionToken);
         await fetchProfile(sessionToken);
       }
@@ -95,17 +98,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          data: {
-            full_name: fullName,
-          },
-        },
+        options: { data: { full_name: fullName } },
       });
-
       if (error) throw error;
       if (data.session) {
         const sessionToken = data.session.access_token;
-        await SecureStore.setItemAsync('traveling_auth_token', sessionToken);
+        await storage.setItem(AUTH_TOKEN_KEY, sessionToken);
         setToken(sessionToken);
         await fetchProfile(sessionToken);
       }
@@ -118,11 +116,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       await supabase.auth.signOut();
-      await SecureStore.deleteItemAsync('traveling_auth_token');
+      await storage.removeItem(AUTH_TOKEN_KEY);
       setToken(null);
       setUser(null);
     } catch (e) {
-      console.warn('Sign out error:', e);
+      console.warn('[AuthContext] Sign out error:', e);
     } finally {
       setIsLoading(false);
     }
@@ -134,15 +132,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <AuthContext.Provider
-      value={{
-        user,
-        token,
-        isLoading,
-        signIn,
-        signUp,
-        signOut,
-        refreshProfile,
-      }}
+      value={{ user, token, isLoading, signIn, signUp, signOut, refreshProfile }}
     >
       {children}
     </AuthContext.Provider>
