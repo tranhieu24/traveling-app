@@ -49,6 +49,8 @@ export class ReviewRepository {
     comment: string;
   }) {
     try {
+      const eligible = await pool.query("SELECT 1 FROM bookings WHERE guest_id=$1 AND listing_id=$2 AND booking_status='completed' LIMIT 1", [data.userId,data.listingId]);
+      if (!eligible.rows.length) throw new AppError('A completed booking at this accommodation is required',403,'REVIEW_NOT_ELIGIBLE');
       const insertSql = `
         INSERT INTO reviews (
           id, listing_id, user_id, rating, comment, created_at
@@ -68,6 +70,7 @@ export class ReviewRepository {
       // Lưu ý: Database đã có trigger trg_rating_after_review tự động tính rating_avg và review_count
       return insertRes.rows[0];
     } catch (error: any) {
+      if (error.constraint === 'review_completed_booking') throw new AppError('Completed booking required',403,'REVIEW_NOT_ELIGIBLE');
       if (error.code === '23505') {
         throw new AppError(
           'You have already submitted a review for this accommodation.',

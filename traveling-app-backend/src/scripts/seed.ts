@@ -4,6 +4,7 @@ import { pool } from '../config/database';
 
 const runSeed = async () => {
   try {
+    if(process.env.CONFIRM_SEED!=='yes') throw new Error('Seed is only for a reviewed disposable database; set CONFIRM_SEED=yes explicitly');
     const seedPath = path.resolve(__dirname, '../../../database/seed.sql');
     console.log(`[Seed Script]: Đang đọc file từ ${seedPath}...`);
 

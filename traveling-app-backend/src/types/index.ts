@@ -90,8 +90,8 @@ export interface ListingPhotoEntity {
   created_at: string;
 }
 
-export type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed';
-export type PaymentStatus = 'pending' | 'succeeded' | 'failed' | 'refunded';
+export type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'expired';
+export type PaymentStatus = 'pending' | 'succeeded' | 'failed' | 'timed_out' | 'refunded';
 
 export interface BookingEntity {
   id: string;

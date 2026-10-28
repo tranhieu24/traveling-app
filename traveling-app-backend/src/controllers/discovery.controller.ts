@@ -25,29 +25,7 @@ export class DiscoveryController {
 
   async getListings(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
-      const queryParams = req.query as any;
-      const result = await listingRepository.findListings({
-        categoryId: queryParams.categoryId,
-        region: queryParams.region,
-        city: queryParams.city,
-        minPrice: queryParams.minPrice ? parseFloat(queryParams.minPrice) : undefined,
-        maxPrice: queryParams.maxPrice ? parseFloat(queryParams.maxPrice) : undefined,
-        guests: queryParams.guests ? parseInt(queryParams.guests, 10) : undefined,
-        bedrooms: queryParams.bedrooms ? parseInt(queryParams.bedrooms, 10) : undefined,
-        beds: queryParams.beds ? parseInt(queryParams.beds, 10) : undefined,
-        bathrooms: queryParams.bathrooms ? parseInt(queryParams.bathrooms, 10) : undefined,
-        amenityIds: queryParams.amenityIds
-          ? Array.isArray(queryParams.amenityIds)
-            ? queryParams.amenityIds
-            : [queryParams.amenityIds]
-          : undefined,
-        checkIn: queryParams.checkIn,
-        checkOut: queryParams.checkOut,
-        page: queryParams.page ? parseInt(queryParams.page, 10) : 1,
-        limit: queryParams.limit ? parseInt(queryParams.limit, 10) : 12,
-        sortBy: queryParams.sortBy || 'recommended',
-        userId: req.user?.id,
-      });
+      const result = await listingRepository.findListings({...req.query as any,userId:req.user?.id});
 
       return sendSuccess(res, result.items, 200, {
         page: result.page,

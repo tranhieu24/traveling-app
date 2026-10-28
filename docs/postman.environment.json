@@ -1,0 +1,120 @@
+{
+  "name": "Traveling App local template (no secrets)",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "enabled": true,
+      "type": "default"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "enabled": true,
+      "type": "secret"
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "enabled": true,
+      "type": "secret"
+    },
+    {
+      "key": "listingId",
+      "value": "",
+      "enabled": true,
+      "type": "default"
+    },
+    {
+      "key": "bookingId",
+      "value": "",
+      "enabled": true,
+      "type": "default"
+    },
+    {
+      "key": "paymentId",
+      "value": "",
+      "enabled": true,
+      "type": "default"
+    },
+    {
+      "key": "refundId",
+      "value": "",
+      "enabled": true,
+      "type": "default"
+    },
+    {
+      "key": "categoryId",
+      "value": "",
+      "enabled": true,
+      "type": "default"
+    },
+    {
+      "key": "couponId",
+      "value": "",
+      "enabled": true,
+      "type": "default"
+    },
+    {
+      "key": "customerId",
+      "value": "",
+      "enabled": true,
+      "type": "default"
+    },
+    {
+      "key": "hostId",
+      "value": "",
+      "enabled": true,
+      "type": "default"
+    },
+    {
+      "key": "amenityId",
+      "value": "",
+      "enabled": true,
+      "type": "default"
+    },
+    {
+      "key": "idempotencyKey",
+      "value": "",
+      "enabled": true,
+      "type": "default"
+    },
+    {
+      "key": "checkIn",
+      "value": "",
+      "enabled": true,
+      "type": "default"
+    },
+    {
+      "key": "checkOut",
+      "value": "",
+      "enabled": true,
+      "type": "default"
+    },
+    {
+      "key": "from",
+      "value": "",
+      "enabled": true,
+      "type": "default"
+    },
+    {
+      "key": "to",
+      "value": "",
+      "enabled": true,
+      "type": "default"
+    },
+    {
+      "key": "mockWebhookSignature",
+      "value": "",
+      "enabled": true,
+      "type": "secret"
+    },
+    {
+      "key": "stripeSignature",
+      "value": "",
+      "enabled": true,
+      "type": "secret"
+    }
+  ],
+  "_postman_variable_scope": "environment"
+}

@@ -1,9 +1,17 @@
-import { Pool, QueryResultRow } from 'pg';
+import { Pool, QueryResultRow, types } from 'pg';
 import { ENV } from './env';
+
+// Preserve calendar dates without JS timezone conversion.
+types.setTypeParser(1082, value => value);
 
 export const pool = new Pool({
   connectionString: ENV.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }, // Kết nối Session Pooler Cổng 5432 Supabase
+  ssl:
+    ENV.DATABASE_SSL === 'disable'
+      ? false
+      : ENV.DATABASE_SSL === 'verify'
+      ? { rejectUnauthorized: true }
+      : { rejectUnauthorized: false },
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 10000,

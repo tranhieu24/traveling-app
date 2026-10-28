@@ -6,6 +6,11 @@ const app = createApp();
 
 const startServer = async () => {
   try {
+    if (!ENV.DATABASE_URL || !/^postgres(ql)?:\/\//.test(ENV.DATABASE_URL)) throw new Error('Configure DATABASE_URL explicitly before starting');
+    if (!ENV.SUPABASE_URL || !ENV.SUPABASE_SERVICE_ROLE_KEY) throw new Error('Configure Supabase server credentials before starting');
+    await pool.query('SELECT account_status,tokens_valid_after FROM public.users LIMIT 0');
+    const schema = await pool.query("SELECT to_regprocedure('public.enforce_refund_state()') AS guard");
+    if (!schema.rows[0].guard) throw new Error('Review and apply backend migrations 001-004 before starting');
     // Kiểm tra kết nối Database
     const dbTest = await pool.query('SELECT NOW()');
     console.log(`[Database Connected]: PostgreSQL ready at ${dbTest.rows[0].now}`);

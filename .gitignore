@@ -34,3 +34,8 @@ yarn-error.log*
 
 # Misc
 *.log
+
+# Isolated integration databases and local secrets
+.test-runs/
+.env.*
+!.env.example

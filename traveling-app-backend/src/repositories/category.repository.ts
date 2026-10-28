@@ -15,7 +15,7 @@ export class CategoryRepository {
         icon_name, 
         icon_name AS icon, 
         created_at 
-      FROM categories 
+      FROM categories WHERE is_active
       ORDER BY name ASC
     `;
     const result = await pool.query<CategoryWithIcon>(query);

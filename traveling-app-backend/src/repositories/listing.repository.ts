@@ -1,7 +1,13 @@
 import { pool } from '../config/database';
+import { priceStay } from '../domain/booking';
+import { ENV } from '../config/env';
 
 export interface ListingFilterParams {
   categoryId?: string;
+  q?: string;
+  country?: string;
+  roomType?: string;
+  propertyType?: string;
   region?: string;
   city?: string;
   minPrice?: number;
@@ -21,10 +27,18 @@ export interface ListingFilterParams {
 
 export class ListingRepository {
   async findListings(filters: ListingFilterParams) {
-    const conditions: string[] = ['l.is_active = true'];
+    const conditions: string[] = ['l.is_active = true', 'EXISTS (SELECT 1 FROM categories cat WHERE cat.id=l.category_id AND cat.is_active)'];
     const values: any[] = [];
     let paramIndex = 1;
 
+    if (filters.q) {
+      values.push('%'+filters.q+'%');
+      const i=paramIndex++;
+      conditions.push("(l.title ILIKE $"+i+" OR l.city ILIKE $"+i+" OR l.country ILIKE $"+i+" OR l.address ILIKE $"+i+")");
+    }
+    for (const [key,column] of [['country','country'],['roomType','room_type'],['propertyType','property_type']] as const) {
+      if (filters[key]) { conditions.push('lower(l.'+column+')=lower($'+paramIndex+++')'); values.push(filters[key]); }
+    }
     if (filters.categoryId) {
       conditions.push(`l.category_id = $${paramIndex++}`);
       values.push(filters.categoryId);
@@ -79,7 +93,7 @@ export class ListingRepository {
       conditions.push(`NOT EXISTS (
         SELECT 1 FROM bookings b 
         WHERE b.listing_id = l.id 
-          AND b.booking_status IN ('confirmed', 'pending')
+          AND (b.booking_status='confirmed' OR (b.booking_status='pending' AND b.payment_due_at>now()))
           AND (b.check_in_date < $${checkOutIndex}::date AND b.check_out_date > $${checkInIndex}::date)
       )`);
     }
@@ -155,14 +169,16 @@ export class ListingRepository {
         LIMIT 1
       ) lp ON true
       ${whereClause}
-      ${orderClause}
+      ${orderClause}, l.id
       LIMIT $${limitIndex} OFFSET $${offsetIndex}
     `;
 
     const result = await pool.query(listingsSql, values);
 
     return {
-      items: result.rows,
+      items: result.rows.map(l => ({...l, nightly_rate:Number(l.price_per_night), currency:'USD',
+        pricing: filters.checkIn && filters.checkOut ? priceStay(l,(Date.parse(filters.checkOut)-Date.parse(filters.checkIn))/86400000,0,ENV.TAX_RATE) : null})),
+
       total,
       page: filters.page,
       limit: filters.limit,
@@ -188,7 +204,7 @@ export class ListingRepository {
       FROM listings l
       LEFT JOIN categories c ON c.id = l.category_id
       LEFT JOIN users u ON u.id = l.host_id
-      WHERE l.id = $1 AND l.is_active = true
+      WHERE l.id = $1 AND l.is_active = true AND c.is_active
     `;
     const listingRes = await pool.query(listingSql, params);
     if (listingRes.rows.length === 0) return null;

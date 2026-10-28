@@ -5,13 +5,14 @@ import rateLimit from 'express-rate-limit';
 import apiRouter from './routes';
 import { errorHandler } from './middlewares/error.middleware';
 import { pool } from './config/database';
+import { paymentRepository } from './repositories/payment.repository';
 
 export const createApp = () => {
   const app = express();
 
   // Security middlewares
   app.use(helmet());
-  app.use(cors({ origin: '*' }));
+  app.use(cors({ origin: '*', exposedHeaders: ['Content-Disposition'] }));
 
   // Request rate limiter
   const limiter = rateLimit({
@@ -29,6 +30,12 @@ export const createApp = () => {
   });
   app.use(limiter);
 
+  // Signature verification must receive the exact bytes, before express.json.
+  for (const provider of ['mock','stripe_test']) {
+    app.post('/api/v1/webhooks/'+provider,express.raw({type:'application/json',limit:'256kb'}),async(req,res,next)=>{
+      try {const signature=req.get(provider==='mock'?'X-Webhook-Signature':'Stripe-Signature');res.json({success:true,data:await paymentRepository.webhook(provider,req.body,signature)});}catch(e){next(e);}
+    });
+  }
   // Body parser
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -47,7 +54,6 @@ export const createApp = () => {
         status: 'unhealthy',
         timestamp: new Date().toISOString(),
         database: 'disconnected',
-        error: err.message,
       });
     }
   });

@@ -1,0 +1,4000 @@
+{
+  "info": {
+    "name": "Traveling App backend v2 (reviewed staging fixtures)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Manual integration collection. Mutating operations need reviewed fixture IDs. No real credentials. Do not run the full collection against live customer data."
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if(!pm.environment.get('idempotencyKey')) pm.environment.set('idempotencyKey',pm.variables.replaceIn('{{$guid}}'));",
+          "const day=(n)=>new Date(Date.now()+n*86400000).toISOString().slice(0,10);",
+          "for(const [k,v] of Object.entries({checkIn:day(7),checkOut:day(9),from:day(0),to:day(0)})) if(!pm.environment.get(k)) pm.environment.set(k,v);"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "auth",
+      "item": [
+        {
+          "name": "GET /api/v1/auth/me",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/auth/me",
+            "header": [],
+            "description": "Đọc hồ sơ phiên hiện tại\nErrors: ",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "GET",
+                "url": "{{baseUrl}}/api/v1/auth/me",
+                "header": [],
+                "description": "Đọc hồ sơ phiên hiện tại\nErrors: ",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"11111111-1111-4111-8111-111111111111\",\n    \"email\": \"guest@example.test\",\n    \"full_name\": \"Traveler\",\n    \"role\": \"guest\",\n    \"account_status\": \"active\"\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /api/v1/auth/me",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/v1/auth/me",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Cập nhật hồ sơ của chính mình\nErrors: VALIDATION_ERROR",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Traveler Updated\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "PATCH",
+                "url": "{{baseUrl}}/api/v1/auth/me",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Cập nhật hồ sơ của chính mình\nErrors: VALIDATION_ERROR",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"fullName\": \"Traveler Updated\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"11111111-1111-4111-8111-111111111111\",\n    \"email\": \"guest@example.test\",\n    \"full_name\": \"Traveler\",\n    \"role\": \"guest\",\n    \"account_status\": \"active\"\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "categories",
+      "item": [
+        {
+          "name": "GET /api/v1/categories",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/categories",
+            "header": [],
+            "description": "Danh mục đang hoạt động\nErrors: ",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "GET",
+                "url": "{{baseUrl}}/api/v1/categories",
+                "header": [],
+                "description": "Danh mục đang hoạt động\nErrors: ",
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"11111111-1111-4111-8111-111111111111\",\n      \"name\": \"Beach\",\n      \"slug\": \"beach\",\n      \"icon_name\": \"sun\",\n      \"is_active\": true\n    }\n  ]\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "amenities",
+      "item": [
+        {
+          "name": "GET /api/v1/amenities",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/amenities",
+            "header": [],
+            "description": "Danh sách tiện nghi\nErrors: ",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "GET",
+                "url": "{{baseUrl}}/api/v1/amenities",
+                "header": [],
+                "description": "Danh sách tiện nghi\nErrors: ",
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"11111111-1111-4111-8111-111111111111\",\n      \"name\": \"WiFi\",\n      \"icon\": \"wifi\",\n      \"category\": \"Facilities\"\n    }\n  ]\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "listings",
+      "item": [
+        {
+          "name": "GET /api/v1/listings",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/listings",
+            "header": [],
+            "description": "q matches title/city/country/address; all amenities are required. minPrice/maxPrice and price sorting use nightly USD. checkIn/checkOut must be supplied together. Optional Bearer token personalizes favorites; an invalid/blocked supplied token is rejected. pricing=null without dates; otherwise server pricing includes fees, configured tax, no coupon.\nErrors: VALIDATION_ERROR",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "GET",
+                "url": "{{baseUrl}}/api/v1/listings",
+                "header": [],
+                "description": "q matches title/city/country/address; all amenities are required. minPrice/maxPrice and price sorting use nightly USD. checkIn/checkOut must be supplied together. Optional Bearer token personalizes favorites; an invalid/blocked supplied token is rejected. pricing=null without dates; otherwise server pricing includes fees, configured tax, no coupon.\nErrors: VALIDATION_ERROR",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"11111111-1111-4111-8111-111111111111\",\n      \"title\": \"Beach Apartment\",\n      \"city\": \"Da Nang\",\n      \"country\": \"Vietnam\",\n      \"region\": \"Asia\",\n      \"room_type\": \"entire_place\",\n      \"price_per_night\": \"100.00\",\n      \"nightly_rate\": 100,\n      \"max_guests\": 4,\n      \"bedrooms\": 2,\n      \"beds\": 3,\n      \"bathrooms\": 1\n    }\n  ],\n  \"pagination\": {\n    \"page\": 1,\n    \"limit\": 12,\n    \"total\": 1,\n    \"totalPages\": 1\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/listings/{id}",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/listings/{{listingId}}",
+            "header": [],
+            "description": "Chi tiết chỗ ở đang hoạt động\nErrors: NOT_FOUND,VALIDATION_ERROR",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "GET",
+                "url": "{{baseUrl}}/api/v1/listings/{{listingId}}",
+                "header": [],
+                "description": "Chi tiết chỗ ở đang hoạt động\nErrors: NOT_FOUND,VALIDATION_ERROR",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"11111111-1111-4111-8111-111111111111\",\n    \"title\": \"Beach Apartment\",\n    \"city\": \"Da Nang\",\n    \"country\": \"Vietnam\",\n    \"region\": \"Asia\",\n    \"room_type\": \"entire_place\",\n    \"price_per_night\": \"100.00\",\n    \"nightly_rate\": 100,\n    \"max_guests\": 4,\n    \"bedrooms\": 2,\n    \"beds\": 3,\n    \"bathrooms\": 1\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/listings/{id}/reviews",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/listings/{{listingId}}/reviews",
+            "header": [],
+            "description": "Danh sách đánh giá\nErrors: ",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "GET",
+                "url": "{{baseUrl}}/api/v1/listings/{{listingId}}/reviews",
+                "header": [],
+                "description": "Danh sách đánh giá\nErrors: ",
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"11111111-1111-4111-8111-111111111111\",\n      \"user_id\": \"11111111-1111-4111-8111-111111111111\",\n      \"rating\": 5,\n      \"comment\": \"A great stay\",\n      \"user_name\": \"Traveler\"\n    }\n  ],\n  \"pagination\": {\n    \"page\": 1,\n    \"limit\": 12,\n    \"total\": 1,\n    \"totalPages\": 1\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/v1/listings/{id}/reviews",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/listings/{{listingId}}/reviews",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "One lifetime review per (authenticated user, listing). A completed booking at that same listing is required; userId from body is never trusted. Legacy auxiliary ratings are accepted but not stored as separate metrics.\nErrors: REVIEW_NOT_ELIGIBLE,REVIEW_ALREADY_EXISTS",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 5,\n  \"comment\": \"A great stay\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "POST",
+                "url": "{{baseUrl}}/api/v1/listings/{{listingId}}/reviews",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "One lifetime review per (authenticated user, listing). A completed booking at that same listing is required; userId from body is never trusted. Legacy auxiliary ratings are accepted but not stored as separate metrics.\nErrors: REVIEW_NOT_ELIGIBLE,REVIEW_ALREADY_EXISTS",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"rating\": 5,\n  \"comment\": \"A great stay\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"11111111-1111-4111-8111-111111111111\",\n    \"listing_id\": \"11111111-1111-4111-8111-111111111111\",\n    \"user_id\": \"11111111-1111-4111-8111-111111111111\",\n    \"rating\": 5,\n    \"comment\": \"A great stay\"\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "favorites",
+      "item": [
+        {
+          "name": "GET /api/v1/favorites",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/favorites",
+            "header": [],
+            "description": "Yêu thích của chính mình\nErrors: ",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "GET",
+                "url": "{{baseUrl}}/api/v1/favorites",
+                "header": [],
+                "description": "Yêu thích của chính mình\nErrors: ",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"11111111-1111-4111-8111-111111111111\",\n      \"title\": \"Beach Apartment\",\n      \"city\": \"Da Nang\",\n      \"country\": \"Vietnam\",\n      \"region\": \"Asia\",\n      \"room_type\": \"entire_place\",\n      \"price_per_night\": \"100.00\",\n      \"nightly_rate\": 100,\n      \"max_guests\": 4,\n      \"bedrooms\": 2,\n      \"beds\": 3,\n      \"bathrooms\": 1\n    }\n  ],\n  \"pagination\": {\n    \"page\": 1,\n    \"limit\": 12,\n    \"total\": 1,\n    \"totalPages\": 1\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/v1/favorites/toggle",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/favorites/toggle",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Preserved legacy toggle. Not idempotent: after a lost response refetch favorites instead of blindly retrying.\nErrors: LISTING_NOT_FOUND",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"listingId\": \"{{listingId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "POST",
+                "url": "{{baseUrl}}/api/v1/favorites/toggle",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Preserved legacy toggle. Not idempotent: after a lost response refetch favorites instead of blindly retrying.\nErrors: LISTING_NOT_FOUND",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"listingId\": \"{{listingId}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"listingId\": \"11111111-1111-4111-8111-111111111111\",\n    \"isFavorite\": true\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "bookings",
+      "item": [
+        {
+          "name": "POST /api/v1/bookings/quote",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/bookings/quote",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Real UTC calendar dates; check-in >= today, checkout after check-in, max 365 nights. Coupon quote requires token; discounts apply to room subtotal. USD amounts rounded in cents. A quote is not a reservation and does not consume coupon usage.\nErrors: INVALID_DATES,INVALID_GUESTS,MAX_GUESTS_EXCEEDED,LISTING_NOT_FOUND,DATES_UNAVAILABLE,COUPON_NOT_APPLICABLE,COUPON_USER_LIMIT,AUTH_REQUIRED",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"listingId\": \"{{listingId}}\",\n  \"checkInDate\": \"{{checkIn}}\",\n  \"checkOutDate\": \"{{checkOut}}\",\n  \"guests\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "POST",
+                "url": "{{baseUrl}}/api/v1/bookings/quote",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Real UTC calendar dates; check-in >= today, checkout after check-in, max 365 nights. Coupon quote requires token; discounts apply to room subtotal. USD amounts rounded in cents. A quote is not a reservation and does not consume coupon usage.\nErrors: INVALID_DATES,INVALID_GUESTS,MAX_GUESTS_EXCEEDED,LISTING_NOT_FOUND,DATES_UNAVAILABLE,COUPON_NOT_APPLICABLE,COUPON_USER_LIMIT,AUTH_REQUIRED",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"listingId\": \"{{listingId}}\",\n  \"checkInDate\": \"{{checkIn}}\",\n  \"checkOutDate\": \"{{checkOut}}\",\n  \"guests\": 2\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"currency\": \"USD\",\n    \"listingId\": \"11111111-1111-4111-8111-111111111111\",\n    \"title\": \"Beach Apartment\",\n    \"city\": \"Da Nang\",\n    \"nightlyRate\": 100,\n    \"totalNights\": 2,\n    \"roomSubtotal\": 200,\n    \"cleaningFee\": 20,\n    \"serviceFee\": 10,\n    \"discountAmount\": 0,\n    \"taxRate\": 0,\n    \"taxAmount\": 0,\n    \"tripTotal\": 230,\n    \"pricePerNight\": 100,\n    \"basePriceTotal\": 200,\n    \"totalPrice\": 230,\n    \"checkInDate\": \"2099-01-10\",\n    \"checkOutDate\": \"2099-01-12\",\n    \"guests\": 2,\n    \"maxGuests\": 4,\n    \"quoteIsReservation\": false\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/v1/bookings",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/bookings",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Recomputes all prices under listing lock and reserves coupon usage atomically. Does not create a payment or confirm booking. Frontend totals/amounts are ignored. Legacy paymentMethod/mockCardLast4 are accepted but ignored. Return payment:null. Existing exclusion constraint remains the final concurrency guard.\nErrors: DATES_ALREADY_BOOKED,MAX_GUESTS_EXCEEDED,COUPON_NOT_APPLICABLE,COUPON_USER_LIMIT,LISTING_NOT_AVAILABLE,INVALID_AMOUNT",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"listingId\": \"{{listingId}}\",\n  \"checkInDate\": \"{{checkIn}}\",\n  \"checkOutDate\": \"{{checkOut}}\",\n  \"guests\": 2,\n  \"paymentPlan\": \"deposit\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "POST",
+                "url": "{{baseUrl}}/api/v1/bookings",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Recomputes all prices under listing lock and reserves coupon usage atomically. Does not create a payment or confirm booking. Frontend totals/amounts are ignored. Legacy paymentMethod/mockCardLast4 are accepted but ignored. Return payment:null. Existing exclusion constraint remains the final concurrency guard.\nErrors: DATES_ALREADY_BOOKED,MAX_GUESTS_EXCEEDED,COUPON_NOT_APPLICABLE,COUPON_USER_LIMIT,LISTING_NOT_AVAILABLE,INVALID_AMOUNT",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"listingId\": \"{{listingId}}\",\n  \"checkInDate\": \"{{checkIn}}\",\n  \"checkOutDate\": \"{{checkOut}}\",\n  \"guests\": 2,\n  \"paymentPlan\": \"deposit\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"booking\": {\n      \"id\": \"11111111-1111-4111-8111-111111111111\",\n      \"booking_code\": \"TRV-example\",\n      \"guest_id\": \"11111111-1111-4111-8111-111111111111\",\n      \"listing_id\": \"11111111-1111-4111-8111-111111111111\",\n      \"check_in_date\": \"2099-01-10\",\n      \"check_out_date\": \"2099-01-12\",\n      \"total_nights\": 2,\n      \"number_of_guests\": 2,\n      \"price_per_night\": \"100.00\",\n      \"total_price\": \"230.00\",\n      \"booking_status\": \"pending\",\n      \"payment_plan\": \"deposit\",\n      \"amount_paid\": \"0.00\",\n      \"balance_due\": \"230.00\",\n      \"payment_status\": \"pending\"\n    },\n    \"payment\": null\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));",
+                  "if (j.success) pm.environment.set('bookingId',j.data.booking.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/bookings",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/bookings",
+            "header": [],
+            "description": "Booking của khách hiện tại\nErrors: ",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "GET",
+                "url": "{{baseUrl}}/api/v1/bookings",
+                "header": [],
+                "description": "Booking của khách hiện tại\nErrors: ",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"11111111-1111-4111-8111-111111111111\",\n      \"booking_code\": \"TRV-example\",\n      \"guest_id\": \"11111111-1111-4111-8111-111111111111\",\n      \"listing_id\": \"11111111-1111-4111-8111-111111111111\",\n      \"check_in_date\": \"2099-01-10\",\n      \"check_out_date\": \"2099-01-12\",\n      \"total_nights\": 2,\n      \"number_of_guests\": 2,\n      \"price_per_night\": \"100.00\",\n      \"total_price\": \"230.00\",\n      \"booking_status\": \"pending\",\n      \"payment_plan\": \"deposit\",\n      \"amount_paid\": \"0.00\",\n      \"balance_due\": \"230.00\",\n      \"payment_status\": \"pending\"\n    }\n  ],\n  \"pagination\": {\n    \"page\": 1,\n    \"limit\": 12,\n    \"total\": 1,\n    \"totalPages\": 1\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/bookings/{id}",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/bookings/{{bookingId}}",
+            "header": [],
+            "description": "Guest owner or listing host; admins can inspect all bookings. No duplicated booking rows when several payments exist. amount_paid is gross successful payments, amount_refunded is successful refunds, net_paid is their difference, balance_due is zero for cancelled/expired bookings.\nErrors: BOOKING_NOT_FOUND",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "GET",
+                "url": "{{baseUrl}}/api/v1/bookings/{{bookingId}}",
+                "header": [],
+                "description": "Guest owner or listing host; admins can inspect all bookings. No duplicated booking rows when several payments exist. amount_paid is gross successful payments, amount_refunded is successful refunds, net_paid is their difference, balance_due is zero for cancelled/expired bookings.\nErrors: BOOKING_NOT_FOUND",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"11111111-1111-4111-8111-111111111111\",\n    \"booking_code\": \"TRV-example\",\n    \"guest_id\": \"11111111-1111-4111-8111-111111111111\",\n    \"listing_id\": \"11111111-1111-4111-8111-111111111111\",\n    \"check_in_date\": \"2099-01-10\",\n    \"check_out_date\": \"2099-01-12\",\n    \"total_nights\": 2,\n    \"number_of_guests\": 2,\n    \"price_per_night\": \"100.00\",\n    \"total_price\": \"230.00\",\n    \"booking_status\": \"pending\",\n    \"payment_plan\": \"deposit\",\n    \"amount_paid\": \"0.00\",\n    \"balance_due\": \"230.00\",\n    \"payment_status\": \"pending\",\n    \"payments\": [\n      {\n        \"id\": \"11111111-1111-4111-8111-111111111111\",\n        \"booking_id\": \"11111111-1111-4111-8111-111111111111\",\n        \"user_id\": \"11111111-1111-4111-8111-111111111111\",\n        \"amount\": \"30.00\",\n        \"currency\": \"USD\",\n        \"payment_status\": \"pending\",\n        \"provider\": \"mock\",\n        \"is_simulated\": true\n      }\n    ],\n    \"refunds\": []\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /api/v1/bookings/{id}/cancel",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/v1/bookings/{{bookingId}}/cancel",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Only guest owner. pending/confirmed can cancel; confirmed requires UTC check-in date still in the future. completed cannot cancel. Frees the booking schedule. No payment is rewritten refunded; successful payments create requested refunds, not success claims.\nErrors: BOOKING_NOT_FOUND,INVALID_STATE_TRANSITION,CANCELLATION_WINDOW_CLOSED",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Plans changed\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "PATCH",
+                "url": "{{baseUrl}}/api/v1/bookings/{{bookingId}}/cancel",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Only guest owner. pending/confirmed can cancel; confirmed requires UTC check-in date still in the future. completed cannot cancel. Frees the booking schedule. No payment is rewritten refunded; successful payments create requested refunds, not success claims.\nErrors: BOOKING_NOT_FOUND,INVALID_STATE_TRANSITION,CANCELLATION_WINDOW_CLOSED",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"reason\": \"Plans changed\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"booking\": {\n      \"id\": \"11111111-1111-4111-8111-111111111111\",\n      \"booking_code\": \"TRV-example\",\n      \"guest_id\": \"11111111-1111-4111-8111-111111111111\",\n      \"listing_id\": \"11111111-1111-4111-8111-111111111111\",\n      \"check_in_date\": \"2099-01-10\",\n      \"check_out_date\": \"2099-01-12\",\n      \"total_nights\": 2,\n      \"number_of_guests\": 2,\n      \"price_per_night\": \"100.00\",\n      \"total_price\": \"230.00\",\n      \"booking_status\": \"cancelled\",\n      \"payment_plan\": \"deposit\",\n      \"amount_paid\": \"0.00\",\n      \"balance_due\": \"230.00\",\n      \"payment_status\": \"pending\"\n    },\n    \"refunds\": [\n      {\n        \"id\": \"11111111-1111-4111-8111-111111111111\",\n        \"payment_id\": \"11111111-1111-4111-8111-111111111111\",\n        \"booking_id\": \"11111111-1111-4111-8111-111111111111\",\n        \"amount\": \"30.00\",\n        \"status\": \"requested\",\n        \"reason\": \"Plans changed\"\n      }\n    ],\n    \"message\": \"Refunds require approval and provider confirmation.\"\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/v1/bookings/{id}/payments",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/bookings/{{bookingId}}/payments",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotencyKey}}"
+              }
+            ],
+            "description": "Owner only. full collects remaining balance; deposit=min(USD30,total), only the first payment of a deposit booking; balance requires an existing payment. One pending attempt per booking. Retry exactly the same key/plan after 502/network timeout. Confirmation only follows verified webhook or explicit configured mock simulation. Stripe test returns clientSecret for client SDK.\nErrors: IDEMPOTENCY_KEY_REQUIRED,IDEMPOTENCY_CONFLICT,PAYMENT_IN_PROGRESS,ALREADY_PAID,BOOKING_EXPIRED,INVALID_PAYMENT_PLAN,PAYMENTS_DISABLED,PROVIDER_MISMATCH,PROVIDER_AMOUNT_LIMIT,PROVIDER_UNAVAILABLE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plan\": \"deposit\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "POST",
+                "url": "{{baseUrl}}/api/v1/bookings/{{bookingId}}/payments",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Idempotency-Key",
+                    "value": "{{idempotencyKey}}"
+                  }
+                ],
+                "description": "Owner only. full collects remaining balance; deposit=min(USD30,total), only the first payment of a deposit booking; balance requires an existing payment. One pending attempt per booking. Retry exactly the same key/plan after 502/network timeout. Confirmation only follows verified webhook or explicit configured mock simulation. Stripe test returns clientSecret for client SDK.\nErrors: IDEMPOTENCY_KEY_REQUIRED,IDEMPOTENCY_CONFLICT,PAYMENT_IN_PROGRESS,ALREADY_PAID,BOOKING_EXPIRED,INVALID_PAYMENT_PLAN,PAYMENTS_DISABLED,PROVIDER_MISMATCH,PROVIDER_AMOUNT_LIMIT,PROVIDER_UNAVAILABLE",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"plan\": \"deposit\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"payment\": {\n      \"id\": \"11111111-1111-4111-8111-111111111111\",\n      \"booking_id\": \"11111111-1111-4111-8111-111111111111\",\n      \"user_id\": \"11111111-1111-4111-8111-111111111111\",\n      \"amount\": \"30.00\",\n      \"currency\": \"USD\",\n      \"payment_status\": \"pending\",\n      \"provider\": \"mock\",\n      \"is_simulated\": true\n    },\n    \"clientSecret\": null,\n    \"simulation\": true\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));",
+                  "if(j.success) pm.environment.set('paymentId',j.data.payment.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/v1/bookings/{id}/refunds",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/bookings/{{bookingId}}/refunds",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Owner only; full refund for each successful payment, maximum one refund record per payment. Repeated requests return existing records, including rejected/failed decisions.\nErrors: BOOKING_NOT_FOUND,INVALID_BOOKING_STATUS",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Booking cancelled\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "POST",
+                "url": "{{baseUrl}}/api/v1/bookings/{{bookingId}}/refunds",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Owner only; full refund for each successful payment, maximum one refund record per payment. Repeated requests return existing records, including rejected/failed decisions.\nErrors: BOOKING_NOT_FOUND,INVALID_BOOKING_STATUS",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"reason\": \"Booking cancelled\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"11111111-1111-4111-8111-111111111111\",\n      \"payment_id\": \"11111111-1111-4111-8111-111111111111\",\n      \"booking_id\": \"11111111-1111-4111-8111-111111111111\",\n      \"amount\": \"30.00\",\n      \"status\": \"requested\",\n      \"reason\": \"Plans changed\"\n    }\n  ]\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "payments",
+      "item": [
+        {
+          "name": "GET /api/v1/payments/{bookingId}/receipt",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/payments/{{bookingId}}/receipt",
+            "header": [],
+            "description": "Path parameter is a BOOKING ID. Only guest owner/admin, not listing host. At least one successful payment in history is required. Available after completed/cancelled/expired and after refunds too. Send Authorization header, download bytes; never put access token in URL. Cache-Control: private, no-store.\nErrors: BOOKING_NOT_FOUND,RECEIPT_UNAVAILABLE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Authenticated file response', () => pm.expect(pm.response.code).to.eql(200));",
+                  "pm.test('File content type', () => pm.expect(pm.response.headers.get('Content-Type')).to.include(\"application/pdf\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/v1/payments/{id}/simulate",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/payments/{{paymentId}}/simulate",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Owner only, PAYMENT_MODE=mock and non-production. Is a labeled simulation, never a real gateway integration.\nErrors: PAYMENT_NOT_FOUND,INVALID_STATE_TRANSITION",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"outcome\": \"succeeded\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "POST",
+                "url": "{{baseUrl}}/api/v1/payments/{{paymentId}}/simulate",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Owner only, PAYMENT_MODE=mock and non-production. Is a labeled simulation, never a real gateway integration.\nErrors: PAYMENT_NOT_FOUND,INVALID_STATE_TRANSITION",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"outcome\": \"succeeded\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"paymentId\": \"11111111-1111-4111-8111-111111111111\",\n    \"status\": \"succeeded\"\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "GET /api/v1/admin/session",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/admin/session",
+            "header": [],
+            "description": "Sign in through Supabase Auth on client, then call this endpoint to verify backend admin permission. No backend password database. Requires public.users.role=admin and account_status=active (server checked).\nErrors: ",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "GET",
+                "url": "{{baseUrl}}/api/v1/admin/session",
+                "header": [],
+                "description": "Sign in through Supabase Auth on client, then call this endpoint to verify backend admin permission. No backend password database. Requires public.users.role=admin and account_status=active (server checked).\nErrors: ",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"11111111-1111-4111-8111-111111111111\",\n    \"email\": \"guest@example.test\",\n    \"full_name\": \"Traveler\",\n    \"role\": \"admin\",\n    \"account_status\": \"active\"\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/v1/admin/logout",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/admin/logout",
+            "header": [],
+            "description": "Đăng xuất admin và vô hiệu hóa JWT cũ tại backend Requires public.users.role=admin and account_status=active (server checked).\nErrors: AUTH_UNAVAILABLE,SESSION_REVOKED",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "POST",
+                "url": "{{baseUrl}}/api/v1/admin/logout",
+                "header": [],
+                "description": "Đăng xuất admin và vô hiệu hóa JWT cũ tại backend Requires public.users.role=admin and account_status=active (server checked).\nErrors: AUTH_UNAVAILABLE,SESSION_REVOKED",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"signedOut\": true\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/admin/listings",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/admin/listings",
+            "header": [],
+            "description": "page/limit/q; isActive=true|false. Coupons also accept status=active|inactive|upcoming|expired|exhausted. Listings search title/city/country; categories search name/slug. Requires public.users.role=admin and account_status=active (server checked).\nErrors: ",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "GET",
+                "url": "{{baseUrl}}/api/v1/admin/listings",
+                "header": [],
+                "description": "page/limit/q; isActive=true|false. Coupons also accept status=active|inactive|upcoming|expired|exhausted. Listings search title/city/country; categories search name/slug. Requires public.users.role=admin and account_status=active (server checked).\nErrors: ",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"11111111-1111-4111-8111-111111111111\",\n      \"title\": \"Beach Apartment\",\n      \"city\": \"Da Nang\",\n      \"country\": \"Vietnam\",\n      \"region\": \"Asia\",\n      \"room_type\": \"entire_place\",\n      \"price_per_night\": \"100.00\",\n      \"nightly_rate\": 100,\n      \"max_guests\": 4,\n      \"bedrooms\": 2,\n      \"beds\": 3,\n      \"bathrooms\": 1\n    }\n  ],\n  \"pagination\": {\n    \"page\": 1,\n    \"limit\": 12,\n    \"total\": 1,\n    \"totalPages\": 1\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/admin/listings/{id}",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/admin/listings/{{listingId}}",
+            "header": [],
+            "description": "Chi tiết quản trị: listings Requires public.users.role=admin and account_status=active (server checked).\nErrors: ",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "GET",
+                "url": "{{baseUrl}}/api/v1/admin/listings/{{listingId}}",
+                "header": [],
+                "description": "Chi tiết quản trị: listings Requires public.users.role=admin and account_status=active (server checked).\nErrors: ",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"11111111-1111-4111-8111-111111111111\",\n    \"title\": \"Beach Apartment\",\n    \"city\": \"Da Nang\",\n    \"country\": \"Vietnam\",\n    \"region\": \"Asia\",\n    \"room_type\": \"entire_place\",\n    \"price_per_night\": \"100.00\",\n    \"nightly_rate\": 100,\n    \"max_guests\": 4,\n    \"bedrooms\": 2,\n    \"beds\": 3,\n    \"bathrooms\": 1\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/v1/admin/listings",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/admin/listings",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Tạo listings Requires public.users.role=admin and account_status=active (server checked).\nErrors: VALIDATION_ERROR,DUPLICATE_ENTRY,FOREIGN_KEY_VIOLATION,INVALID_HOST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hostId\": \"{{hostId}}\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"title\": \"Beach Apartment\",\n  \"propertyType\": \"Apartment\",\n  \"roomType\": \"entire_place\",\n  \"city\": \"Da Nang\",\n  \"country\": \"Vietnam\",\n  \"region\": \"Asia\",\n  \"pricePerNight\": 100,\n  \"cleaningFee\": 20,\n  \"serviceFee\": 10,\n  \"maxGuests\": 4,\n  \"bedrooms\": 2,\n  \"beds\": 3,\n  \"bathrooms\": 1,\n  \"amenityIds\": [\n    \"{{amenityId}}\"\n  ],\n  \"photos\": [\n    {\n      \"photoUrl\": \"https://example.test/photo.jpg\",\n      \"isCover\": true\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "POST",
+                "url": "{{baseUrl}}/api/v1/admin/listings",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Tạo listings Requires public.users.role=admin and account_status=active (server checked).\nErrors: VALIDATION_ERROR,DUPLICATE_ENTRY,FOREIGN_KEY_VIOLATION,INVALID_HOST",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"hostId\": \"{{hostId}}\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"title\": \"Beach Apartment\",\n  \"propertyType\": \"Apartment\",\n  \"roomType\": \"entire_place\",\n  \"city\": \"Da Nang\",\n  \"country\": \"Vietnam\",\n  \"region\": \"Asia\",\n  \"pricePerNight\": 100,\n  \"cleaningFee\": 20,\n  \"serviceFee\": 10,\n  \"maxGuests\": 4,\n  \"bedrooms\": 2,\n  \"beds\": 3,\n  \"bathrooms\": 1,\n  \"amenityIds\": [\n    \"{{amenityId}}\"\n  ],\n  \"photos\": [\n    {\n      \"photoUrl\": \"https://example.test/photo.jpg\",\n      \"isCover\": true\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"11111111-1111-4111-8111-111111111111\",\n    \"title\": \"Beach Apartment\",\n    \"city\": \"Da Nang\",\n    \"country\": \"Vietnam\",\n    \"region\": \"Asia\",\n    \"room_type\": \"entire_place\",\n    \"price_per_night\": \"100.00\",\n    \"nightly_rate\": 100,\n    \"max_guests\": 4,\n    \"bedrooms\": 2,\n    \"beds\": 3,\n    \"bathrooms\": 1\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /api/v1/admin/listings/{id}",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/v1/admin/listings/{{listingId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "PATCH merges fields. Coupons cannot end before start or reduce maxUses below used_count. Listing amenityIds/photos replace their respective entire lists atomically. Audit log saved in the same transaction. Requires public.users.role=admin and account_status=active (server checked).\nErrors: VALIDATION_ERROR,DUPLICATE_ENTRY,INVALID_COUPON,INVALID_HOST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated accommodation\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "PATCH",
+                "url": "{{baseUrl}}/api/v1/admin/listings/{{listingId}}",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "PATCH merges fields. Coupons cannot end before start or reduce maxUses below used_count. Listing amenityIds/photos replace their respective entire lists atomically. Audit log saved in the same transaction. Requires public.users.role=admin and account_status=active (server checked).\nErrors: VALIDATION_ERROR,DUPLICATE_ENTRY,INVALID_COUPON,INVALID_HOST",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Updated accommodation\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"11111111-1111-4111-8111-111111111111\",\n    \"title\": \"Beach Apartment\",\n    \"city\": \"Da Nang\",\n    \"country\": \"Vietnam\",\n    \"region\": \"Asia\",\n    \"room_type\": \"entire_place\",\n    \"price_per_night\": \"100.00\",\n    \"nightly_rate\": 100,\n    \"max_guests\": 4,\n    \"bedrooms\": 2,\n    \"beds\": 3,\n    \"bathrooms\": 1\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /api/v1/admin/listings/{id}",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/admin/listings/{{listingId}}",
+            "header": [],
+            "description": "Soft deactivate; preserves all historical transactions and audit records. Requires public.users.role=admin and account_status=active (server checked).\nErrors: NOT_FOUND,CATEGORY_IN_USE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "DELETE",
+                "url": "{{baseUrl}}/api/v1/admin/listings/{{listingId}}",
+                "header": [],
+                "description": "Soft deactivate; preserves all historical transactions and audit records. Requires public.users.role=admin and account_status=active (server checked).\nErrors: NOT_FOUND,CATEGORY_IN_USE",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"11111111-1111-4111-8111-111111111111\",\n    \"title\": \"Beach Apartment\",\n    \"city\": \"Da Nang\",\n    \"country\": \"Vietnam\",\n    \"region\": \"Asia\",\n    \"room_type\": \"entire_place\",\n    \"price_per_night\": \"100.00\",\n    \"nightly_rate\": 100,\n    \"max_guests\": 4,\n    \"bedrooms\": 2,\n    \"beds\": 3,\n    \"bathrooms\": 1,\n    \"is_active\": false\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/admin/categories",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/admin/categories",
+            "header": [],
+            "description": "page/limit/q; isActive=true|false. Coupons also accept status=active|inactive|upcoming|expired|exhausted. Listings search title/city/country; categories search name/slug. Requires public.users.role=admin and account_status=active (server checked).\nErrors: ",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "GET",
+                "url": "{{baseUrl}}/api/v1/admin/categories",
+                "header": [],
+                "description": "page/limit/q; isActive=true|false. Coupons also accept status=active|inactive|upcoming|expired|exhausted. Listings search title/city/country; categories search name/slug. Requires public.users.role=admin and account_status=active (server checked).\nErrors: ",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"11111111-1111-4111-8111-111111111111\",\n      \"name\": \"Beach\",\n      \"slug\": \"beach\",\n      \"icon_name\": \"sun\",\n      \"is_active\": true\n    }\n  ],\n  \"pagination\": {\n    \"page\": 1,\n    \"limit\": 12,\n    \"total\": 1,\n    \"totalPages\": 1\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/admin/categories/{id}",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/admin/categories/{{categoryId}}",
+            "header": [],
+            "description": "Chi tiết quản trị: categories Requires public.users.role=admin and account_status=active (server checked).\nErrors: ",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "GET",
+                "url": "{{baseUrl}}/api/v1/admin/categories/{{categoryId}}",
+                "header": [],
+                "description": "Chi tiết quản trị: categories Requires public.users.role=admin and account_status=active (server checked).\nErrors: ",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"11111111-1111-4111-8111-111111111111\",\n    \"name\": \"Beach\",\n    \"slug\": \"beach\",\n    \"icon_name\": \"sun\",\n    \"is_active\": true\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/v1/admin/categories",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/admin/categories",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Tạo categories Requires public.users.role=admin and account_status=active (server checked).\nErrors: VALIDATION_ERROR,DUPLICATE_ENTRY,FOREIGN_KEY_VIOLATION,INVALID_HOST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Beach\",\n  \"slug\": \"beach\",\n  \"iconName\": \"sun\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "POST",
+                "url": "{{baseUrl}}/api/v1/admin/categories",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Tạo categories Requires public.users.role=admin and account_status=active (server checked).\nErrors: VALIDATION_ERROR,DUPLICATE_ENTRY,FOREIGN_KEY_VIOLATION,INVALID_HOST",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Beach\",\n  \"slug\": \"beach\",\n  \"iconName\": \"sun\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"11111111-1111-4111-8111-111111111111\",\n    \"name\": \"Beach\",\n    \"slug\": \"beach\",\n    \"icon_name\": \"sun\",\n    \"is_active\": true\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /api/v1/admin/categories/{id}",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/v1/admin/categories/{{categoryId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "PATCH merges fields. Coupons cannot end before start or reduce maxUses below used_count. Listing amenityIds/photos replace their respective entire lists atomically. Audit log saved in the same transaction. Requires public.users.role=admin and account_status=active (server checked).\nErrors: VALIDATION_ERROR,DUPLICATE_ENTRY,INVALID_COUPON,INVALID_HOST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated category\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "PATCH",
+                "url": "{{baseUrl}}/api/v1/admin/categories/{{categoryId}}",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "PATCH merges fields. Coupons cannot end before start or reduce maxUses below used_count. Listing amenityIds/photos replace their respective entire lists atomically. Audit log saved in the same transaction. Requires public.users.role=admin and account_status=active (server checked).\nErrors: VALIDATION_ERROR,DUPLICATE_ENTRY,INVALID_COUPON,INVALID_HOST",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Updated category\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"11111111-1111-4111-8111-111111111111\",\n    \"name\": \"Beach\",\n    \"slug\": \"beach\",\n    \"icon_name\": \"sun\",\n    \"is_active\": true\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /api/v1/admin/categories/{id}",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/admin/categories/{{categoryId}}",
+            "header": [],
+            "description": "Soft deactivate; rejects if any listing still links to this category (including hidden listings). Requires public.users.role=admin and account_status=active (server checked).\nErrors: NOT_FOUND,CATEGORY_IN_USE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "DELETE",
+                "url": "{{baseUrl}}/api/v1/admin/categories/{{categoryId}}",
+                "header": [],
+                "description": "Soft deactivate; rejects if any listing still links to this category (including hidden listings). Requires public.users.role=admin and account_status=active (server checked).\nErrors: NOT_FOUND,CATEGORY_IN_USE",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"11111111-1111-4111-8111-111111111111\",\n    \"name\": \"Beach\",\n    \"slug\": \"beach\",\n    \"icon_name\": \"sun\",\n    \"is_active\": false\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/admin/coupons",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/admin/coupons",
+            "header": [],
+            "description": "page/limit/q; isActive=true|false. Coupons also accept status=active|inactive|upcoming|expired|exhausted. Listings search title/city/country; categories search name/slug. Requires public.users.role=admin and account_status=active (server checked).\nErrors: ",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "GET",
+                "url": "{{baseUrl}}/api/v1/admin/coupons",
+                "header": [],
+                "description": "page/limit/q; isActive=true|false. Coupons also accept status=active|inactive|upcoming|expired|exhausted. Listings search title/city/country; categories search name/slug. Requires public.users.role=admin and account_status=active (server checked).\nErrors: ",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"11111111-1111-4111-8111-111111111111\",\n      \"code\": \"SUMMER\",\n      \"discount_percent\": \"10.00\",\n      \"starts_at\": \"2000-01-01T00:00:00Z\",\n      \"ends_at\": \"2100-01-01T00:00:00Z\",\n      \"max_uses\": 100,\n      \"used_count\": 0,\n      \"per_user_limit\": 1,\n      \"is_active\": true\n    }\n  ],\n  \"pagination\": {\n    \"page\": 1,\n    \"limit\": 12,\n    \"total\": 1,\n    \"totalPages\": 1\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/admin/coupons/{id}",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/admin/coupons/{{couponId}}",
+            "header": [],
+            "description": "Chi tiết quản trị: coupons Requires public.users.role=admin and account_status=active (server checked).\nErrors: ",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "GET",
+                "url": "{{baseUrl}}/api/v1/admin/coupons/{{couponId}}",
+                "header": [],
+                "description": "Chi tiết quản trị: coupons Requires public.users.role=admin and account_status=active (server checked).\nErrors: ",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"11111111-1111-4111-8111-111111111111\",\n    \"code\": \"SUMMER\",\n    \"discount_percent\": \"10.00\",\n    \"starts_at\": \"2000-01-01T00:00:00Z\",\n    \"ends_at\": \"2100-01-01T00:00:00Z\",\n    \"max_uses\": 100,\n    \"used_count\": 0,\n    \"per_user_limit\": 1,\n    \"is_active\": true\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/v1/admin/coupons",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/admin/coupons",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Tạo coupons Requires public.users.role=admin and account_status=active (server checked).\nErrors: VALIDATION_ERROR,DUPLICATE_ENTRY,FOREIGN_KEY_VIOLATION,INVALID_HOST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"SUMMER\",\n  \"discountPercent\": 10,\n  \"maxDiscount\": 50,\n  \"minSubtotal\": 100,\n  \"startsAt\": \"2000-01-01T00:00:00Z\",\n  \"endsAt\": \"2100-01-01T00:00:00Z\",\n  \"maxUses\": 100,\n  \"perUserLimit\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "POST",
+                "url": "{{baseUrl}}/api/v1/admin/coupons",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Tạo coupons Requires public.users.role=admin and account_status=active (server checked).\nErrors: VALIDATION_ERROR,DUPLICATE_ENTRY,FOREIGN_KEY_VIOLATION,INVALID_HOST",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"SUMMER\",\n  \"discountPercent\": 10,\n  \"maxDiscount\": 50,\n  \"minSubtotal\": 100,\n  \"startsAt\": \"2000-01-01T00:00:00Z\",\n  \"endsAt\": \"2100-01-01T00:00:00Z\",\n  \"maxUses\": 100,\n  \"perUserLimit\": 1\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"11111111-1111-4111-8111-111111111111\",\n    \"code\": \"SUMMER\",\n    \"discount_percent\": \"10.00\",\n    \"starts_at\": \"2000-01-01T00:00:00Z\",\n    \"ends_at\": \"2100-01-01T00:00:00Z\",\n    \"max_uses\": 100,\n    \"used_count\": 0,\n    \"per_user_limit\": 1,\n    \"is_active\": true\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /api/v1/admin/coupons/{id}",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/v1/admin/coupons/{{couponId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "PATCH merges fields. Coupons cannot end before start or reduce maxUses below used_count. Listing amenityIds/photos replace their respective entire lists atomically. Audit log saved in the same transaction. Requires public.users.role=admin and account_status=active (server checked).\nErrors: VALIDATION_ERROR,DUPLICATE_ENTRY,INVALID_COUPON,INVALID_HOST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"maxUses\": 200\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "PATCH",
+                "url": "{{baseUrl}}/api/v1/admin/coupons/{{couponId}}",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "PATCH merges fields. Coupons cannot end before start or reduce maxUses below used_count. Listing amenityIds/photos replace their respective entire lists atomically. Audit log saved in the same transaction. Requires public.users.role=admin and account_status=active (server checked).\nErrors: VALIDATION_ERROR,DUPLICATE_ENTRY,INVALID_COUPON,INVALID_HOST",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"maxUses\": 200\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"11111111-1111-4111-8111-111111111111\",\n    \"code\": \"SUMMER\",\n    \"discount_percent\": \"10.00\",\n    \"starts_at\": \"2000-01-01T00:00:00Z\",\n    \"ends_at\": \"2100-01-01T00:00:00Z\",\n    \"max_uses\": 100,\n    \"used_count\": 0,\n    \"per_user_limit\": 1,\n    \"is_active\": true\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /api/v1/admin/coupons/{id}",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/admin/coupons/{{couponId}}",
+            "header": [],
+            "description": "Soft deactivate; preserves all historical transactions and audit records. Requires public.users.role=admin and account_status=active (server checked).\nErrors: NOT_FOUND,CATEGORY_IN_USE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "DELETE",
+                "url": "{{baseUrl}}/api/v1/admin/coupons/{{couponId}}",
+                "header": [],
+                "description": "Soft deactivate; preserves all historical transactions and audit records. Requires public.users.role=admin and account_status=active (server checked).\nErrors: NOT_FOUND,CATEGORY_IN_USE",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"11111111-1111-4111-8111-111111111111\",\n    \"code\": \"SUMMER\",\n    \"discount_percent\": \"10.00\",\n    \"starts_at\": \"2000-01-01T00:00:00Z\",\n    \"ends_at\": \"2100-01-01T00:00:00Z\",\n    \"max_uses\": 100,\n    \"used_count\": 0,\n    \"per_user_limit\": 1,\n    \"is_active\": false\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/admin/customers",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/admin/customers",
+            "header": [],
+            "description": "q searches full name/email/phone; status=active|blocked. Admin accounts excluded. Requires public.users.role=admin and account_status=active (server checked).\nErrors: ",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "GET",
+                "url": "{{baseUrl}}/api/v1/admin/customers",
+                "header": [],
+                "description": "q searches full name/email/phone; status=active|blocked. Admin accounts excluded. Requires public.users.role=admin and account_status=active (server checked).\nErrors: ",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"11111111-1111-4111-8111-111111111111\",\n      \"email\": \"guest@example.test\",\n      \"full_name\": \"Traveler\",\n      \"role\": \"guest\",\n      \"account_status\": \"active\"\n    }\n  ],\n  \"pagination\": {\n    \"page\": 1,\n    \"limit\": 12,\n    \"total\": 1,\n    \"totalPages\": 1\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/admin/bookings",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/admin/bookings",
+            "header": [],
+            "description": "q searches booking code/guest phone/email/accommodation title; status=pending|confirmed|cancelled|completed|expired. Requires public.users.role=admin and account_status=active (server checked).\nErrors: ",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "GET",
+                "url": "{{baseUrl}}/api/v1/admin/bookings",
+                "header": [],
+                "description": "q searches booking code/guest phone/email/accommodation title; status=pending|confirmed|cancelled|completed|expired. Requires public.users.role=admin and account_status=active (server checked).\nErrors: ",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"11111111-1111-4111-8111-111111111111\",\n      \"booking_code\": \"TRV-example\",\n      \"guest_id\": \"11111111-1111-4111-8111-111111111111\",\n      \"listing_id\": \"11111111-1111-4111-8111-111111111111\",\n      \"check_in_date\": \"2099-01-10\",\n      \"check_out_date\": \"2099-01-12\",\n      \"total_nights\": 2,\n      \"number_of_guests\": 2,\n      \"price_per_night\": \"100.00\",\n      \"total_price\": \"230.00\",\n      \"booking_status\": \"pending\",\n      \"payment_plan\": \"deposit\",\n      \"amount_paid\": \"0.00\",\n      \"balance_due\": \"230.00\",\n      \"payment_status\": \"pending\"\n    }\n  ],\n  \"pagination\": {\n    \"page\": 1,\n    \"limit\": 12,\n    \"total\": 1,\n    \"totalPages\": 1\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/admin/refunds",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/admin/refunds",
+            "header": [],
+            "description": "q searches reason/ID; status=requested|approved|processing|succeeded|failed|rejected. Requires public.users.role=admin and account_status=active (server checked).\nErrors: ",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "GET",
+                "url": "{{baseUrl}}/api/v1/admin/refunds",
+                "header": [],
+                "description": "q searches reason/ID; status=requested|approved|processing|succeeded|failed|rejected. Requires public.users.role=admin and account_status=active (server checked).\nErrors: ",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"11111111-1111-4111-8111-111111111111\",\n      \"payment_id\": \"11111111-1111-4111-8111-111111111111\",\n      \"booking_id\": \"11111111-1111-4111-8111-111111111111\",\n      \"amount\": \"30.00\",\n      \"status\": \"requested\",\n      \"reason\": \"Plans changed\"\n    }\n  ],\n  \"pagination\": {\n    \"page\": 1,\n    \"limit\": 12,\n    \"total\": 1,\n    \"totalPages\": 1\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/admin/audit-logs",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/admin/audit-logs",
+            "header": [],
+            "description": "q searches action/entity type. Read-only; runtime cannot update/delete audit rows. Requires public.users.role=admin and account_status=active (server checked).\nErrors: ",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "GET",
+                "url": "{{baseUrl}}/api/v1/admin/audit-logs",
+                "header": [],
+                "description": "q searches action/entity type. Read-only; runtime cannot update/delete audit rows. Requires public.users.role=admin and account_status=active (server checked).\nErrors: ",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"11111111-1111-4111-8111-111111111111\",\n      \"actor_id\": \"11111111-1111-4111-8111-111111111111\",\n      \"action\": \"bookings.completed\",\n      \"entity_type\": \"booking\",\n      \"entity_id\": \"11111111-1111-4111-8111-111111111111\"\n    }\n  ],\n  \"pagination\": {\n    \"page\": 1,\n    \"limit\": 12,\n    \"total\": 1,\n    \"totalPages\": 1\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /api/v1/admin/customers/{id}",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/v1/admin/customers/{{customerId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Cannot edit role/admin accounts. Local profile changes saved with audit. Email staged in desired_auth_email, then applied through Supabase admin API; auth_sync_pending means retry required. Admin is trusted to authorize email changes. Requires public.users.role=admin and account_status=active (server checked).\nErrors: NOT_FOUND,DUPLICATE_ENTRY",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Customer Updated\",\n  \"email\": \"customer@example.test\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "PATCH",
+                "url": "{{baseUrl}}/api/v1/admin/customers/{{customerId}}",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Cannot edit role/admin accounts. Local profile changes saved with audit. Email staged in desired_auth_email, then applied through Supabase admin API; auth_sync_pending means retry required. Admin is trusted to authorize email changes. Requires public.users.role=admin and account_status=active (server checked).\nErrors: NOT_FOUND,DUPLICATE_ENTRY",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"fullName\": \"Customer Updated\",\n  \"email\": \"customer@example.test\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"11111111-1111-4111-8111-111111111111\",\n    \"email\": \"guest@example.test\",\n    \"full_name\": \"Traveler\",\n    \"role\": \"guest\",\n    \"account_status\": \"active\"\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /api/v1/admin/customers/{id}/status",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/v1/admin/customers/{{customerId}}/status",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Backend immediately checks local blocked status on every protected request. tokens_valid_after rejects old verified JWTs even after reactivation. Supabase ban and session revocation sync separately; 202 with auth_sync_pending=true means provider synchronization has not completed. Requires public.users.role=admin and account_status=active (server checked).\nErrors: NOT_FOUND",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"blocked\",\n  \"reason\": \"Account investigation\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "PATCH",
+                "url": "{{baseUrl}}/api/v1/admin/customers/{{customerId}}/status",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Backend immediately checks local blocked status on every protected request. tokens_valid_after rejects old verified JWTs even after reactivation. Supabase ban and session revocation sync separately; 202 with auth_sync_pending=true means provider synchronization has not completed. Requires public.users.role=admin and account_status=active (server checked).\nErrors: NOT_FOUND",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"blocked\",\n  \"reason\": \"Account investigation\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"11111111-1111-4111-8111-111111111111\",\n    \"email\": \"guest@example.test\",\n    \"full_name\": \"Traveler\",\n    \"role\": \"guest\",\n    \"account_status\": \"blocked\",\n    \"auth_sync_pending\": false\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/v1/admin/customers/{id}/auth-sync",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/admin/customers/{{customerId}}/auth-sync",
+            "header": [],
+            "description": "Thử lại đồng bộ Supabase cho khách Requires public.users.role=admin and account_status=active (server checked).\nErrors: NOT_FOUND",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "POST",
+                "url": "{{baseUrl}}/api/v1/admin/customers/{{customerId}}/auth-sync",
+                "header": [],
+                "description": "Thử lại đồng bộ Supabase cho khách Requires public.users.role=admin and account_status=active (server checked).\nErrors: NOT_FOUND",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"11111111-1111-4111-8111-111111111111\",\n    \"email\": \"guest@example.test\",\n    \"full_name\": \"Traveler\",\n    \"role\": \"guest\",\n    \"account_status\": \"active\",\n    \"auth_sync_pending\": false\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/admin/bookings/{id}",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/admin/bookings/{{bookingId}}",
+            "header": [],
+            "description": "Chi tiết booking bất kỳ cho admin Requires public.users.role=admin and account_status=active (server checked).\nErrors: BOOKING_NOT_FOUND",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "GET",
+                "url": "{{baseUrl}}/api/v1/admin/bookings/{{bookingId}}",
+                "header": [],
+                "description": "Chi tiết booking bất kỳ cho admin Requires public.users.role=admin and account_status=active (server checked).\nErrors: BOOKING_NOT_FOUND",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"11111111-1111-4111-8111-111111111111\",\n    \"booking_code\": \"TRV-example\",\n    \"guest_id\": \"11111111-1111-4111-8111-111111111111\",\n    \"listing_id\": \"11111111-1111-4111-8111-111111111111\",\n    \"check_in_date\": \"2099-01-10\",\n    \"check_out_date\": \"2099-01-12\",\n    \"total_nights\": 2,\n    \"number_of_guests\": 2,\n    \"price_per_night\": \"100.00\",\n    \"total_price\": \"230.00\",\n    \"booking_status\": \"pending\",\n    \"payment_plan\": \"deposit\",\n    \"amount_paid\": \"0.00\",\n    \"balance_due\": \"230.00\",\n    \"payment_status\": \"pending\",\n    \"payments\": [\n      {\n        \"id\": \"11111111-1111-4111-8111-111111111111\",\n        \"booking_id\": \"11111111-1111-4111-8111-111111111111\",\n        \"user_id\": \"11111111-1111-4111-8111-111111111111\",\n        \"amount\": \"30.00\",\n        \"currency\": \"USD\",\n        \"payment_status\": \"pending\",\n        \"provider\": \"mock\",\n        \"is_simulated\": true\n      }\n    ],\n    \"refunds\": []\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /api/v1/admin/bookings/{id}/confirm",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/v1/admin/bookings/{{bookingId}}/confirm",
+            "header": [],
+            "description": "Requires pending, valid hold and verified paid threshold (full total or min($30,total) for deposit). Does not fabricate a payment. Requires public.users.role=admin and account_status=active (server checked).\nErrors: BOOKING_NOT_FOUND,INVALID_STATE_TRANSITION,PAYMENT_REQUIRED,BOOKING_EXPIRED,STAY_NOT_ENDED",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "PATCH",
+                "url": "{{baseUrl}}/api/v1/admin/bookings/{{bookingId}}/confirm",
+                "header": [],
+                "description": "Requires pending, valid hold and verified paid threshold (full total or min($30,total) for deposit). Does not fabricate a payment. Requires public.users.role=admin and account_status=active (server checked).\nErrors: BOOKING_NOT_FOUND,INVALID_STATE_TRANSITION,PAYMENT_REQUIRED,BOOKING_EXPIRED,STAY_NOT_ENDED",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"11111111-1111-4111-8111-111111111111\",\n    \"booking_code\": \"TRV-example\",\n    \"guest_id\": \"11111111-1111-4111-8111-111111111111\",\n    \"listing_id\": \"11111111-1111-4111-8111-111111111111\",\n    \"check_in_date\": \"2099-01-10\",\n    \"check_out_date\": \"2099-01-12\",\n    \"total_nights\": 2,\n    \"number_of_guests\": 2,\n    \"price_per_night\": \"100.00\",\n    \"total_price\": \"230.00\",\n    \"booking_status\": \"confirmed\",\n    \"payment_plan\": \"deposit\",\n    \"amount_paid\": \"0.00\",\n    \"balance_due\": \"230.00\",\n    \"payment_status\": \"pending\"\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /api/v1/admin/bookings/{id}/complete",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/v1/admin/bookings/{{bookingId}}/complete",
+            "header": [],
+            "description": "Requires confirmed, checkout <= UTC today and full verified net payment. Requires public.users.role=admin and account_status=active (server checked).\nErrors: BOOKING_NOT_FOUND,INVALID_STATE_TRANSITION,PAYMENT_REQUIRED,BOOKING_EXPIRED,STAY_NOT_ENDED",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "PATCH",
+                "url": "{{baseUrl}}/api/v1/admin/bookings/{{bookingId}}/complete",
+                "header": [],
+                "description": "Requires confirmed, checkout <= UTC today and full verified net payment. Requires public.users.role=admin and account_status=active (server checked).\nErrors: BOOKING_NOT_FOUND,INVALID_STATE_TRANSITION,PAYMENT_REQUIRED,BOOKING_EXPIRED,STAY_NOT_ENDED",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"11111111-1111-4111-8111-111111111111\",\n    \"booking_code\": \"TRV-example\",\n    \"guest_id\": \"11111111-1111-4111-8111-111111111111\",\n    \"listing_id\": \"11111111-1111-4111-8111-111111111111\",\n    \"check_in_date\": \"2099-01-10\",\n    \"check_out_date\": \"2099-01-12\",\n    \"total_nights\": 2,\n    \"number_of_guests\": 2,\n    \"price_per_night\": \"100.00\",\n    \"total_price\": \"230.00\",\n    \"booking_status\": \"completed\",\n    \"payment_plan\": \"deposit\",\n    \"amount_paid\": \"0.00\",\n    \"balance_due\": \"230.00\",\n    \"payment_status\": \"pending\"\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /api/v1/admin/bookings/{id}/cancel",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/v1/admin/bookings/{{bookingId}}/cancel",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Admin hủy booking theo chính sách Requires public.users.role=admin and account_status=active (server checked).\nErrors: INVALID_STATE_TRANSITION,CANCELLATION_WINDOW_CLOSED",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Approved customer cancellation\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "PATCH",
+                "url": "{{baseUrl}}/api/v1/admin/bookings/{{bookingId}}/cancel",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Admin hủy booking theo chính sách Requires public.users.role=admin and account_status=active (server checked).\nErrors: INVALID_STATE_TRANSITION,CANCELLATION_WINDOW_CLOSED",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"reason\": \"Approved customer cancellation\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"booking\": {\n      \"id\": \"11111111-1111-4111-8111-111111111111\",\n      \"booking_code\": \"TRV-example\",\n      \"guest_id\": \"11111111-1111-4111-8111-111111111111\",\n      \"listing_id\": \"11111111-1111-4111-8111-111111111111\",\n      \"check_in_date\": \"2099-01-10\",\n      \"check_out_date\": \"2099-01-12\",\n      \"total_nights\": 2,\n      \"number_of_guests\": 2,\n      \"price_per_night\": \"100.00\",\n      \"total_price\": \"230.00\",\n      \"booking_status\": \"cancelled\",\n      \"payment_plan\": \"deposit\",\n      \"amount_paid\": \"0.00\",\n      \"balance_due\": \"230.00\",\n      \"payment_status\": \"pending\"\n    },\n    \"refunds\": [\n      {\n        \"id\": \"11111111-1111-4111-8111-111111111111\",\n        \"payment_id\": \"11111111-1111-4111-8111-111111111111\",\n        \"booking_id\": \"11111111-1111-4111-8111-111111111111\",\n        \"amount\": \"30.00\",\n        \"status\": \"requested\",\n        \"reason\": \"Plans changed\"\n      }\n    ]\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/v1/admin/jobs/expire-bookings",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/admin/jobs/expire-bookings",
+            "header": [],
+            "description": "No background database changes enabled by default. Operator schedules this endpoint or reviewed CLI job at least once per minute. Confirmed deposit bookings do not expire when a balance attempt times out. Requires public.users.role=admin and account_status=active (server checked).\nErrors: ",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "POST",
+                "url": "{{baseUrl}}/api/v1/admin/jobs/expire-bookings",
+                "header": [],
+                "description": "No background database changes enabled by default. Operator schedules this endpoint or reviewed CLI job at least once per minute. Confirmed deposit bookings do not expire when a balance attempt times out. Requires public.users.role=admin and account_status=active (server checked).\nErrors: ",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"expired\": 1,\n    \"paymentsTimedOut\": 1\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /api/v1/admin/refunds/{id}/decision",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/v1/admin/refunds/{{refundId}}/decision",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Duyệt/từ chối refund requested Requires public.users.role=admin and account_status=active (server checked).\nErrors: REFUND_NOT_FOUND,INVALID_STATE_TRANSITION",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"approve\",\n  \"reason\": \"Eligible cancellation\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "PATCH",
+                "url": "{{baseUrl}}/api/v1/admin/refunds/{{refundId}}/decision",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Duyệt/từ chối refund requested Requires public.users.role=admin and account_status=active (server checked).\nErrors: REFUND_NOT_FOUND,INVALID_STATE_TRANSITION",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"decision\": \"approve\",\n  \"reason\": \"Eligible cancellation\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"11111111-1111-4111-8111-111111111111\",\n    \"payment_id\": \"11111111-1111-4111-8111-111111111111\",\n    \"booking_id\": \"11111111-1111-4111-8111-111111111111\",\n    \"amount\": \"30.00\",\n    \"status\": \"approved\",\n    \"reason\": \"Plans changed\"\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/v1/admin/refunds/{id}/process",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/admin/refunds/{{refundId}}/process",
+            "header": [],
+            "description": "Only approved/failed/processing refunds. Stripe dispatch is idempotent by refund ID; timeout stays processing until reconciliation. Only signed refund webhook marks succeeded/failed. Explicit mock mode may simulate succeeded. Legacy mock history requires manual reconciliation. Requires public.users.role=admin and account_status=active (server checked).\nErrors: REFUND_NOT_FOUND,INVALID_STATE_TRANSITION,INVALID_PAYMENT_STATUS,LEGACY_PAYMENT,PROVIDER_MISMATCH,PAYMENTS_DISABLED,PROVIDER_UNAVAILABLE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "POST",
+                "url": "{{baseUrl}}/api/v1/admin/refunds/{{refundId}}/process",
+                "header": [],
+                "description": "Only approved/failed/processing refunds. Stripe dispatch is idempotent by refund ID; timeout stays processing until reconciliation. Only signed refund webhook marks succeeded/failed. Explicit mock mode may simulate succeeded. Legacy mock history requires manual reconciliation. Requires public.users.role=admin and account_status=active (server checked).\nErrors: REFUND_NOT_FOUND,INVALID_STATE_TRANSITION,INVALID_PAYMENT_STATUS,LEGACY_PAYMENT,PROVIDER_MISMATCH,PAYMENTS_DISABLED,PROVIDER_UNAVAILABLE",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"11111111-1111-4111-8111-111111111111\",\n    \"status\": \"processing\",\n    \"providerRefundId\": \"re_test_example\"\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/admin/reports/revenue",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/admin/reports/revenue?from={{from}}&to={{to}}",
+            "header": [],
+            "description": "Inclusive ordered range <=367 days. Gross from succeeded payment settlement date; refunds from succeeded refund settlement date. No booking total multiplication. Providers separated; this implementation supports test/mock only, not actual production revenue. A failed/pending refund does not reduce revenue. Requires public.users.role=admin and account_status=active (server checked).\nErrors: ",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "GET",
+                "url": "{{baseUrl}}/api/v1/admin/reports/revenue?from={{from}}&to={{to}}",
+                "header": [],
+                "description": "Inclusive ordered range <=367 days. Gross from succeeded payment settlement date; refunds from succeeded refund settlement date. No booking total multiplication. Providers separated; this implementation supports test/mock only, not actual production revenue. A failed/pending refund does not reduce revenue. Requires public.users.role=admin and account_status=active (server checked).\nErrors: ",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"from\": \"2026-10-27\",\n    \"to\": \"2026-10-27\",\n    \"timezone\": \"UTC\",\n    \"currency\": \"USD\",\n    \"scope\": \"test_and_mock_only\",\n    \"gross_payments\": \"230.00\",\n    \"refunds\": \"30.00\",\n    \"net_revenue\": \"200.00\",\n    \"items\": [\n      {\n        \"day\": \"2026-10-27\",\n        \"provider\": \"mock\",\n        \"is_simulated\": true,\n        \"gross_payments\": \"230.00\",\n        \"refunds\": \"30.00\",\n        \"net_revenue\": \"200.00\",\n        \"successful_transactions\": 1,\n        \"successful_refunds\": 1\n      }\n    ]\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/admin/reports/revenue.xlsx",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/admin/reports/revenue.xlsx?from={{from}}&to={{to}}",
+            "header": [],
+            "description": "Xuất Excel doanh thu cùng công thức API JSON Requires public.users.role=admin and account_status=active (server checked).\nErrors: ",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Authenticated file response', () => pm.expect(pm.response.code).to.eql(200));",
+                  "pm.test('File content type', () => pm.expect(pm.response.headers.get('Content-Type')).to.include(\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "webhooks",
+      "item": [
+        {
+          "name": "POST /api/v1/webhooks/mock",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/webhooks/mock",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Webhook-Signature",
+                "value": "{{mockWebhookSignature}}"
+              }
+            ],
+            "description": "Only PAYMENT_MODE=mock, never production. Header t=unixSeconds,v1=hexHmacSHA256(timestamp + dot + rawJSON). ±300s tolerance. Transactional dedup by provider/event ID and payload hash. Duplicate returns {duplicate:true}.\nErrors: INVALID_WEBHOOK_SIGNATURE,INVALID_WEBHOOK,PAYMENT_MISMATCH,WEBHOOK_EVENT_CONFLICT",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"event-example-01\",\n  \"paymentId\": \"{{paymentId}}\",\n  \"type\": \"succeeded\",\n  \"amount\": 3000,\n  \"currency\": \"USD\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "POST",
+                "url": "{{baseUrl}}/api/v1/webhooks/mock",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Webhook-Signature",
+                    "value": "{{mockWebhookSignature}}"
+                  }
+                ],
+                "description": "Only PAYMENT_MODE=mock, never production. Header t=unixSeconds,v1=hexHmacSHA256(timestamp + dot + rawJSON). ±300s tolerance. Transactional dedup by provider/event ID and payload hash. Duplicate returns {duplicate:true}.\nErrors: INVALID_WEBHOOK_SIGNATURE,INVALID_WEBHOOK,PAYMENT_MISMATCH,WEBHOOK_EVENT_CONFLICT",
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": \"event-example-01\",\n  \"paymentId\": \"{{paymentId}}\",\n  \"type\": \"succeeded\",\n  \"amount\": 3000,\n  \"currency\": \"USD\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"duplicate\": false\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/v1/webhooks/stripe_test",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/webhooks/stripe_test",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Stripe-Signature",
+                "value": "{{stripeSignature}}"
+              }
+            ],
+            "description": "Only stripe_test mode; live events rejected. SDK signature verification, 300s tolerance. payment_intent.succeeded/payment_failed/canceled and refund.created/updated/failed supported. Transactional dedup by provider/event ID. Subscribe to snapshot events in configured test account and reconcile missed/failed events.\nErrors: INVALID_WEBHOOK_SIGNATURE,INVALID_WEBHOOK,PAYMENT_MISMATCH,REFUND_MISMATCH",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"evt_example\",\n  \"type\": \"payment_intent.succeeded\",\n  \"livemode\": false,\n  \"data\": {\n    \"object\": {\n      \"id\": \"pi_example\",\n      \"amount_received\": 3000,\n      \"currency\": \"usd\",\n      \"metadata\": {\n        \"paymentId\": \"{{paymentId}}\"\n      }\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "POST",
+                "url": "{{baseUrl}}/api/v1/webhooks/stripe_test",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Stripe-Signature",
+                    "value": "{{stripeSignature}}"
+                  }
+                ],
+                "description": "Only stripe_test mode; live events rejected. SDK signature verification, 300s tolerance. payment_intent.succeeded/payment_failed/canceled and refund.created/updated/failed supported. Transactional dedup by provider/event ID. Subscribe to snapshot events in configured test account and reconcile missed/failed events.\nErrors: INVALID_WEBHOOK_SIGNATURE,INVALID_WEBHOOK,PAYMENT_MISMATCH,REFUND_MISMATCH",
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": \"evt_example\",\n  \"type\": \"payment_intent.succeeded\",\n  \"livemode\": false,\n  \"data\": {\n    \"object\": {\n      \"id\": \"pi_example\",\n      \"amount_received\": 3000,\n      \"currency\": \"usd\",\n      \"metadata\": {\n        \"paymentId\": \"{{paymentId}}\"\n      }\n    }\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"ignored\": true\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "health",
+      "item": [
+        {
+          "name": "GET /api/v1/health",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/health",
+            "header": [],
+            "description": "Liveness API versioned\nErrors: ",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "GET",
+                "url": "{{baseUrl}}/api/v1/health",
+                "header": [],
+                "description": "Liveness API versioned\nErrors: ",
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Backend API server is operating normally\",\n  \"timestamp\": \"2026-10-27T00:00:00Z\"\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /health",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/health",
+            "header": [],
+            "description": "Database readiness ngoài API prefix\nErrors: ",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "GET",
+                "url": "{{baseUrl}}/health",
+                "header": [],
+                "description": "Database readiness ngoài API prefix\nErrors: ",
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"healthy\",\n  \"timestamp\": \"2026-10-27T00:00:00Z\",\n  \"database\": \"connected\"\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

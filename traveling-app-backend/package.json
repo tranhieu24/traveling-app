@@ -7,28 +7,38 @@
     "dev": "tsx watch src/server.ts",
     "seed": "tsx src/scripts/seed.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit",
+    "test": "node test/run.cjs",
+    "expire-bookings": "tsx src/scripts/expire-bookings.ts",
+    "docs:generate": "tsx src/scripts/generate-api-docs.ts",
+    "test:isolated": "node test/run-isolated.cjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0",
     "express": "^4.19.2",
     "express-rate-limit": "^7.3.1",
     "helmet": "^7.1.0",
     "morgan": "^1.10.0",
     "pdfkit": "^0.15.0",
     "pg": "^8.12.0",
+    "stripe": "^23.0.1",
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@apidevtools/swagger-parser": "^13.1.0",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/morgan": "^1.9.9",
     "@types/node": "^20.14.9",
     "@types/pdfkit": "^0.13.4",
     "@types/pg": "^8.11.6",
+    "embedded-postgres": "^18.4.0-beta.17",
     "tsx": "^4.16.2",
-    "typescript": "^5.5.2"
+    "typescript": "^5.5.2",
+    "zod-to-json-schema": "^3.25.2"
   }
 }

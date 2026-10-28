@@ -9,8 +9,8 @@ export class InteractionController {
       if (!req.user) {
         throw new AppError('Unauthorized', 401, 'UNAUTHORIZED');
       }
-      const favorites = await favoriteRepository.getUserFavorites(req.user.id);
-      return sendSuccess(res, favorites);
+      const favorites = await favoriteRepository.getUserFavorites(req.user.id,Number(req.query.page),Number(req.query.limit));
+      return sendSuccess(res, favorites.items,200,favorites.pagination);
     } catch (error) {
       next(error);
     }
