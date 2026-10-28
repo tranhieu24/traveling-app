@@ -121,7 +121,7 @@ export const LoginScreen: React.FC = () => {
         {/* Switch to Register */}
         <View className="flex-row items-center justify-center mt-auto pt-8">
           <Text className="text-xs text-dark-muted">Don't have an account? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+          <TouchableOpacity onPress={() => navigation.navigate('CreateAccount')}>
             <Text className="text-xs font-bold text-primary">Sign up</Text>
           </TouchableOpacity>
         </View>
