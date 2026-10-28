@@ -1,6 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Search, Heart, CalendarCheck, MessageSquare, User } from 'lucide-react-native';
+import { Search, Heart, LayoutGrid, MessageSquare, ContactRound } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomTabParamList } from '../types';
 import { HomeScreen } from '../screens/HomeScreen';
 import { FavoritesScreen } from '../screens/FavoritesScreen';
@@ -11,22 +12,25 @@ import { ProfileScreen } from '../screens/ProfileScreen';
 const Tab = createBottomTabNavigator<BottomTabParamList>();
 
 export const TabNavigator: React.FC = () => {
+  const insets = useSafeAreaInsets();
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: '#00BCD4',
-        tabBarInactiveTintColor: '#717171',
+        tabBarInactiveTintColor: '#808892',
         tabBarStyle: {
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 8,
+          height: 68 + insets.bottom,
+          paddingBottom: 10 + insets.bottom,
+          paddingTop: 10,
           backgroundColor: '#FFFFFF',
-          borderTopColor: '#EBEBEB',
+          borderTopColor: '#E5E8EB',
+          elevation: 0,
         },
         tabBarLabelStyle: {
           fontSize: 10,
-          fontWeight: '700',
+          fontWeight: '500',
+          marginTop: 3,
         },
       }}
     >
@@ -34,24 +38,24 @@ export const TabNavigator: React.FC = () => {
         name="SearchTab"
         component={HomeScreen}
         options={{
-          tabBarLabel: 'Explore',
-          tabBarIcon: ({ color, size }) => <Search size={size} color={color} />,
+          tabBarLabel: 'Search',
+          tabBarIcon: ({ color }) => <Search size={22} color={color} strokeWidth={1.8} />,
         }}
       />
       <Tab.Screen
         name="FavoritesTab"
         component={FavoritesScreen}
         options={{
-          tabBarLabel: 'Wishlists',
-          tabBarIcon: ({ color, size }) => <Heart size={size} color={color} />,
+          tabBarLabel: 'Favorites',
+          tabBarIcon: ({ color }) => <Heart size={22} color={color} strokeWidth={1.8} />,
         }}
       />
       <Tab.Screen
         name="BookingsTab"
         component={BookingsScreen}
         options={{
-          tabBarLabel: 'Trips',
-          tabBarIcon: ({ color, size }) => <CalendarCheck size={size} color={color} />,
+          tabBarLabel: 'Bookings',
+          tabBarIcon: ({ color }) => <LayoutGrid size={21} color={color} strokeWidth={1.8} />,
         }}
       />
       <Tab.Screen
@@ -59,7 +63,7 @@ export const TabNavigator: React.FC = () => {
         component={InboxScreen}
         options={{
           tabBarLabel: 'Inbox',
-          tabBarIcon: ({ color, size }) => <MessageSquare size={size} color={color} />,
+          tabBarIcon: ({ color }) => <MessageSquare size={22} color={color} strokeWidth={1.8} />,
         }}
       />
       <Tab.Screen
@@ -67,7 +71,7 @@ export const TabNavigator: React.FC = () => {
         component={ProfileScreen}
         options={{
           tabBarLabel: 'Profile',
-          tabBarIcon: ({ color, size }) => <User size={size} color={color} />,
+          tabBarIcon: ({ color }) => <ContactRound size={22} color={color} strokeWidth={1.8} />,
         }}
       />
     </Tab.Navigator>
