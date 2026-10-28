@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { ChevronDown, Check, X } from 'lucide-react-native';
+import { ChevronDown, Check, Mail, X } from 'lucide-react-native';
 import { RootStackParamList } from '../types';
 
 const COUNTRIES = [
@@ -123,6 +123,14 @@ export const CreateAccountScreen: React.FC = () => {
             <Text style={styles.separator}>or</Text>
 
             <View style={styles.socialButtons}>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => navigation.navigate('Register')}
+                style={({ pressed }) => [styles.socialButton, styles.emailButton, pressed && styles.pressed]}
+              >
+                <Mail size={21} color="#292C30" />
+                <Text style={[styles.socialText, styles.emailText]}>Continue with email</Text>
+              </Pressable>
               {SOCIAL_PROVIDERS.map((provider) => (
                 <Pressable
                   key={provider.name}
@@ -266,6 +274,8 @@ const styles = StyleSheet.create({
   continueText: { color: '#FFFFFF', fontSize: 18, fontWeight: '600', lineHeight: 24 },
   separator: { color: '#797C81', fontSize: 14, lineHeight: 20, textAlign: 'center', marginVertical: 13 },
   socialButtons: { gap: 8 },
+  emailButton: { borderColor: '#BFC1C5' },
+  emailText: { color: '#292C30' },
   socialButton: {
     minHeight: 52, borderWidth: 1, borderRadius: 4, flexDirection: 'row',
     alignItems: 'center', justifyContent: 'center', gap: 12, paddingHorizontal: 12, paddingVertical: 12,

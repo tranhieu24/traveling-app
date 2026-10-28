@@ -210,8 +210,15 @@ export const LoginScreen: React.FC = () => {
             <Text style={styles.noticeMessage}>
               {socialProvider} sign-in is not available yet. Please log in with your email and password.
             </Text>
-            <Pressable accessibilityRole="button" onPress={() => setSocialProvider(null)} style={({ pressed }) => [styles.loginButton, pressed && styles.pressed]}>
-              <Text style={styles.loginText}>Got it</Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                setSocialProvider(null);
+                emailRef.current?.focus();
+              }}
+              style={({ pressed }) => [styles.loginButton, pressed && styles.pressed]}
+            >
+              <Text style={styles.loginText}>Continue with email</Text>
             </Pressable>
           </View>
         </View>
