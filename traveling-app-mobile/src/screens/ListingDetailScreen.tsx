@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -7,12 +7,15 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ActivityIndicator,
-  Alert,
   Dimensions,
+  Modal,
+  Platform,
+  Share,
 } from 'react-native';
+import axios from 'axios';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ChevronLeft,
   Heart,
@@ -30,6 +33,8 @@ import { apiClient } from '../services/apiClient';
 import { useAuth } from '../context/AuthContext';
 import { useFilterStore } from '../store/useFilterStore';
 import { Button } from '../components/common/Button';
+import { ListingShareDialog } from '../components/common/ListingShareDialog';
+import { getListingShareContent } from '../utils/listingShare';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -38,26 +43,92 @@ export const ListingDetailScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { listingId } = route.params;
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const detailQueryKey = ['listing_detail', listingId, user?.id];
+  const savingFavorite = useRef(false);
+  const sharing = useRef(false);
   const { checkInDate, checkOutDate, guests } = useFilterStore();
 
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [isQuoting, setIsQuoting] = useState(false);
+  const [isSavingFavorite, setIsSavingFavorite] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const [shareVisible, setShareVisible] = useState(false);
+  const [favoriteFeedback, setFavoriteFeedback] = useState('');
+  const [notice, setNotice] = useState<{ title: string; message: string; login?: boolean } | null>(null);
 
   // 1. Fetch Listing Detail
   const { data: listing, isLoading } = useQuery<Listing>({
-    queryKey: ['listing_detail', listingId],
+    queryKey: detailQueryKey,
     queryFn: async () => {
       const res = await apiClient.get(`/listings/${listingId}`);
       return res.data.data;
     },
   });
 
+  const handleFavorite = async () => {
+    if (!listing || savingFavorite.current) return;
+    if (!user) {
+      setNotice({ title: 'Save your favorite places', message: 'Please log in to save this place to your favorites.', login: true });
+      return;
+    }
+
+    savingFavorite.current = true;
+    setIsSavingFavorite(true);
+    setFavoriteFeedback('');
+    const previousListing = queryClient.getQueryData<Listing>(detailQueryKey) || listing;
+    try {
+      await queryClient.cancelQueries({ queryKey: detailQueryKey, exact: true });
+      queryClient.setQueryData<Listing>(detailQueryKey, { ...previousListing, is_favorite: !previousListing.is_favorite });
+      const response = await apiClient.post('/favorites/toggle', { listingId });
+      const isFavorite = response.data.data?.isFavorite;
+      if (!response.data.success || typeof isFavorite !== 'boolean') {
+        throw new Error('Could not update your favorites. Please try again.');
+      }
+      queryClient.setQueryData<Listing>(detailQueryKey, (current: Listing | undefined) => current ? { ...current, is_favorite: isFavorite } : current);
+      setFavoriteFeedback(isFavorite ? 'Saved to favorites.' : 'Removed from favorites.');
+      void queryClient.invalidateQueries({ queryKey: ['my_favorites'] });
+      void queryClient.invalidateQueries({ queryKey: ['listings'] });
+      void queryClient.invalidateQueries({ queryKey: ['search_results'] });
+    } catch (error: unknown) {
+      queryClient.setQueryData(detailQueryKey, previousListing);
+      setNotice({
+        title: 'Could not update favorites',
+        message: axios.isAxiosError(error)
+          ? error.response?.data?.error?.message || 'Please check your connection and try again.'
+          : error instanceof Error ? error.message : 'Please try again.',
+        login: axios.isAxiosError(error) && error.response?.status === 401,
+      });
+    } finally {
+      savingFavorite.current = false;
+      setIsSavingFavorite(false);
+    }
+  };
+
+  const handleShare = async () => {
+    if (!listing || sharing.current) return;
+    if (Platform.OS === 'web') {
+      setShareVisible(true);
+      return;
+    }
+    sharing.current = true;
+    setIsSharing(true);
+    try {
+      const content = getListingShareContent(listing);
+      await Share.share(Platform.OS === 'android'
+        ? { title: content.title, message: `${content.message}\n${content.url}` }
+        : content);
+    } catch (error: unknown) {
+      if (!(error instanceof Error && error.name === 'AbortError')) setShareVisible(true);
+    } finally {
+      sharing.current = false;
+      setIsSharing(false);
+    }
+  };
+
   const handleReserve = async () => {
     if (!user) {
-      Alert.alert('Login Required', 'Please sign in to make a reservation.', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Log In', onPress: () => navigation.navigate('Login') },
-      ]);
+      setNotice({ title: 'Login required', message: 'Please sign in to make a reservation.', login: true });
       return;
     }
 
@@ -88,10 +159,7 @@ export const ListingDetailScreen: React.FC = () => {
         navigation.navigate('OrderReview', { quote: quoteRes.data.data });
       }
     } catch (error: any) {
-      Alert.alert(
-        'Reservation Error',
-        error.response?.data?.error?.message || 'Unable to quote pricing for these dates.'
-      );
+      setNotice({ title: 'Reservation error', message: error.response?.data?.error?.message || 'Unable to quote pricing for these dates.' });
     } finally {
       setIsQuoting(false);
     }
@@ -146,18 +214,36 @@ export const ListingDetailScreen: React.FC = () => {
           {/* Top Floating Buttons */}
           <View className="absolute top-4 left-4 right-4 flex-row justify-between items-center">
             <TouchableOpacity
-              onPress={() => navigation.goBack()}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+              onPress={() => navigation.canGoBack() ? navigation.goBack() : navigation.replace('MainTabs')}
               className="w-10 h-10 rounded-full bg-white/80 items-center justify-center backdrop-blur-md"
             >
               <ChevronLeft size={24} color="#222222" />
             </TouchableOpacity>
 
             <View className="flex-row space-x-2">
-              <TouchableOpacity className="w-10 h-10 rounded-full bg-white/80 items-center justify-center backdrop-blur-md">
-                <Share2 size={18} color="#222222" />
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Share this place"
+                accessibilityState={{ disabled: isSharing, busy: isSharing }}
+                onPress={handleShare}
+                disabled={isSharing}
+                className="w-10 h-10 rounded-full bg-white/80 items-center justify-center backdrop-blur-md"
+              >
+                {isSharing ? <ActivityIndicator size="small" color="#00BCD4" /> : <Share2 size={18} color="#222222" />}
               </TouchableOpacity>
-              <TouchableOpacity className="w-10 h-10 rounded-full bg-white/80 items-center justify-center backdrop-blur-md">
-                <Heart size={18} color={listing.is_favorite ? '#FF5A5F' : '#222222'} fill={listing.is_favorite ? '#FF5A5F' : 'none'} />
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={listing.is_favorite ? 'Remove from favorites' : 'Save to favorites'}
+                accessibilityState={{ selected: !!listing.is_favorite, disabled: isSavingFavorite, busy: isSavingFavorite }}
+                onPress={handleFavorite}
+                disabled={isSavingFavorite}
+                className="w-10 h-10 rounded-full bg-white/80 items-center justify-center backdrop-blur-md"
+              >
+                {isSavingFavorite ? <ActivityIndicator size="small" color="#00BCD4" /> : (
+                  <Heart size={18} color={listing.is_favorite ? '#FF5A5F' : '#222222'} fill={listing.is_favorite ? '#FF5A5F' : 'none'} />
+                )}
               </TouchableOpacity>
             </View>
           </View>
@@ -172,6 +258,11 @@ export const ListingDetailScreen: React.FC = () => {
 
         {/* Content Body */}
         <View className="p-5">
+          {!!favoriteFeedback && (
+            <View className="mb-3 rounded-lg bg-primary-50 p-3">
+              <Text accessibilityRole="alert" className="text-xs font-medium text-primary-800">{favoriteFeedback}</Text>
+            </View>
+          )}
           {/* Title and Location */}
           <Text className="text-2xl font-extrabold text-dark mb-2">
             {listing.title}
@@ -302,6 +393,22 @@ export const ListingDetailScreen: React.FC = () => {
           className="px-8"
         />
       </View>
+      <ListingShareDialog listing={listing} visible={shareVisible} onClose={() => setShareVisible(false)} />
+      <Modal visible={!!notice} transparent animationType="fade" onRequestClose={() => setNotice(null)}>
+        <View className="flex-1 items-center justify-center bg-black/40 p-6">
+          <View accessibilityViewIsModal className="w-full max-w-sm rounded-2xl bg-white p-6">
+            <Text accessibilityRole="header" className="text-lg font-bold text-dark mb-3">{notice?.title}</Text>
+            <Text className="text-sm text-dark-muted leading-6 mb-4">{notice?.message}</Text>
+            {notice?.login && (
+              <Button title="Log in" onPress={() => {
+                setNotice(null);
+                navigation.navigate('Login');
+              }} className="mb-3" />
+            )}
+            <Button title="Close" variant="outline" onPress={() => setNotice(null)} />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
