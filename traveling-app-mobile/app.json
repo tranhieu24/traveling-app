@@ -2,6 +2,7 @@
   "expo": {
     "name": "Traveling App",
     "slug": "traveling-app",
+    "scheme": "traveling",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",

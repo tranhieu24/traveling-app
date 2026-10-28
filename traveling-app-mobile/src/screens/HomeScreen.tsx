@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   View,
   Text,
   FlatList,
   TouchableOpacity,
-  SafeAreaView,
   RefreshControl,
+  StyleSheet,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
@@ -18,9 +19,12 @@ import { CategoryBar } from '../components/common/CategoryBar';
 import { ListingCard } from '../components/common/ListingCard';
 import { SkeletonListingList } from '../components/common/SkeletonLoader';
 import { EmptyState } from '../components/common/EmptyState';
+import { useAuth } from '../context/AuthContext';
 
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { user } = useAuth();
+  const hasInitializedCategory = useRef(false);
   const {
     selectedCategory,
     setSelectedCategory,
@@ -40,7 +44,12 @@ export const HomeScreen: React.FC = () => {
   const filterCount = getActiveFilterCount();
 
   // 1. Fetch Categories
-  const { data: categories = [] } = useQuery<Category[]>({
+  const {
+    data: categories = [],
+    isLoading: categoriesLoading,
+    isError: categoriesError,
+    refetch: refetchCategories,
+  } = useQuery<Category[]>({
     queryKey: ['categories'],
     queryFn: async () => {
       const res = await apiClient.get('/categories');
@@ -48,15 +57,26 @@ export const HomeScreen: React.FC = () => {
     },
   });
 
+  useEffect(() => {
+    if (hasInitializedCategory.current || categories.length === 0) return;
+    hasInitializedCategory.current = true;
+    if (!selectedCategory) {
+      const beach = categories.find((category) => category.slug === 'beach');
+      if (beach) setSelectedCategory(beach.id);
+    }
+  }, [categories, selectedCategory, setSelectedCategory]);
+
   // 2. Fetch Listings with Filters
   const {
     data: listings = [],
     isLoading,
+    isError,
     isRefetching,
     refetch,
   } = useQuery<Listing[]>({
     queryKey: [
       'listings',
+      user?.id,
       selectedCategory,
       region,
       checkInDate,
@@ -70,7 +90,7 @@ export const HomeScreen: React.FC = () => {
       selectedAmenities,
     ],
     queryFn: async () => {
-      const params: any = { limit: 20 };
+      const params: Record<string, string | number | string[]> = { limit: 20 };
       if (selectedCategory) params.categoryId = selectedCategory;
       if (region) params.region = region;
       if (checkInDate) params.checkIn = checkInDate;
@@ -89,83 +109,108 @@ export const HomeScreen: React.FC = () => {
   });
 
   const renderSearchHeader = () => (
-    <View className="flex-row items-center px-4 py-3 bg-white gap-2">
-      {/* Search Pill Bar */}
-      <TouchableOpacity
-        onPress={() => navigation.navigate('SearchSheet')}
-        activeOpacity={0.8}
-        className="flex-1 flex-row items-center bg-gray-50 border border-gray-200 rounded-full px-4 py-3 shadow-sm"
-      >
-        <Search size={18} color="#00BCD4" />
-        <View className="flex-1 ml-3">
-          <Text className="text-xs font-bold text-gray-900">
-            {region ? region : 'Anywhere in the World'}
-          </Text>
-          <Text className="text-[11px] text-gray-500 mt-0.5" numberOfLines={1}>
-            {checkInDate ? `${checkInDate} • ${guests} guests` : 'Any week • Add guests'}
-          </Text>
-        </View>
-      </TouchableOpacity>
-
-      {/* Filter Button */}
-      <TouchableOpacity
-        onPress={() => navigation.navigate('FilterSheet')}
-        activeOpacity={0.8}
-        className="w-11 h-11 rounded-full border border-gray-200 bg-white items-center justify-center shadow-sm relative"
-      >
-        <SlidersHorizontal size={18} color={filterCount > 0 ? '#00BCD4' : '#222222'} />
-        {filterCount > 0 && (
-          <View className="absolute -top-1 -right-1 bg-[#00BCD4] rounded-full w-4 h-4 items-center justify-center">
-            <Text className="text-[10px] font-bold text-white">{filterCount}</Text>
+    <View style={styles.searchRow}>
+      <View style={styles.searchField}>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Where do you want to stay?"
+          accessibilityHint="Choose a destination, travel dates, and guests"
+          onPress={() => navigation.navigate('SearchSheet')}
+          activeOpacity={0.8}
+          style={styles.searchButton}
+        >
+          <Search size={21} color="#292C30" strokeWidth={2} />
+          <View style={styles.searchCopy}>
+            <Text style={[styles.searchPlaceholder, !!region && styles.searchValue]} numberOfLines={1}>
+              {region || 'Where do you want to stay?'}
+            </Text>
+            {!!checkInDate && (
+              <Text style={styles.searchDetails} numberOfLines={1}>
+                {checkInDate} · {guests} {guests === 1 ? 'guest' : 'guests'}
+              </Text>
+            )}
           </View>
-        )}
-      </TouchableOpacity>
+        </TouchableOpacity>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={filterCount > 0 ? `Filters, ${filterCount} active` : 'Filters'}
+          onPress={() => navigation.navigate('FilterSheet')}
+          activeOpacity={0.8}
+          style={styles.filterButton}
+        >
+          <SlidersHorizontal size={18} color={filterCount > 0 ? '#00BCD4' : '#808892'} />
+          {filterCount > 0 && <View style={styles.filterBadge}><Text style={styles.filterCount}>{filterCount}</Text></View>}
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      {renderSearchHeader()}
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.screen}>
+      <View style={styles.header}>
+        {renderSearchHeader()}
 
-      <CategoryBar
-        categories={categories}
-        selectedCategoryId={selectedCategory}
-        onSelectCategory={setSelectedCategory}
-      />
+        <CategoryBar
+          categories={categories}
+          selectedCategoryId={selectedCategory}
+          onSelectCategory={setSelectedCategory}
+        />
+      </View>
 
-      {isLoading ? (
-        <SkeletonListingList count={3} />
-      ) : listings.length === 0 ? (
-        <EmptyState
-          icon={<MapPin size={48} color="#00BCD4" />}
-          title="No accommodations found"
-          description="Try loosening your search filters or selecting another category to discover more stays."
-          actionTitle="Reset All Filters"
-          onAction={() => {
-            useFilterStore.getState().resetFilters();
-          }}
-        />
-      ) : (
-        <FlatList
-          data={listings}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ padding: 16 }}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefetching}
-              onRefresh={refetch}
-              tintColor="#00BCD4"
-            />
-          }
-          renderItem={({ item }) => (
-            <ListingCard
-              listing={item}
-              onPress={() => navigation.navigate('ListingDetail', { listingId: item.id })}
-            />
-          )}
-        />
-      )}
+      <View style={styles.listArea}>
+        {isLoading || categoriesLoading ? (
+          <SkeletonListingList count={3} />
+        ) : isError || categoriesError ? (
+          <EmptyState
+            icon={<MapPin size={44} color="#00BCD4" />}
+            title="Unable to load stays"
+            description="Please check your connection and try again."
+            actionTitle="Try again"
+            onAction={() => { void Promise.all([refetch(), refetchCategories()]); }}
+          />
+        ) : listings.length === 0 ? (
+          <EmptyState
+            icon={<MapPin size={48} color="#00BCD4" />}
+            title="No accommodations found"
+            description="Try loosening your search filters or selecting another category to discover more stays."
+            actionTitle="Reset All Filters"
+            onAction={() => useFilterStore.getState().resetFilters()}
+          />
+        ) : (
+          <FlatList
+            data={listings}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#00BCD4" />
+            }
+            renderItem={({ item }) => (
+              <ListingCard
+                listing={item}
+                onPress={() => navigation.navigate('ListingDetail', { listingId: item.id })}
+              />
+            )}
+          />
+        )}
+      </View>
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: '#ECFCFE' },
+  header: { backgroundColor: '#ECFCFE' },
+  searchRow: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
+  searchField: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#C9CDD1', borderRadius: 8, backgroundColor: '#FFFFFF' },
+  searchButton: { flex: 1, minHeight: 50, flexDirection: 'row', alignItems: 'center', gap: 12, paddingLeft: 18, paddingRight: 6, paddingVertical: 10 },
+  searchCopy: { flex: 1 },
+  searchPlaceholder: { fontSize: 16, lineHeight: 22, color: '#B8BDC5' },
+  searchValue: { color: '#292C30' },
+  searchDetails: { color: '#93979F', fontSize: 12, lineHeight: 17, marginTop: 2 },
+  filterButton: { width: 40, height: 44, marginRight: 4, alignItems: 'center', justifyContent: 'center' },
+  filterBadge: { position: 'absolute', top: -5, right: -5, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: '#00BCD4', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
+  filterCount: { color: '#FFFFFF', fontSize: 10, fontWeight: '600' },
+  listArea: { flex: 1, backgroundColor: '#FFFFFF' },
+  listContent: { paddingHorizontal: 20, paddingTop: 22, paddingBottom: 4 },
+});

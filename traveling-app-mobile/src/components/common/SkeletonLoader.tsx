@@ -37,15 +37,15 @@ export const SkeletonCard: React.FC = () => {
     <View style={styles.card}>
       {/* Image placeholder */}
       <SkeletonBox style={styles.image} />
-      {/* Location + rating row */}
+      {/* Title and rating */}
       <View style={styles.row}>
         <SkeletonBox style={styles.lineHalf} />
         <SkeletonBox style={styles.lineSmall} />
       </View>
-      {/* Title */}
-      <SkeletonBox style={styles.lineThreeQuarter} />
-      {/* Price */}
-      <SkeletonBox style={styles.lineQuarter} />
+      <View style={styles.row}>
+        <SkeletonBox style={styles.lineQuarter} />
+        <SkeletonBox style={styles.lineSmall} />
+      </View>
     </View>
   );
 };
@@ -62,16 +62,12 @@ export const SkeletonListingList: React.FC<{ count?: number }> = ({ count = 3 })
 
 const styles = StyleSheet.create({
   listContainer: {
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingTop: 22,
   },
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    overflow: 'hidden',
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
-    padding: 16,
+    marginBottom: 26,
   },
   box: {
     backgroundColor: '#E5E7EB',
@@ -79,8 +75,8 @@ const styles = StyleSheet.create({
   },
   image: {
     width: '100%',
-    height: 240,
-    borderRadius: 12,
+    aspectRatio: 1.08,
+    borderRadius: 7,
     marginBottom: 16,
   },
   row: {
@@ -96,13 +92,8 @@ const styles = StyleSheet.create({
     width: 48,
     height: 14,
   },
-  lineThreeQuarter: {
-    width: '75%',
-    height: 12,
-    marginBottom: 12,
-  },
   lineQuarter: {
     width: '25%',
-    height: 18,
+    height: 12,
   },
 });

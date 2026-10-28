@@ -1,21 +1,10 @@
-/**
- * ListingCard — Airbnb-style accommodation card.
- *
- * Shadow uses StyleSheet (cross-platform: elevation on Android,
- * boxShadow-compatible on Web, shadow* on iOS) instead of deprecated
- * inline `shadow*` props that trigger console warnings on web.
- */
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  Image,
-  TouchableOpacity,
-  StyleSheet,
-  Platform,
-} from 'react-native';
-import { Heart, Star } from 'lucide-react-native';
-import { Listing } from '../../types';
+import React, { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useQueryClient } from '@tanstack/react-query';
+import { Heart, ImageOff, Star } from 'lucide-react-native';
+import { Listing, RootStackParamList } from '../../types';
 import { apiClient } from '../../services/apiClient';
 import { useAuth } from '../../context/AuthContext';
 
@@ -25,212 +14,174 @@ interface ListingCardProps {
   onFavoriteToggle?: (isFav: boolean) => void;
 }
 
-export const ListingCard: React.FC<ListingCardProps> = ({
-  listing,
-  onPress,
-  onFavoriteToggle,
-}) => {
+export const ListingCard: React.FC<ListingCardProps> = ({ listing, onPress, onFavoriteToggle }) => {
   const { user } = useAuth();
-  const [isFavorite, setIsFavorite] = useState(listing.is_favorite || false);
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const queryClient = useQueryClient();
+  const savingFavorite = useRef(false);
+  const [isFavorite, setIsFavorite] = useState(!!listing.is_favorite);
   const [loadingFav, setLoadingFav] = useState(false);
+  const [imageWidth, setImageWidth] = useState(0);
+  const [activePhoto, setActivePhoto] = useState(0);
+  const [failedPhotos, setFailedPhotos] = useState<string[]>([]);
+  const gallery = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    setIsFavorite(!!listing.is_favorite);
+  }, [listing.id, listing.is_favorite]);
+
+  useEffect(() => {
+    setActivePhoto(0);
+    setFailedPhotos([]);
+    gallery.current?.scrollTo({ x: 0, animated: false });
+  }, [listing.id, listing.cover_photo]);
+
+  const photoUrls = [...new Set([
+    listing.cover_photo,
+    ...(listing.photos || []).map((photo) => photo.photo_url),
+  ].filter((url): url is string => !!url))];
+  const price = Number(listing.price_per_night);
+  const rating = Number(listing.rating_avg);
 
   const handleFavoritePress = async () => {
     if (!user) {
-      alert('Please log in to save favorites');
+      navigation.navigate('Login');
       return;
     }
+    if (savingFavorite.current) return;
+    savingFavorite.current = true;
     setLoadingFav(true);
-    const newStatus = !isFavorite;
-    setIsFavorite(newStatus);
+    const previousStatus = isFavorite;
+    setIsFavorite(!previousStatus);
     try {
-      await apiClient.post('/favorites/toggle', { listingId: listing.id });
-      if (onFavoriteToggle) onFavoriteToggle(newStatus);
+      const response = await apiClient.post('/favorites/toggle', { listingId: listing.id });
+      const nextStatus = response.data.data.isFavorite as boolean;
+      setIsFavorite(nextStatus);
+      onFavoriteToggle?.(nextStatus);
+      void queryClient.invalidateQueries({ queryKey: ['my_favorites'] });
+      void queryClient.invalidateQueries({ queryKey: ['listings'] });
+      void queryClient.invalidateQueries({ queryKey: ['search_results'] });
+      void queryClient.invalidateQueries({ queryKey: ['listing_detail', listing.id] });
     } catch {
-      setIsFavorite(!newStatus); // Revert on failure
+      setIsFavorite(previousStatus);
+      Alert.alert('Could not update favorites', 'Please check your connection and try again.');
     } finally {
+      savingFavorite.current = false;
       setLoadingFav(false);
     }
   };
 
-  const coverUrl =
-    listing.cover_photo ||
-    'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80';
-
-  const price =
-    typeof listing.price_per_night === 'number'
-      ? listing.price_per_night
-      : parseFloat(listing.price_per_night || '0');
-
-  const rating =
-    typeof listing.rating_avg === 'number'
-      ? listing.rating_avg.toFixed(2)
-      : parseFloat(listing.rating_avg || '0').toFixed(2);
-
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.9}
-      style={styles.card}
-    >
-      {/* ── Cover Image ── */}
-      <View style={styles.imageContainer}>
-        <Image source={{ uri: coverUrl }} style={styles.image} resizeMode="cover" />
+    <View style={styles.card}>
+      <View style={styles.imageContainer} onLayout={(event) => {
+        const width = event.nativeEvent.layout.width;
+        setImageWidth(width);
+        gallery.current?.scrollTo({ x: activePhoto * width, animated: false });
+      }}>
+        {photoUrls.length > 0 ? (
+          <ScrollView
+            ref={gallery}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            scrollEnabled={photoUrls.length > 1}
+            onMomentumScrollEnd={(event) => {
+              if (imageWidth > 0) setActivePhoto(Math.round(event.nativeEvent.contentOffset.x / imageWidth));
+            }}
+            style={styles.gallery}
+          >
+            {photoUrls.map((url, index) => (
+              <Pressable key={url} accessibilityRole="button" accessibilityLabel={`View ${listing.title}, photo ${index + 1}`} onPress={onPress} style={[styles.photo, { width: imageWidth }]}>
+                {failedPhotos.includes(url) ? <ImageOff size={30} color="#9AA1A9" /> : (
+                  <Image
+                    source={{ uri: url }}
+                    accessibilityLabel={listing.title}
+                    resizeMode="cover"
+                    style={styles.image}
+                    onError={() => setFailedPhotos((current) => current.includes(url) ? current : [...current, url])}
+                  />
+                )}
+              </Pressable>
+            ))}
+          </ScrollView>
+        ) : (
+          <Pressable accessibilityRole="button" accessibilityLabel={`View ${listing.title}`} onPress={onPress} style={styles.placeholder}>
+            <ImageOff size={30} color="#9AA1A9" />
+          </Pressable>
+        )}
 
-        {/* Heart / Favourite button */}
-        <TouchableOpacity
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={isFavorite ? `Remove ${listing.title} from favorites` : `Save ${listing.title} to favorites`}
+          accessibilityState={{ selected: isFavorite, disabled: loadingFav, busy: loadingFav }}
           onPress={handleFavoritePress}
           disabled={loadingFav}
-          activeOpacity={0.7}
-          style={styles.heartButton}
+          hitSlop={6}
+          style={({ pressed }) => [styles.heartButton, pressed && styles.pressed]}
         >
-          <Heart
-            size={18}
-            color={isFavorite ? '#FF5A5F' : '#FFFFFF'}
-            fill={isFavorite ? '#FF5A5F' : 'none'}
-            strokeWidth={2}
-          />
-        </TouchableOpacity>
+          {loadingFav ? <ActivityIndicator size="small" color="#00BCD4" /> : (
+            <Heart size={21} color={isFavorite ? '#F05C70' : '#939BA4'} fill={isFavorite ? '#F05C70' : 'transparent'} strokeWidth={1.8} />
+          )}
+        </Pressable>
 
-        {/* Category pill */}
-        {listing.category_name && (
-          <View style={styles.categoryPill}>
-            <Text style={styles.categoryPillText}>{listing.category_name}</Text>
+        {photoUrls.length > 1 && (
+          <View style={styles.pagination}>
+            {photoUrls.map((url, index) => (
+              <Pressable
+                key={url}
+                accessibilityRole="button"
+                accessibilityLabel={`Photo ${index + 1} of ${photoUrls.length}`}
+                accessibilityState={{ selected: activePhoto === index }}
+                onPress={() => {
+                  setActivePhoto(index);
+                  gallery.current?.scrollTo({ x: index * imageWidth, animated: true });
+                }}
+                style={styles.dotTarget}
+              >
+                <View style={[styles.dot, activePhoto === index && styles.activeDot]} />
+              </Pressable>
+            ))}
           </View>
         )}
       </View>
 
-      {/* ── Content ── */}
-      <View style={styles.content}>
-        {/* Location row + rating */}
+      <Pressable accessibilityRole="button" accessibilityLabel={`View ${listing.title}`} onPress={onPress} style={styles.content}>
         <View style={styles.row}>
-          <Text style={styles.location} numberOfLines={1}>
-            {listing.city}, {listing.country}
-          </Text>
+          <Text style={styles.title} numberOfLines={1}>{listing.title}</Text>
           <View style={styles.ratingRow}>
-            <Star size={14} color="#F59E0B" fill="#F59E0B" />
-            <Text style={styles.ratingText}>
-              {rating} ({listing.review_count || 0})
-            </Text>
+            <Star size={12} color="#EBC64D" fill="#EBC64D" strokeWidth={1} />
+            <Text style={styles.ratingText}>{Number.isFinite(rating) && rating > 0 ? rating.toFixed(1) : 'New'}</Text>
           </View>
         </View>
-
-        {/* Title */}
-        <Text style={styles.title} numberOfLines={1}>
-          {listing.title}
-        </Text>
-
-        {/* Price */}
-        <View style={styles.priceRow}>
-          <Text style={styles.price}>${price.toFixed(0)}</Text>
-          <Text style={styles.perNight}> / night</Text>
+        <View style={styles.secondRow}>
+          <Text style={styles.category} numberOfLines={1}>{listing.category_name || listing.property_type}</Text>
+          <Text style={styles.price}><Text style={styles.priceAmount}>${Number.isFinite(price) ? price.toFixed(0) : '—'}</Text>/night</Text>
         </View>
-      </View>
-    </TouchableOpacity>
+      </Pressable>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
-    marginBottom: 24,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
-    // Cross-platform shadow (no deprecated shadow* warnings on web)
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 3,
-      },
-      web: {
-        // @ts-ignore — valid CSS on web via react-native-web
-        boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-      },
-    }),
-  },
-  imageContainer: {
-    width: '100%',
-    height: 240,
-    backgroundColor: '#E5E7EB',
-    position: 'relative',
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-  },
-  heartButton: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(0,0,0,0.28)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  categoryPill: {
-    position: 'absolute',
-    bottom: 12,
-    left: 12,
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
-  },
-  categoryPillText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#222222',
-  },
-  content: {
-    padding: 16,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  location: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#222222',
-    marginRight: 8,
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  ratingText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#222222',
-    marginLeft: 4,
-  },
-  title: {
-    fontSize: 12,
-    color: '#717171',
-    marginBottom: 8,
-  },
-  priceRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-  },
-  price: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#222222',
-  },
-  perNight: {
-    fontSize: 12,
-    color: '#717171',
-  },
+  card: { marginBottom: 26, backgroundColor: '#FFFFFF' },
+  imageContainer: { width: '100%', aspectRatio: 1.08, borderRadius: 7, overflow: 'hidden', backgroundColor: '#F0F2F3' },
+  gallery: { flex: 1 },
+  photo: { height: '100%', alignItems: 'center', justifyContent: 'center' },
+  image: { width: '100%', height: '100%' },
+  placeholder: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  heartButton: { position: 'absolute', top: 12, right: 12, width: 36, height: 36, borderRadius: 18, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
+  pressed: { opacity: 0.7 },
+  pagination: { position: 'absolute', bottom: 4, left: 0, right: 0, flexDirection: 'row', justifyContent: 'center' },
+  dotTarget: { width: 12, height: 24, alignItems: 'center', justifyContent: 'center' },
+  dot: { width: 5, height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.5)' },
+  activeDot: { backgroundColor: '#FFFFFF', width: 6, height: 6 },
+  content: { paddingTop: 16 },
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  title: { flex: 1, fontSize: 14, lineHeight: 20, fontWeight: '600', color: '#30343A' },
+  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  ratingText: { fontSize: 12, lineHeight: 20, color: '#93979F' },
+  secondRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 4 },
+  category: { flex: 1, fontSize: 13, lineHeight: 20, color: '#93979F' },
+  price: { fontSize: 13, lineHeight: 20, color: '#797C81' },
+  priceAmount: { fontSize: 14, color: '#30343A', fontWeight: '700' },
 });

@@ -1,17 +1,17 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
   ScrollView,
   Image,
-  TouchableOpacity,
   SafeAreaView,
   TextInput,
-  Alert,
 } from 'react-native';
+import axios from 'axios';
+import { useQueryClient } from '@tanstack/react-query';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { CreditCard, Calendar, Users, ShieldCheck, ChevronRight } from 'lucide-react-native';
+import { CreditCard, Calendar, Users, ShieldCheck } from 'lucide-react-native';
 import { RootStackParamList } from '../types';
 import { apiClient } from '../services/apiClient';
 import { Header } from '../components/common/Header';
@@ -21,13 +21,19 @@ export const OrderReviewScreen: React.FC = () => {
   const route = useRoute<RouteProp<RootStackParamList, 'OrderReview'>>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { quote } = route.params;
+  const queryClient = useQueryClient();
+  const submittingRef = useRef(false);
 
   const [specialRequests, setSpecialRequests] = useState('');
-  const [cardNumber, setCardNumber] = useState('4242 •••• •••• 4242');
-  const [mockCardLast4, setMockCardLast4] = useState('4242');
+  const cardNumber = '4242 •••• •••• 4242';
+  const mockCardLast4 = '4242';
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
   const handleConfirmPay = async () => {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    setPaymentError(null);
     setIsSubmitting(true);
     try {
       const res = await apiClient.post('/bookings', {
@@ -36,23 +42,28 @@ export const OrderReviewScreen: React.FC = () => {
         checkOutDate: quote.checkOutDate,
         guests: quote.guests,
         specialRequests: specialRequests.trim() || undefined,
-        paymentMethod: 'credit_card',
+        paymentMethod: 'mock_credit_card',
         mockCardLast4: mockCardLast4 || '4242',
       });
 
-      if (res.data.success) {
-        const { booking } = res.data.data;
-        navigation.replace('BookingSuccess', {
-          bookingId: booking.id,
-          bookingCode: booking.booking_code,
-        });
+      const booking = res.data.data?.booking;
+      if (!res.data.success || !booking?.id || !booking?.booking_code) {
+        throw new Error('Your booking could not be confirmed. Please try again.');
       }
-    } catch (error: any) {
-      Alert.alert(
-        'Booking Failed',
-        error.response?.data?.error?.message || 'Transaction could not be completed. The dates might have been booked.'
-      );
+
+      void queryClient.invalidateQueries({ queryKey: ['my_bookings'] });
+      void queryClient.invalidateQueries({ queryKey: ['listings'] });
+      void queryClient.invalidateQueries({ queryKey: ['listing_detail', quote.listingId] });
+      navigation.replace('BookingSuccess', {
+        bookingId: booking.id,
+        bookingCode: booking.booking_code,
+      });
+    } catch (error: unknown) {
+      setPaymentError(axios.isAxiosError(error)
+        ? error.response?.data?.error?.message || 'Could not connect to the server. Please try again.'
+        : error instanceof Error ? error.message : 'Your booking could not be confirmed. Please try again.');
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -121,6 +132,8 @@ export const OrderReviewScreen: React.FC = () => {
           <TextInput
             value={specialRequests}
             onChangeText={setSpecialRequests}
+            maxLength={500}
+            editable={!isSubmitting}
             placeholder="Early check-in, quiet room, anniversary notes..."
             multiline
             numberOfLines={3}
@@ -181,8 +194,13 @@ export const OrderReviewScreen: React.FC = () => {
 
       {/* Bottom Confirm Button */}
       <View className="p-4 border-t border-gray-200 bg-white">
+        {!!paymentError && (
+          <View className="mb-3 p-3 rounded-xl bg-red-50 border border-red-100">
+            <Text accessibilityRole="alert" className="text-xs text-red-700 leading-5">{paymentError}</Text>
+          </View>
+        )}
         <Button
-          title={`Confirm & Pay $${quote.totalPrice.toFixed(2)}`}
+          title={isSubmitting ? 'Confirming your booking...' : `Confirm & Pay $${quote.totalPrice.toFixed(2)}`}
           onPress={handleConfirmPay}
           loading={isSubmitting}
           variant="primary"
