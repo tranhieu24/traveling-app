@@ -1,41 +1,92 @@
-import React, { useEffect } from 'react';
-import { View, Text, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Compass } from 'lucide-react-native';
 import { RootStackParamList } from '../types';
 import { apiClient } from '../services/apiClient';
+import { useAuth } from '../context/AuthContext';
 
 export const SplashScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { token, isLoading } = useAuth();
+  const [isSplashReady, setIsSplashReady] = useState(false);
 
   useEffect(() => {
+    let isActive = true;
+    let navigationTimeout: ReturnType<typeof setTimeout> | undefined;
+
     const initializeApp = async () => {
       try {
         // Ping ngầm /health để đánh thức Render cold start nếu có
-        await apiClient.get('/health', { timeout: 4000 }).catch(() => {});
+        await apiClient.get('/health', { timeout: 4000 }).catch(() => { });
       } finally {
-        setTimeout(() => {
-          navigation.replace('MainTabs');
+        if (!isActive) return;
+
+        navigationTimeout = setTimeout(() => {
+          setIsSplashReady(true);
         }, 1200);
       }
     };
 
     initializeApp();
-  }, [navigation]);
+
+    return () => {
+      isActive = false;
+      if (navigationTimeout) clearTimeout(navigationTimeout);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isSplashReady && !isLoading) {
+      navigation.replace(token ? 'MainTabs' : 'CreateAccount');
+    }
+  }, [isSplashReady, isLoading, token, navigation]);
 
   return (
-    <View className="flex-1 bg-primary items-center justify-center p-6">
-      <View className="w-24 h-24 rounded-3xl bg-white/20 items-center justify-center mb-6">
-        <Compass size={56} color="#FFFFFF" />
+    <View style={styles.container}>
+      <View style={styles.logo} accessible accessibilityRole="image" accessibilityLabel="Traveling">
+        <View style={styles.logoStem} />
+        <View style={styles.logoDots}>
+          <View style={[styles.logoDot, styles.purpleDot]} />
+          <View style={[styles.logoDot, styles.blueDot]} />
+        </View>
       </View>
-      <Text className="text-3xl font-extrabold text-white tracking-wider mb-2">
-        TRAVELING
-      </Text>
-      <Text className="text-sm font-medium text-white/80 mb-8">
-        Discover Unique Stays Worldwide
-      </Text>
-      <ActivityIndicator size="small" color="#FFFFFF" />
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logo: {
+    width: 58,
+    height: 60,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  logoStem: {
+    width: 23,
+    height: 60,
+    backgroundColor: '#06B6CF',
+    borderTopLeftRadius: 23,
+    borderBottomRightRadius: 23,
+  },
+  logoDots: {
+    justifyContent: 'space-between',
+  },
+  logoDot: {
+    width: 27,
+    height: 27,
+    borderRadius: 14,
+  },
+  purpleDot: {
+    backgroundColor: '#8750DF',
+  },
+  blueDot: {
+    backgroundColor: '#4069E5',
+  },
+});
