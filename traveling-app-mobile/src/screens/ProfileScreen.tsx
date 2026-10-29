@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,10 @@ import {
   SafeAreaView,
   TextInput,
   Alert,
+  Modal,
+  Pressable,
+  StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -32,6 +36,10 @@ export const ProfileScreen: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [fullName, setFullName] = useState(user?.full_name || '');
   const [isSaving, setIsSaving] = useState(false);
+  const [logoutVisible, setLogoutVisible] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState('');
+  const logoutPending = useRef(false);
 
   const handleSaveProfile = async () => {
     if (!fullName.trim()) {
@@ -56,17 +64,26 @@ export const ProfileScreen: React.FC = () => {
   };
 
   const handleLogout = () => {
-    Alert.alert('Log Out', 'Are you sure you want to log out?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Log Out',
-        style: 'destructive',
-        onPress: async () => {
-          await signOut();
-          navigation.replace('MainTabs');
-        },
-      },
-    ]);
+    if (logoutPending.current) return;
+    setLogoutError('');
+    setLogoutVisible(true);
+  };
+
+  const confirmLogout = async () => {
+    if (logoutPending.current) return;
+    logoutPending.current = true;
+    setIsLoggingOut(true);
+    setLogoutError('');
+    try {
+      await signOut();
+      setLogoutVisible(false);
+      navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
+    } catch {
+      setLogoutError('Could not log out. Please try again.');
+    } finally {
+      logoutPending.current = false;
+      setIsLoggingOut(false);
+    }
   };
 
   return (
@@ -208,6 +225,9 @@ export const ProfileScreen: React.FC = () => {
           {user ? (
             <TouchableOpacity
               onPress={handleLogout}
+              accessibilityRole="button"
+              accessibilityLabel="Log Out"
+              disabled={isLoggingOut}
               activeOpacity={0.8}
               className="border border-gray-300 rounded-xl py-3 items-center mt-6 flex-row justify-center"
             >
@@ -230,6 +250,55 @@ export const ProfileScreen: React.FC = () => {
           )}
         </View>
       </ScrollView>
+      <Modal
+        visible={logoutVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => { if (!logoutPending.current) setLogoutVisible(false); }}
+      >
+        <View style={logoutStyles.overlay}>
+          <View style={logoutStyles.card} accessibilityViewIsModal>
+            <Text accessibilityRole="header" style={logoutStyles.title}>Log out?</Text>
+            <Text style={logoutStyles.message}>Are you sure you want to log out?</Text>
+            {!!logoutError && <Text accessibilityRole="alert" style={logoutStyles.error}>{logoutError}</Text>}
+            <View style={logoutStyles.actions}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Cancel log out"
+                disabled={isLoggingOut}
+                onPress={() => setLogoutVisible(false)}
+                style={logoutStyles.cancelButton}
+              >
+                <Text style={logoutStyles.cancelLabel}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Confirm log out"
+                disabled={isLoggingOut}
+                onPress={confirmLogout}
+                style={[logoutStyles.confirmButton, isLoggingOut && logoutStyles.busy]}
+              >
+                {isLoggingOut && <ActivityIndicator size="small" color="#FFFFFF" />}
+                <Text style={logoutStyles.confirmLabel}>{isLoggingOut ? 'Logging out...' : 'Log Out'}</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
+
+const logoutStyles = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.4)', alignItems: 'center', justifyContent: 'center', padding: 24 },
+  card: { width: '100%', maxWidth: 360, borderRadius: 18, backgroundColor: '#FFFFFF', padding: 24 },
+  title: { fontSize: 22, fontWeight: '700', color: '#292C30' },
+  message: { fontSize: 15, lineHeight: 22, color: '#6B7280', marginTop: 12 },
+  error: { fontSize: 14, lineHeight: 20, color: '#DC2626', marginTop: 12 },
+  actions: { flexDirection: 'row', gap: 12, marginTop: 24 },
+  cancelButton: { flex: 1, minHeight: 46, borderRadius: 10, borderWidth: 1, borderColor: '#D1D5DB', alignItems: 'center', justifyContent: 'center' },
+  cancelLabel: { fontSize: 15, fontWeight: '600', color: '#374151' },
+  confirmButton: { flex: 1, minHeight: 46, borderRadius: 10, backgroundColor: '#EF4444', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  confirmLabel: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
+  busy: { opacity: 0.65 },
+});

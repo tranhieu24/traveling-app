@@ -1,3 +1,5 @@
+import type { NavigatorScreenParams } from '@react-navigation/native';
+
 export interface User {
   id: string;
   email: string;
@@ -129,7 +131,7 @@ export type RootStackParamList = {
   CreateAccount: undefined;
   Login: undefined;
   Register: undefined;
-  MainTabs: undefined;
+  MainTabs: NavigatorScreenParams<BottomTabParamList> | undefined;
   ListingDetail: { listingId: string };
   SearchSheet: undefined;
   FilterSheet: undefined;

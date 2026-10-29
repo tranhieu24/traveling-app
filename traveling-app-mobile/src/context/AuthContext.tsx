@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import axios from 'axios';
+import { useQueryClient } from '@tanstack/react-query';
 import Constants from 'expo-constants';
 import { apiClient } from '../services/apiClient';
 import { storage } from '../utils/storage';
@@ -41,11 +43,12 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 // --- Provider ---
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchProfile = async (_currentToken?: string) => {
+  const fetchProfile = async (currentToken?: string) => {
     try {
       const res = await apiClient.get('/auth/me');
       if (res.data.success) {
@@ -53,6 +56,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (e) {
       console.warn('[AuthContext] Could not fetch user profile:', e);
+      if (axios.isAxiosError(e) && e.response?.status === 401) {
+        const savedToken = await storage.getItem(AUTH_TOKEN_KEY);
+        // Ignore a delayed failure belonging to an earlier login.
+        if (currentToken && savedToken !== currentToken) return;
+        await storage.removeItem(AUTH_TOKEN_KEY);
+        setToken(null);
+      }
       setUser(null);
     }
   };
@@ -116,19 +126,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     setIsLoading(true);
     try {
-      await supabase.auth.signOut();
-      await storage.removeItem(AUTH_TOKEN_KEY);
-      setToken(null);
-      setUser(null);
+      const { error } = await supabase.auth.signOut({ scope: 'local' });
+      if (error) console.warn('[AuthContext] Session revocation error:', error);
     } catch (e) {
       console.warn('[AuthContext] Sign out error:', e);
     } finally {
-      setIsLoading(false);
+      // Clear this device even if revoking the remote session fails.
+      try {
+        await storage.removeItem(AUTH_TOKEN_KEY);
+        setToken(null);
+        setUser(null);
+        queryClient.clear();
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
   const refreshProfile = async () => {
-    await fetchProfile();
+    await fetchProfile(token || undefined);
   };
 
   return (

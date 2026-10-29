@@ -7,7 +7,17 @@ export const linkingConfig: NonNullable<LinkingOptions<RootStackParamList>['conf
     CreateAccount: 'create-account',
     Login: 'login',
     Register: 'register',
-    MainTabs: 'browse',
+    MainTabs: {
+      path: 'browse',
+      initialRouteName: 'SearchTab',
+      screens: {
+        SearchTab: 'SearchTab',
+        FavoritesTab: 'FavoritesTab',
+        BookingsTab: 'BookingsTab',
+        InboxTab: 'InboxTab',
+        ProfileTab: 'ProfileTab',
+      },
+    },
     ListingDetail: 'stays/:listingId',
   },
 };
