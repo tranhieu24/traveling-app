@@ -33,6 +33,9 @@ export interface ListingPhoto {
   is_cover: boolean;
 }
 
+export type RoomType = 'entire_place' | 'private_room' | 'dormitory';
+export interface ListingPricing { currency: string; nightlyRate: number; roomSubtotal: number; cleaningFee: number; serviceFee: number; discountAmount: number; taxRate: number; taxAmount: number; tripTotal: number; totalNights: number }
+
 export interface Listing {
   id: string;
   title: string;
@@ -63,6 +66,9 @@ export interface Listing {
   host_name?: string;
   host_avatar?: string;
   is_favorite?: boolean;
+  nightly_rate?: number;
+  currency?: string;
+  pricing?: ListingPricing | null;
 }
 
 export interface Review {
@@ -167,7 +173,7 @@ export type RootStackParamList = {
   HelpCenter: undefined;
   MainTabs: NavigatorScreenParams<BottomTabParamList> | undefined;
   ListingDetail: { listingId: string };
-  SearchSheet: undefined;
+  SearchSheet: { step?: 'where' | 'when' | 'who' } | undefined;
   FilterSheet: undefined;
   SearchResults: undefined;
   OrderReview: { quote: BookingQuote };

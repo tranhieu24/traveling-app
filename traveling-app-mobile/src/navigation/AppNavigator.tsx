@@ -46,7 +46,7 @@ export const AppNavigator: React.FC = () => {
       <Stack.Screen
         name="FilterSheet"
         component={FilterSheetScreen}
-        options={{ animation: 'slide_from_bottom', presentation: 'modal' }}
+        options={{ animation: 'slide_from_bottom', presentation: 'transparentModal', contentStyle: { backgroundColor: 'transparent' } }}
       />
       <Stack.Screen name="SearchResults" component={SearchResultsScreen} />
       <Stack.Screen name="OrderReview" component={OrderReviewScreen} />

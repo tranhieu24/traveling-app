@@ -7,6 +7,8 @@ export const linkingConfig: NonNullable<LinkingOptions<RootStackParamList>['conf
     CreateAccount: 'create-account',
     Login: 'login',
     Register: 'register',
+    SearchSheet: 'search',
+    FilterSheet: 'filters',
     Settings: 'settings',
     HelpCenter: 'help',
     BookingSuccess: 'payments/:bookingId/success',

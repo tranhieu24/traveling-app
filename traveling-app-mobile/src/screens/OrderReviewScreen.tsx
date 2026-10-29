@@ -49,7 +49,7 @@ export const OrderReviewScreen: React.FC = () => {
       if (!response.data.success || updated?.listingId !== quote.listingId || !Number.isFinite(Number(updated.totalPrice))) throw new Error('Could not update the trip price. Please try again.');
       setQuote({ ...updated, adults: draft.adults, children: draft.children });
       useFilterStore.getState().setDates(draft.checkInDate, draft.checkOutDate);
-      useFilterStore.getState().setGuests(draft.adults + draft.children);
+      useFilterStore.getState().setGuestCounts(draft.adults, draft.children);
       setError('');
       setEditor(null);
     } catch (failure) { throw new Error(paymentErrorMessage(failure)); }

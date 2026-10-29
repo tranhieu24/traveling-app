@@ -47,7 +47,7 @@ export const ListingDetailScreen: React.FC = () => {
   const detailQueryKey = ['listing_detail', listingId, user?.id];
   const savingFavorite = useRef(false);
   const sharing = useRef(false);
-  const { checkInDate, checkOutDate, guests } = useFilterStore();
+  const { checkInDate, checkOutDate, guests, adults, children } = useFilterStore();
 
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [isQuoting, setIsQuoting] = useState(false);
@@ -153,11 +153,11 @@ export const ListingDetailScreen: React.FC = () => {
         listingId,
         checkInDate: inDate,
         checkOutDate: outDate,
-        guests: Math.min(guests || 1, listing?.max_guests || 2),
+        guests: guests || 1,
       });
 
       if (quoteRes.data.success) {
-        navigation.navigate('OrderReview', { quote: quoteRes.data.data });
+        navigation.navigate('OrderReview', { quote: { ...quoteRes.data.data, adults: adults || 1, children } });
       }
     } catch (error: any) {
       setNotice({ title: 'Reservation error', message: error.response?.data?.error?.message || 'Unable to quote pricing for these dates.' });

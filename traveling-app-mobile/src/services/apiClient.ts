@@ -9,7 +9,7 @@ type GuestRetryConfig = InternalAxiosRequestConfig & { _retryAsGuest?: boolean }
 
 const isPublicDiscoveryRequest = (config: GuestRetryConfig): boolean =>
   config.method?.toLowerCase() === 'get' &&
-  /^\/(?:categories|amenities|listings(?:\/[^/]+(?:\/reviews)?)?)$/.test(
+  /^\/(?:categories|amenities|destinations|listings(?:\/[^/]+(?:\/reviews)?)?)$/.test(
     (config.url || '').split('?')[0]
   );
 
