@@ -18,6 +18,7 @@ import { AllReviewsScreen } from '../screens/AllReviewsScreen';
 import { WriteReviewScreen } from '../screens/WriteReviewScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { HelpCenterScreen } from '../screens/HelpCenterScreen';
+import { PaymentsPayoutsScreen } from '../screens/PaymentsPayoutsScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -35,6 +36,7 @@ export const AppNavigator: React.FC = () => {
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
       <Stack.Screen name="MainTabs" component={TabNavigator} />
+      <Stack.Screen name="PaymentsPayouts" component={PaymentsPayoutsScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="HelpCenter" component={HelpCenterScreen} />
       <Stack.Screen name="ListingDetail" component={ListingDetailScreen} />

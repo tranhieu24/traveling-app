@@ -9,6 +9,7 @@ export const linkingConfig: NonNullable<LinkingOptions<RootStackParamList>['conf
     Register: 'register',
     SearchSheet: 'search',
     FilterSheet: 'filters',
+    PaymentsPayouts: 'account/payments',
     Settings: 'settings',
     HelpCenter: 'help',
     BookingSuccess: 'payments/:bookingId/success',

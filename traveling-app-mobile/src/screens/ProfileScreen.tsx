@@ -178,7 +178,9 @@ export const ProfileScreen: React.FC = () => {
 
           {/* 2. Payments & Payouts */}
           <TouchableOpacity
-            onPress={() => {}}
+            accessibilityRole="button"
+            accessibilityLabel="Payments & Payouts"
+            onPress={() => navigation.navigate(user ? 'PaymentsPayouts' : 'Login')}
             className="flex-row items-center py-4 border-b border-gray-100"
             activeOpacity={0.7}
           >

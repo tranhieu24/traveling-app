@@ -107,6 +107,20 @@ export interface BookingPayment {
   is_simulated?: boolean;
 }
 
+export interface BookingRefund {
+  id: string;
+  payment_id: string;
+  booking_id: string;
+  amount: number | string;
+  status: 'requested' | 'approved' | 'processing' | 'succeeded' | 'failed' | 'rejected';
+  reason: string;
+  decision_reason?: string | null;
+  provider_refund_id?: string | null;
+  succeeded_at?: string | null;
+  created_at: string;
+  updated_at?: string;
+}
+
 export interface Booking {
   id: string;
   booking_code: string;
@@ -127,6 +141,7 @@ export interface Booking {
   booking_status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'expired';
   payment_status: 'pending' | 'partially_paid' | 'paid' | 'refunded' | 'failed';
   payments?: BookingPayment[];
+  refunds?: BookingRefund[];
   payment_plan?: 'full' | 'deposit';
   payment_due_at?: string | null;
   amount_paid?: number | string;
@@ -171,6 +186,7 @@ export type RootStackParamList = {
   Register: undefined;
   Settings: undefined;
   HelpCenter: undefined;
+  PaymentsPayouts: undefined;
   MainTabs: NavigatorScreenParams<BottomTabParamList> | undefined;
   ListingDetail: { listingId: string };
   SearchSheet: { step?: 'where' | 'when' | 'who' } | undefined;
