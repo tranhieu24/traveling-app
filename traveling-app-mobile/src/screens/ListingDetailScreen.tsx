@@ -42,7 +42,7 @@ export const ListingDetailScreen: React.FC = () => {
   const route = useRoute<RouteProp<RootStackParamList, 'ListingDetail'>>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { listingId } = route.params;
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const detailQueryKey = ['listing_detail', listingId, user?.id];
   const savingFavorite = useRef(false);
@@ -127,6 +127,7 @@ export const ListingDetailScreen: React.FC = () => {
   };
 
   const handleReserve = async () => {
+    if (authLoading || isQuoting) return;
     if (!user) {
       setNotice({ title: 'Login required', message: 'Please sign in to make a reservation.', login: true });
       return;
@@ -387,7 +388,8 @@ export const ListingDetailScreen: React.FC = () => {
         <Button
           title="Reserve"
           onPress={handleReserve}
-          loading={isQuoting}
+          loading={isQuoting || authLoading}
+            disabled={authLoading}
           variant="primary"
           size="lg"
           className="px-8"

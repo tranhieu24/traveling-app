@@ -9,6 +9,9 @@ export const linkingConfig: NonNullable<LinkingOptions<RootStackParamList>['conf
     Register: 'register',
     Settings: 'settings',
     HelpCenter: 'help',
+    BookingSuccess: 'payments/:bookingId/success',
+    Payment: 'bookings/:bookingId/pay',
+    BookingDetail: 'bookings/:bookingId',
     MainTabs: {
       path: 'browse',
       initialRouteName: 'SearchTab',

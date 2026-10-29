@@ -81,6 +81,26 @@ export interface Review {
   user_avatar?: string;
 }
 
+export type PaymentPlan = 'full' | 'deposit' | 'balance';
+
+export interface BookingPayment {
+  id: string;
+  booking_id?: string;
+  idempotency_key?: string;
+  expires_at?: string;
+  requested_plan?: 'full' | 'deposit' | 'balance';
+  amount: number | string;
+  currency?: string;
+  payment_status: 'pending' | 'succeeded' | 'failed' | 'timed_out' | 'refunded';
+  payment_method?: string;
+  provider?: string;
+  provider_payment_id?: string | null;
+  transaction_reference?: string | null;
+  paid_at?: string | null;
+  created_at?: string;
+  is_simulated?: boolean;
+}
+
 export interface Booking {
   id: string;
   booking_code: string;
@@ -98,8 +118,14 @@ export interface Booking {
   cleaning_fee: number | string;
   service_fee: number | string;
   total_price: number | string;
-  booking_status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
-  payment_status: 'pending' | 'paid' | 'refunded' | 'failed';
+  booking_status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'expired';
+  payment_status: 'pending' | 'partially_paid' | 'paid' | 'refunded' | 'failed';
+  payments?: BookingPayment[];
+  payment_plan?: 'full' | 'deposit';
+  payment_due_at?: string | null;
+  amount_paid?: number | string;
+  amount_refunded?: number | string;
+  balance_due?: number | string;
   special_requests?: string;
   transaction_reference?: string;
   payment_method?: string;
@@ -109,6 +135,12 @@ export interface Booking {
 }
 
 export interface BookingQuote {
+  currency?: string;
+  taxAmount?: number;
+  taxRate?: number;
+  discountAmount?: number;
+  adults?: number;
+  children?: number;
   listingId: string;
   title: string;
   city: string;
@@ -139,7 +171,8 @@ export type RootStackParamList = {
   FilterSheet: undefined;
   SearchResults: undefined;
   OrderReview: { quote: BookingQuote };
-  BookingSuccess: { bookingId: string; bookingCode: string };
+  Payment: { bookingId: string; plan?: PaymentPlan };
+  BookingSuccess: { bookingId: string; bookingCode?: string };
   BookingDetail: { bookingId: string };
   AllReviews: { listingId: string; ratingAvg: number; reviewCount: number };
   WriteReview: { listingId: string; listingTitle: string };

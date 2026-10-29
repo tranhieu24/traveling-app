@@ -11,6 +11,7 @@ import { SearchSheetScreen } from '../screens/SearchSheetScreen';
 import { FilterSheetScreen } from '../screens/FilterSheetScreen';
 import { SearchResultsScreen } from '../screens/SearchResultsScreen';
 import { OrderReviewScreen } from '../screens/OrderReviewScreen';
+import { PaymentScreen } from '../screens/PaymentScreen';
 import { BookingSuccessScreen } from '../screens/BookingSuccessScreen';
 import { BookingDetailScreen } from '../screens/BookingDetailScreen';
 import { AllReviewsScreen } from '../screens/AllReviewsScreen';
@@ -49,6 +50,7 @@ export const AppNavigator: React.FC = () => {
       />
       <Stack.Screen name="SearchResults" component={SearchResultsScreen} />
       <Stack.Screen name="OrderReview" component={OrderReviewScreen} />
+      <Stack.Screen name="Payment" component={PaymentScreen} />
       <Stack.Screen name="BookingSuccess" component={BookingSuccessScreen} />
       <Stack.Screen name="BookingDetail" component={BookingDetailScreen} />
       <Stack.Screen name="AllReviews" component={AllReviewsScreen} />
