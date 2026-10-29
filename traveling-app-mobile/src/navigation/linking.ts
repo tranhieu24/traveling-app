@@ -7,6 +7,8 @@ export const linkingConfig: NonNullable<LinkingOptions<RootStackParamList>['conf
     CreateAccount: 'create-account',
     Login: 'login',
     Register: 'register',
+    Settings: 'settings',
+    HelpCenter: 'help',
     MainTabs: {
       path: 'browse',
       initialRouteName: 'SearchTab',

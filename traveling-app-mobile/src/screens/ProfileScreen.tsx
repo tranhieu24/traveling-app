@@ -193,7 +193,9 @@ export const ProfileScreen: React.FC = () => {
 
           {/* 3. Settings & Notifications */}
           <TouchableOpacity
-            onPress={() => {}}
+            accessibilityRole="button"
+            accessibilityLabel="Settings & Notifications"
+            onPress={() => navigation.navigate('Settings')}
             className="flex-row items-center py-4 border-b border-gray-100"
             activeOpacity={0.7}
           >
@@ -208,7 +210,9 @@ export const ProfileScreen: React.FC = () => {
 
           {/* 4. Help Center */}
           <TouchableOpacity
-            onPress={() => {}}
+            accessibilityRole="button"
+            accessibilityLabel="Help Center"
+            onPress={() => navigation.navigate('HelpCenter')}
             className="flex-row items-center py-4 border-b border-gray-100"
             activeOpacity={0.7}
           >

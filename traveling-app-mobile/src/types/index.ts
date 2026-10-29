@@ -131,6 +131,8 @@ export type RootStackParamList = {
   CreateAccount: undefined;
   Login: undefined;
   Register: undefined;
+  Settings: undefined;
+  HelpCenter: undefined;
   MainTabs: NavigatorScreenParams<BottomTabParamList> | undefined;
   ListingDetail: { listingId: string };
   SearchSheet: undefined;

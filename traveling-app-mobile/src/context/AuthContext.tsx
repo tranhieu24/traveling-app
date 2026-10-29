@@ -16,6 +16,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ requiresEmailConfirmation: boolean }>;
   signOut: () => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
 
@@ -143,13 +144,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    if (!user?.email) throw new Error('Please log in to change your password.');
+    if (!currentPassword) throw new Error('Enter your current password.');
+    if (newPassword.length < 6) throw new Error('Use at least 6 characters for your new password.');
+    if (newPassword === currentPassword) throw new Error('Choose a different password.');
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: currentPassword,
+    });
+    if (error) throw error;
+    if (!data.session || data.user?.id !== user.id) {
+      await signOut();
+      throw new Error('Your session changed. Please log in again.');
+    }
+
+    // Reauthentication refreshes the SDK session; keep API requests in sync.
+    await storage.setItem(AUTH_TOKEN_KEY, data.session.access_token);
+    setToken(data.session.access_token);
+    const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+    if (updateError) throw updateError;
+  };
+
   const refreshProfile = async () => {
     await fetchProfile(token || undefined);
   };
 
   return (
     <AuthContext.Provider
-      value={{ user, token, isLoading, signIn, signUp, signOut, refreshProfile }}
+      value={{ user, token, isLoading, signIn, signUp, signOut, changePassword, refreshProfile }}
     >
       {children}
     </AuthContext.Provider>
