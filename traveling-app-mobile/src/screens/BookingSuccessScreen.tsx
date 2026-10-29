@@ -129,7 +129,13 @@ export const BookingSuccessScreen: React.FC = () => {
       <View style={styles.footer}>
         <Pressable
           accessibilityRole="button" accessibilityLabel="View booking" disabled={!user || authLoading}
-          onPress={() => navigation.replace('BookingDetail', { bookingId })}
+          onPress={() => navigation.reset({
+            index: 1,
+            routes: [
+              { name: 'MainTabs', params: { screen: 'BookingsTab' } },
+              { name: 'BookingDetail', params: { bookingId } },
+            ],
+          })}
           style={({ pressed }) => [styles.viewBookingButton, (!user || authLoading) && styles.disabled, pressed && styles.pressed]}
         ><Text style={styles.viewBookingLabel}>View booking</Text></Pressable>
       </View>

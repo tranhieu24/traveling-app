@@ -35,6 +35,12 @@ export const BookingDetailScreen: React.FC = () => {
 
   const [isCancelling, setIsCancelling] = useState(false);
 
+  const handleBack = () => {
+    if (navigation.canGoBack()) navigation.goBack();
+    else navigation.replace('MainTabs', { screen: 'BookingsTab' });
+  };
+
+
   const { data: booking, isLoading, refetch } = useQuery({
     queryKey: ['booking_detail', bookingId],
     queryFn: async () => {
@@ -83,9 +89,17 @@ export const BookingDetailScreen: React.FC = () => {
 
   if (isLoading || !booking) {
     return (
-      <View className="flex-1 bg-white items-center justify-center">
-        <ActivityIndicator size="large" color="#00BCD4" />
-      </View>
+      <SafeAreaView className="flex-1 bg-white">
+        <Header title="Reservation Details" onBack={handleBack} />
+        <View className="flex-1 items-center justify-center px-6">
+          {isLoading ? <ActivityIndicator size="large" color="#00BCD4" /> : (
+            <>
+              <Text className="text-sm text-dark-muted text-center mb-4">Unable to load reservation details. Please try again.</Text>
+              <Button title="Try again" onPress={() => { void refetch(); }} variant="outline" />
+            </>
+          )}
+        </View>
+      </SafeAreaView>
     );
   }
 
@@ -94,7 +108,7 @@ export const BookingDetailScreen: React.FC = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-white">
-      <Header title="Reservation Details" />
+      <Header title="Reservation Details" onBack={handleBack} />
 
       <ScrollView className="flex-1 p-5" showsVerticalScrollIndicator={false}>
         {/* Status Banner */}
