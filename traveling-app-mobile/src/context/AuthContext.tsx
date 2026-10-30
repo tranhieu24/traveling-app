@@ -13,7 +13,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<User>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ requiresEmailConfirmation: boolean }>;
   signOut: () => Promise<void>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
@@ -54,18 +54,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const res = await apiClient.get('/auth/me');
       if (res.data.success) {
         setUser(res.data.data);
+        return res.data.data as User;
       }
     } catch (e) {
-      console.warn('[AuthContext] Could not fetch user profile:', e);
-      if (axios.isAxiosError(e) && e.response?.status === 401) {
+      console.warn('[AuthContext] Could not fetch user profile.');
+      if (axios.isAxiosError(e) && [401, 403].includes(e.response?.status || 0)) {
         const savedToken = await storage.getItem(AUTH_TOKEN_KEY);
         // Ignore a delayed failure belonging to an earlier login.
-        if (currentToken && savedToken !== currentToken) return;
+        if (currentToken && savedToken !== currentToken) throw new Error('Your session changed. Please log in again.');
         await storage.removeItem(AUTH_TOKEN_KEY);
         setToken(null);
       }
       setUser(null);
+      throw new Error('Could not verify your account. Please check your connection and try again.');
     }
+    throw new Error('Could not verify your account.');
   };
 
   // Restore session on app launch
@@ -78,7 +81,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           await fetchProfile(savedToken);
         }
       } catch (e) {
-        console.error('[AuthContext] Failed to restore session token:', e);
+        console.warn('[AuthContext] Could not restore account session.');
       } finally {
         setIsLoading(false);
       }
@@ -96,8 +99,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const sessionToken = data.session.access_token;
         await storage.setItem(AUTH_TOKEN_KEY, sessionToken);
         setToken(sessionToken);
-        await fetchProfile(sessionToken);
+        return await fetchProfile(sessionToken);
       }
+      throw new Error('Unable to create a sign-in session.');
     } finally {
       setIsLoading(false);
     }

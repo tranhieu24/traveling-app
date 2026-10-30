@@ -6,6 +6,8 @@ export const linkingConfig: NonNullable<LinkingOptions<RootStackParamList>['conf
     Splash: '',
     CreateAccount: 'create-account',
     Login: 'login',
+    AdminLogin: 'admin/login',
+    AdminPortal: 'admin',
     Register: 'register',
     SearchSheet: 'search',
     FilterSheet: 'filters',

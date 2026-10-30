@@ -1,7 +1,8 @@
 import React from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity, Text, View, useWindowDimensions } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity, Text, View, Image, useWindowDimensions } from 'react-native';
 import { Mountain, Tent, Trees, Building2, Compass, Home, Flame, Sun, Palmtree, Waves } from 'lucide-react-native';
 import { Category } from '../../types';
+import { categoryImage } from '../../utils/categoryImage';
 
 interface CategoryBarProps {
   categories: Category[];
@@ -33,6 +34,7 @@ export const CategoryBar: React.FC<CategoryBarProps> = ({ categories, selectedCa
           const active = selectedCategoryId === category.id;
           const Icon = ICONS[(category.slug || category.icon) as keyof typeof ICONS] || Compass;
           const color = active ? '#00BCD4' : '#808892';
+          const image = categoryImage(category.icon);
           return (
             <TouchableOpacity
               key={category.id}
@@ -44,7 +46,7 @@ export const CategoryBar: React.FC<CategoryBarProps> = ({ categories, selectedCa
               activeOpacity={0.7}
               style={[styles.category, { width: categoryWidth }, active && styles.activeCategory]}
             >
-              <Icon size={23} color={color} strokeWidth={1.9} />
+              {image ? <Image source={{ uri: image }} style={{ width: 23, height: 23, borderRadius: 4 }} /> : <Icon size={23} color={color} strokeWidth={1.9} />}
               <Text numberOfLines={1} style={[styles.label, { color }, active && styles.activeLabel]}>{category.name}</Text>
             </TouchableOpacity>
           );

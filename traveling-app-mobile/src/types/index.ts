@@ -192,6 +192,8 @@ export type RootStackParamList = {
   Splash: undefined;
   CreateAccount: undefined;
   Login: undefined;
+  AdminLogin: undefined;
+  AdminPortal: { section?: import('./admin').AdminSection } | undefined;
   Register: undefined;
   Settings: undefined;
   HelpCenter: undefined;

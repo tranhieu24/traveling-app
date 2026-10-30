@@ -53,8 +53,8 @@ export const LoginScreen: React.FC = () => {
     submittingRef.current = true;
     setIsSubmitting(true);
     try {
-      await signIn(email.trim(), password);
-      navigation.replace('MainTabs');
+      const profile = await signIn(email.trim(), password);
+      navigation.replace(profile.role === 'admin' ? 'AdminPortal' : 'MainTabs');
     } catch (error: unknown) {
       setErrors({ form: error instanceof Error ? error.message : 'Unable to log in. Please try again.' });
     } finally {
@@ -200,6 +200,9 @@ export const LoginScreen: React.FC = () => {
               <Text style={styles.signupLink}>Sign up</Text>
             </Pressable>
           </View>
+          <Pressable accessibilityRole="link" accessibilityLabel="Admin Portal" disabled={busy} onPress={() => navigation.navigate('AdminLogin')} style={{ alignSelf: 'center', padding: 12, marginTop: 12 }}>
+            <Text style={{ fontSize: 12, color: '#81909F' }}>Admin Portal</Text>
+          </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
 

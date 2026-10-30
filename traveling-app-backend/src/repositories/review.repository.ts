@@ -2,6 +2,25 @@ import { pool } from '../config/database';
 import { AppError } from '../types';
 
 export class ReviewRepository {
+  async getEligibility(listingId: string, userId: string) {
+    const result = await pool.query(`
+      SELECT l.id, l.title,
+        EXISTS (SELECT 1 FROM bookings b WHERE b.listing_id = l.id AND b.guest_id = $2 AND b.booking_status = 'completed') AS completed_stay,
+        (SELECT json_build_object('id', r.id, 'listing_id', r.listing_id, 'user_id', r.user_id,
+          'rating', r.rating, 'comment', r.comment, 'created_at', r.created_at)
+          FROM reviews r WHERE r.listing_id = l.id AND r.user_id = $2 LIMIT 1) AS existing_review
+      FROM listings l WHERE l.id = $1
+    `, [listingId, userId]);
+    const row = result.rows[0];
+    if (!row) throw new AppError('Listing not found', 404, 'LISTING_NOT_FOUND');
+    return {
+      listingId: row.id, listingTitle: row.title,
+      canReview: row.completed_stay && !row.existing_review,
+      reason: row.existing_review ? 'already_reviewed' : row.completed_stay ? 'eligible' : 'completed_stay_required',
+      existingReview: row.existing_review || null,
+    };
+  }
+
   async getByListingId(listingId: string, page = 1, limit = 10) {
     const offset = (page - 1) * limit;
 
@@ -28,7 +47,7 @@ export class ReviewRepository {
       FROM reviews r
       JOIN users u ON u.id = r.user_id
       WHERE r.listing_id = $1
-      ORDER BY r.created_at DESC
+      ORDER BY r.created_at DESC, r.id DESC
       LIMIT $2 OFFSET $3
     `;
     const listRes = await pool.query(listSql, [listingId, limit, offset]);

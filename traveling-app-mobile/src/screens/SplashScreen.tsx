@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext';
 
 export const SplashScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { token, isLoading } = useAuth();
+  const { token, user, isLoading } = useAuth();
   const [isSplashReady, setIsSplashReady] = useState(false);
 
   useEffect(() => {
@@ -38,9 +38,9 @@ export const SplashScreen: React.FC = () => {
 
   useEffect(() => {
     if (isSplashReady && !isLoading) {
-      navigation.replace(token ? 'MainTabs' : 'CreateAccount');
+      navigation.replace(token ? user?.role === 'admin' ? 'AdminPortal' : 'MainTabs' : 'CreateAccount');
     }
-  }, [isSplashReady, isLoading, token, navigation]);
+  }, [isSplashReady, isLoading, token, user?.role, navigation]);
 
   return (
     <View style={styles.container}>

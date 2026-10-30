@@ -4,6 +4,14 @@ import { favoriteRepository } from '../repositories/favorite.repository';
 import { reviewRepository } from '../repositories/review.repository';
 
 export class InteractionController {
+  async getReviewEligibility(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      if (!req.user) throw new AppError('Unauthorized', 401, 'UNAUTHORIZED');
+      res.setHeader('Cache-Control', 'no-store');
+      return sendSuccess(res, await reviewRepository.getEligibility(req.params.id, req.user.id));
+    } catch (error) { next(error); }
+  }
+
   async getFavorites(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
       if (!req.user) {
