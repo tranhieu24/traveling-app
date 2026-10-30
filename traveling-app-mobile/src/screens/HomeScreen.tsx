@@ -207,11 +207,15 @@ const ExploreScreen: React.FC = () => {
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
             refreshControl={
+<<<<<<< HEAD
               <RefreshControl
                 refreshing={isRefetching && !isFetchingNextPage}
                 onRefresh={refetch}
                 tintColor="#00BCD4"
               />
+=======
+              <RefreshControl refreshing={isRefetching} onRefresh={async () => { await refetch(); }} tintColor="#00BCD4" />
+>>>>>>> backup/code-cua-toi
             }
             renderItem={({ item }) => (
               <ListingCard

@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import {
   ActivityIndicator, Keyboard, KeyboardAvoidingView, Platform, Pressable,
-  ScrollView, StyleSheet, Text, TextInput, View,
+  ScrollView, StyleSheet, Text, TextInput, View, type TextInputInstance,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -23,9 +23,9 @@ export const RegisterScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { signUp, isLoading } = useAuth();
   const fieldRefs = {
-    fullName: useRef<TextInput>(null),
-    email: useRef<TextInput>(null),
-    password: useRef<TextInput>(null),
+    fullName: useRef<TextInputInstance>(null),
+    email: useRef<TextInputInstance>(null),
+    password: useRef<TextInputInstance>(null),
   };
   const submittingRef = useRef(false);
   const [values, setValues] = useState({ fullName: '', email: '', password: '' });

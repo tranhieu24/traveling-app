@@ -1,10 +1,15 @@
 import axios from 'axios';
+<<<<<<< HEAD
 import type { InternalAxiosRequestConfig } from 'axios';
+=======
+import Constants from 'expo-constants';
+>>>>>>> backup/code-cua-toi
 import { Platform } from 'react-native';
 import { storage } from '../utils/storage';
 
 const AUTH_TOKEN_KEY = 'traveling_auth_token';
 
+<<<<<<< HEAD
 type GuestRetryConfig = InternalAxiosRequestConfig & { _retryAsGuest?: boolean };
 
 const isPublicDiscoveryRequest = (config: GuestRetryConfig): boolean =>
@@ -14,11 +19,19 @@ const isPublicDiscoveryRequest = (config: GuestRetryConfig): boolean =>
   );
 
 // Bắt buộc: Web dùng localhost, Mobile thật mới dùng IP LAN 192.168.1.166
+=======
+// Web uses localhost; physical devices use the LAN URL configured in app.json.
+>>>>>>> backup/code-cua-toi
 const getBaseUrl = (): string => {
   if (Platform.OS === 'web') {
     return 'http://localhost:5000/api/v1';
   }
-  return 'http://192.168.1.166:5000/api/v1';
+  const configuredApiUrl = Constants.expoConfig?.extra?.apiUrl;
+  if (typeof configuredApiUrl !== 'string' || !configuredApiUrl) {
+    throw new Error('Missing expo.extra.apiUrl in app.json');
+  }
+
+  return configuredApiUrl;
 };
 
 export const API_BASE_URL = getBaseUrl();
@@ -49,6 +62,7 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+<<<<<<< HEAD
 // An expired saved session must not prevent anonymous discovery.
 // Retry only public reads, once, without credentials. Protected calls keep 401.
 apiClient.interceptors.response.use(
@@ -72,3 +86,6 @@ apiClient.interceptors.response.use(
 );
 
 export default apiClient;
+=======
+export default apiClient;
+>>>>>>> backup/code-cua-toi
