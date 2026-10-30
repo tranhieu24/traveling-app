@@ -205,8 +205,8 @@ export type RootStackParamList = {
   Payment: { bookingId: string; plan?: PaymentPlan };
   BookingSuccess: { bookingId: string; bookingCode?: string };
   BookingDetail: { bookingId: string };
-  AllReviews: { listingId: string; ratingAvg: number; reviewCount: number; listingTitle?: string };
-  WriteReview: { listingId: string; listingTitle: string };
+  AllReviews: { listingId: string; ratingAvg?: number; reviewCount?: number; listingTitle?: string };
+  WriteReview: { listingId: string; listingTitle?: string };
 };
 
 export type BottomTabParamList = {

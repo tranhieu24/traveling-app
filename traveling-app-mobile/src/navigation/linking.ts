@@ -27,5 +27,7 @@ export const linkingConfig: NonNullable<LinkingOptions<RootStackParamList>['conf
       },
     },
     ListingDetail: 'stays/:listingId',
+    AllReviews: 'stays/:listingId/reviews',
+    WriteReview: 'stays/:listingId/review',
   },
 };

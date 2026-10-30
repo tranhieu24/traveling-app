@@ -439,6 +439,25 @@ export const BookingDetailScreen: React.FC = () => {
               )}
             </View>
           )}
+        {booking.booking_status === 'completed' && booking.guest_id === user?.id && (
+          <View className="mb-6">
+            <Button
+              title="Write a Review"
+              accessibilityRole="button"
+              accessibilityLabel="Review completed stay"
+              onPress={() =>
+                navigation.navigate('WriteReview', {
+                  listingId: booking.listing_id,
+                  listingTitle: booking.listing_title,
+                })
+              }
+              variant="outline"
+            />
+            <Text className="text-xs text-dark-muted text-center mt-3">
+              Share your experience after your completed stay.
+            </Text>
+          </View>
+        )}
       </ScrollView>
       <CancelReservationModal
         visible={cancelVisible}
