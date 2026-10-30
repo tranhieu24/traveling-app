@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import {
   ActivityIndicator, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable,
-  ScrollView, StyleSheet, Text, TextInput, View,
+  ScrollView, StyleSheet, Text, TextInput, View, type TextInputInstance,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -20,8 +20,8 @@ const SOCIAL_PROVIDERS = [
 export const LoginScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { signIn, isLoading } = useAuth();
-  const emailRef = useRef<TextInput>(null);
-  const passwordRef = useRef<TextInput>(null);
+  const emailRef = useRef<TextInputInstance>(null);
+  const passwordRef = useRef<TextInputInstance>(null);
   const submittingRef = useRef(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

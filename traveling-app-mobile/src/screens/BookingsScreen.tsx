@@ -127,7 +127,7 @@ export const BookingsScreen: React.FC = () => {
             refreshControl={
               <RefreshControl
                 refreshing={isRefetching}
-                onRefresh={refetch}
+                onRefresh={async () => { await refetch(); }}
                 tintColor="#00BCD4"
               />
             }

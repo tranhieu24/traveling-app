@@ -183,7 +183,7 @@ export const HomeScreen: React.FC = () => {
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
             refreshControl={
-              <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#00BCD4" />
+              <RefreshControl refreshing={isRefetching} onRefresh={async () => { await refetch(); }} tintColor="#00BCD4" />
             }
             renderItem={({ item }) => (
               <ListingCard

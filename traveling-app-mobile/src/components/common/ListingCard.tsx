@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Text, View, type ScrollViewInstance } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQueryClient } from '@tanstack/react-query';
@@ -24,7 +24,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, onPress, onFa
   const [imageWidth, setImageWidth] = useState(0);
   const [activePhoto, setActivePhoto] = useState(0);
   const [failedPhotos, setFailedPhotos] = useState<string[]>([]);
-  const gallery = useRef<ScrollView>(null);
+  const gallery = useRef<ScrollViewInstance>(null);
 
   useEffect(() => {
     setIsFavorite(!!listing.is_favorite);
