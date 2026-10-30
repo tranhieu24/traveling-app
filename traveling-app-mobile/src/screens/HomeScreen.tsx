@@ -202,14 +202,14 @@ const ExploreScreen: React.FC = () => {
                     Could not load more stays. Try again
                   </Text>
                 </TouchableOpacity>
-              ) : null
+              ) : undefined
             }
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
             refreshControl={
               <RefreshControl
                 refreshing={isRefetching && !isFetchingNextPage}
-                onRefresh={refetch}
+                onRefresh={() => void refetch()}
                 tintColor="#00BCD4"
               />
             }

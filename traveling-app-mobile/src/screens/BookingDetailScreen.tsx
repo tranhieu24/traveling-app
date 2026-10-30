@@ -5,10 +5,10 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
-  SafeAreaView,
   ActivityIndicator,
   Pressable,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -145,7 +145,10 @@ export const BookingDetailScreen: React.FC = () => {
     (!booking || (axios.isAxiosError(error) && [403, 404].includes(error.response?.status || 0)));
   if (authLoading || (!!user && isLoading) || needsLogin || cannotShowDetails || !booking) {
     return (
-      <SafeAreaView className="flex-1 bg-white">
+      <SafeAreaView
+        edges={['top', 'bottom', 'left', 'right']}
+        style={{ flex: 1, backgroundColor: '#FFFFFF' }}
+      >
         <Header title="Reservation Details" onBack={handleBack} />
         <View className="flex-1 items-center justify-center px-6">
           {authLoading || (!!user && isLoading) ? (
@@ -182,10 +185,17 @@ export const BookingDetailScreen: React.FC = () => {
   const isCancelled = booking.booking_status === 'cancelled';
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView
+      edges={['top', 'bottom', 'left', 'right']}
+      style={{ flex: 1, backgroundColor: '#FFFFFF' }}
+    >
       <Header title="Reservation Details" onBack={handleBack} />
 
-      <ScrollView className="flex-1 p-5" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 20, paddingBottom: 32 }}
+        showsVerticalScrollIndicator={false}
+      >
         {isError && (
           <View className="mb-4 p-3 rounded-xl bg-amber-50">
             <Text accessibilityRole="alert" className="text-xs text-dark-muted leading-5">

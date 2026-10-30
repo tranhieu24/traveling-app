@@ -2,17 +2,21 @@
   "expo": {
     "name": "Traveling App",
     "slug": "traveling-app",
-    "scheme": "traveling",
+    "scheme": "travelingapp",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.travelingapp.mobile"
     },
     "extra": {
       "apiUrl": "http://192.168.1.166:5000/api/v1",
       "supabaseUrl": "https://iopoikkmkerkxessljyp.supabase.co",
       "supabaseAnonKey": "sb_publishable_GNDmiJBIwX449aVQnoXwfg_gmOU8EZ9"
+    },
+    "android": {
+      "package": "com.travelingapp.mobile"
     }
   }
 }

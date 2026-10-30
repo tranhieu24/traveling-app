@@ -112,6 +112,7 @@ export const BookingSuccessScreen: React.FC = () => {
                 </Pressable>
               )}
               <Pressable
+                cssInterop={false}
                 accessibilityRole="button" accessibilityLabel="Get PDF receipt"
                 accessibilityState={{ disabled: !summary.canDownloadReceipt || downloading, busy: downloading }}
                 disabled={!summary.canDownloadReceipt || downloading} onPress={handleReceipt}
@@ -128,6 +129,7 @@ export const BookingSuccessScreen: React.FC = () => {
       </ScrollView>
       <View style={styles.footer}>
         <Pressable
+          cssInterop={false}
           accessibilityRole="button" accessibilityLabel="View booking" disabled={!user || authLoading}
           onPress={() => navigation.reset({
             index: 1,

@@ -1,21 +1,12 @@
+import './global.css';
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { NativeWindStyleSheet } from 'nativewind';
-import * as Linking from 'expo-linking';
 import { AuthProvider } from './src/context/AuthContext';
 import { AppNavigator } from './src/navigation/AppNavigator';
-import { linkingConfig } from './src/navigation/linking';
-
-const linking = {
-  prefixes: [Linking.createURL('/'), 'traveling://'],
-  config: linkingConfig,
-};
-
-// NativeWind v2 defaults to external CSS on web; use its compiled styles here.
-NativeWindStyleSheet.setOutput({ web: 'native', default: 'native' });
+import { linking } from './src/navigation/linking';
 
 const queryClient = new QueryClient({
   defaultOptions: {

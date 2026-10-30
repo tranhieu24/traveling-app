@@ -1,9 +1,11 @@
+import 'react-native-url-polyfill/auto';
 import axios from 'axios';
 import type { InternalAxiosRequestConfig } from 'axios';
 import { Platform } from 'react-native';
-import { storage } from '../utils/storage';
+import Constants from 'expo-constants';
+import { resolveApiBaseUrl } from '../utils/apiUrl';
+import { readAuthToken } from '../utils/authToken';
 
-const AUTH_TOKEN_KEY = 'traveling_auth_token';
 
 type GuestRetryConfig = InternalAxiosRequestConfig & { _retryAsGuest?: boolean };
 
@@ -13,15 +15,17 @@ const isPublicDiscoveryRequest = (config: GuestRetryConfig): boolean =>
     (config.url || '').split('?')[0]
   );
 
-// Bắt buộc: Web dùng localhost, Mobile thật mới dùng IP LAN 192.168.1.166
-const getBaseUrl = (): string => {
-  if (Platform.OS === 'web') {
-    return 'http://localhost:5000/api/v1';
-  }
-  return 'http://192.168.1.166:5000/api/v1';
-};
-
-export const API_BASE_URL = getBaseUrl();
+// Resolve the native development backend from the same LAN host as Metro.
+export const API_BASE_URL = resolveApiBaseUrl({
+  platform: Platform.OS,
+  development: __DEV__,
+  override: process.env.EXPO_PUBLIC_API_URL,
+  configuredUrl: Constants.expoConfig?.extra?.apiUrl,
+  hostUri: Constants.expoConfig?.hostUri,
+  webHostname: Platform.OS === 'web' && typeof window !== 'undefined'
+    ? window.location?.hostname
+    : undefined,
+});
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -37,12 +41,14 @@ apiClient.interceptors.request.use(
     try {
       const token = (config as GuestRetryConfig)._retryAsGuest
         ? null
-        : await storage.getItem(AUTH_TOKEN_KEY);
+        : await readAuthToken();
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
+      } else if (config.headers) {
+        config.headers.delete('Authorization');
       }
-    } catch (e) {
-      console.warn('[apiClient] Lỗi đọc token:', e);
+    } catch {
+      return Promise.reject(new Error('Could not read saved sign-in. Please enable site storage.'));
     }
     return config;
   },

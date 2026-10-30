@@ -43,6 +43,7 @@ export function AdminButton({
 }) {
   return (
     <Pressable
+      cssInterop={false}
       accessibilityRole="button"
       accessibilityLabel={label || title}
       accessibilityState={{ disabled: !!disabled || !!busy, busy }}

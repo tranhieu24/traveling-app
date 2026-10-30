@@ -3,10 +3,10 @@ import {
   View,
   Text,
   FlatList,
-  SafeAreaView,
   TouchableOpacity,
   RefreshControl,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
@@ -46,7 +46,7 @@ export const FavoritesScreen: React.FC = () => {
         Save places you love so you can easily find them later.
       </Text>
       <TouchableOpacity
-        onPress={() => navigation.navigate('MainTabs')}
+        onPress={() => navigation.navigate('MainTabs', { screen: 'SearchTab' })}
         activeOpacity={0.85}
         className="bg-[#00BCD4] py-3 px-8 rounded-xl shadow-sm mt-6"
       >
@@ -58,7 +58,10 @@ export const FavoritesScreen: React.FC = () => {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView
+      edges={['top', 'left', 'right']}
+      style={{ flex: 1, backgroundColor: '#FFFFFF' }}
+    >
       {isLoading ? (
         <View className="flex-1 p-4 bg-white">
           <SkeletonListingList count={2} />
@@ -82,7 +85,7 @@ export const FavoritesScreen: React.FC = () => {
             refreshControl={
               <RefreshControl
                 refreshing={isRefetching}
-                onRefresh={refetch}
+                onRefresh={() => void refetch()}
                 tintColor="#00BCD4"
               />
             }

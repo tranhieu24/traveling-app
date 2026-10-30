@@ -5,10 +5,10 @@ import {
   Text,
   FlatList,
   TouchableOpacity,
-  SafeAreaView,
   Image,
   RefreshControl,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
@@ -90,7 +90,10 @@ export const BookingsScreen: React.FC = () => {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView
+      edges={['top', 'left', 'right']}
+      style={{ flex: 1, backgroundColor: '#FFFFFF' }}
+    >
       <View className="px-5 py-4 border-b border-gray-100 bg-white">
         <Text className="text-2xl font-bold text-gray-900">Trips & Bookings</Text>
       </View>
@@ -138,7 +141,7 @@ export const BookingsScreen: React.FC = () => {
             refreshControl={
               <RefreshControl
                 refreshing={isRefetching}
-                onRefresh={refetch}
+                onRefresh={() => void refetch()}
                 tintColor="#00BCD4"
               />
             }

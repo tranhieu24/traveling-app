@@ -14,7 +14,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { SocialSignInButtons } from '../components/common/SocialSignInButtons';
+import { useAuth } from '../context/AuthContext';
 import { ChevronDown, Check, Mail, X } from 'lucide-react-native';
 import { RootStackParamList } from '../types';
 
@@ -26,37 +27,17 @@ const COUNTRIES = [
   { code: 'SG', name: 'Singapore', flag: '🇸🇬', dialCode: '+65', minLength: 8, maxLength: 8 },
 ] as const;
 
-const SOCIAL_PROVIDERS = [
-  { name: 'Apple', icon: 'apple', color: '#292C30' },
-  { name: 'Facebook', icon: 'facebook-official', color: '#399CD5' },
-  { name: 'Google', icon: 'google', color: '#D94B55' },
-] as const;
 
 type Notice = { title: string; message: string; offerEmail?: boolean };
 
 export const CreateAccountScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { isLoading } = useAuth();
   const [country, setCountry] = useState<(typeof COUNTRIES)[number]>(COUNTRIES[0]);
   const [phone, setPhone] = useState('');
   const [phoneError, setPhoneError] = useState('');
   const [countryPickerVisible, setCountryPickerVisible] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
-
-  const handleContinue = () => {
-    const digits = phone.replace(/\D/g, '');
-    if (digits.length < country.minLength || digits.length > country.maxLength) {
-      setPhoneError(`Enter a valid mobile number for ${country.name}.`);
-      return;
-    }
-
-    Keyboard.dismiss();
-    setPhoneError('');
-    setNotice({
-      title: 'Sign up with your phone',
-      message: 'Phone verification is not available yet. You can create your account with email instead.',
-      offerEmail: true,
-    });
-  };
 
   const showLegalNotice = (title: string) => {
     setNotice({ title, message: `The ${title} for this app have not been published yet.` });
@@ -79,6 +60,7 @@ export const CreateAccountScreen: React.FC = () => {
             <Text style={styles.label} nativeID="mobile-number-label">Enter your mobile number:</Text>
             <View style={styles.phoneRow}>
               <Pressable
+                cssInterop={false}
                 accessibilityRole="button"
                 accessibilityLabel={`Country code: ${country.name}, ${country.dialCode}`}
                 accessibilityHint="Choose your country"
@@ -106,53 +88,37 @@ export const CreateAccountScreen: React.FC = () => {
                 autoCorrect={false}
                 maxLength={20}
                 returnKeyType="done"
-                onSubmitEditing={handleContinue}
+                editable={false}
                 style={[styles.phoneInput, !!phoneError && styles.invalidInput]}
               />
             </View>
             {!!phoneError && <Text accessibilityRole="alert" style={styles.error}>{phoneError}</Text>}
 
             <Pressable
+
+              cssInterop={false}
               accessibilityRole="button"
-              onPress={handleContinue}
-              style={({ pressed }) => [styles.continueButton, pressed && styles.pressed]}
+              disabled
+              accessibilityState={{ disabled: true }}
+              style={({ pressed }) => [styles.continueButton, { opacity: 0.5 }, pressed && styles.pressed]}
             >
-              <Text style={styles.continueText}>Continue</Text>
+              <Text style={styles.continueText}>Phone sign-up - Coming soon</Text>
             </Pressable>
 
             <Text style={styles.separator}>or</Text>
 
             <View style={styles.socialButtons}>
               <Pressable
+                cssInterop={false}
                 accessibilityRole="button"
+                disabled={isLoading}
                 onPress={() => navigation.navigate('Register')}
                 style={({ pressed }) => [styles.socialButton, styles.emailButton, pressed && styles.pressed]}
               >
                 <Mail size={21} color="#292C30" />
                 <Text style={[styles.socialText, styles.emailText]}>Continue with email</Text>
               </Pressable>
-              {SOCIAL_PROVIDERS.map((provider) => (
-                <Pressable
-                  key={provider.name}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Continue with ${provider.name}`}
-                  onPress={() => setNotice({
-                    title: `Continue with ${provider.name}`,
-                    message: `${provider.name} sign-in is not available yet. You can create your account with email instead.`,
-                    offerEmail: true,
-                  })}
-                  style={({ pressed }) => [
-                    styles.socialButton,
-                    { borderColor: provider.color },
-                    pressed && styles.pressed,
-                  ]}
-                >
-                  <FontAwesome name={provider.icon} size={21} color={provider.color} />
-                  <Text style={[styles.socialText, { color: provider.color }]}>
-                    Continue with {provider.name}
-                  </Text>
-                </Pressable>
-              ))}
+              <SocialSignInButtons />
             </View>
 
             <View style={styles.legal}>
@@ -174,6 +140,7 @@ export const CreateAccountScreen: React.FC = () => {
             <Pressable
               accessibilityRole="link"
               hitSlop={8}
+              disabled={isLoading}
               onPress={() => navigation.navigate('Login')}
             >
               <Text style={styles.loginLink}>Log in</Text>
@@ -200,6 +167,7 @@ export const CreateAccountScreen: React.FC = () => {
             <ScrollView>
               {COUNTRIES.map((item) => (
                 <Pressable
+                  cssInterop={false}
                   key={item.code}
                   accessibilityRole="radio"
                   accessibilityState={{ checked: country.code === item.code }}

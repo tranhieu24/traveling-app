@@ -27,7 +27,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, onPress, onFa
   const [imageWidth, setImageWidth] = useState(0);
   const [activePhoto, setActivePhoto] = useState(0);
   const [failedPhotos, setFailedPhotos] = useState<string[]>([]);
-  const gallery = useRef<ScrollView>(null);
+  const gallery = useRef<React.ComponentRef<typeof ScrollView>>(null);
 
   useEffect(() => {
     setIsFavorite(!!listing.is_favorite);
@@ -114,6 +114,8 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, onPress, onFa
         )}
 
         <Pressable
+
+          cssInterop={false}
           accessibilityRole="button"
           accessibilityLabel={isFavorite ? `Remove ${listing.title} from favorites` : `Save ${listing.title} to favorites`}
           accessibilityState={{ selected: isFavorite, disabled: loadingFav, busy: loadingFav }}

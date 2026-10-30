@@ -38,9 +38,9 @@ export const SplashScreen: React.FC = () => {
 
   useEffect(() => {
     if (isSplashReady && !isLoading) {
-      navigation.replace(token ? user?.role === 'admin' ? 'AdminPortal' : 'MainTabs' : 'CreateAccount');
+      navigation.replace(token && user ? user.role === 'admin' ? 'AdminPortal' : 'MainTabs' : 'CreateAccount');
     }
-  }, [isSplashReady, isLoading, token, user?.role, navigation]);
+  }, [isSplashReady, isLoading, token, user, navigation]);
 
   return (
     <View style={styles.container}>

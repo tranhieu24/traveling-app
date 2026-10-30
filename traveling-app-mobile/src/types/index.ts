@@ -190,6 +190,7 @@ export interface BookingQuote {
 // Navigation types
 export type RootStackParamList = {
   Splash: undefined;
+  AuthCallback: undefined;
   CreateAccount: undefined;
   Login: undefined;
   AdminLogin: undefined;

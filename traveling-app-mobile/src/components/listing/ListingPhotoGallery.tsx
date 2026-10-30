@@ -31,7 +31,7 @@ export const ListingHero = ({
 }) => {
   const [width, setWidth] = useState(0),
     [active, setActive] = useState(0);
-  const scroll = useRef<ScrollView>(null);
+  const scroll = useRef<React.ComponentRef<typeof ScrollView>>(null);
   return (
     <View
       style={s.hero}
@@ -92,7 +92,7 @@ export const ListingPhotoGallery = ({
 }) => {
   const [width, setWidth] = useState(1),
     [active, setActive] = useState(0);
-  const scroll = useRef<ScrollView>(null);
+  const scroll = useRef<React.ComponentRef<typeof ScrollView>>(null);
   useEffect(() => {
     if (visible) {
       setActive(0);
