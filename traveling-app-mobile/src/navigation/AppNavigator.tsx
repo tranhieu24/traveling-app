@@ -4,6 +4,8 @@ import { RootStackParamList } from '../types';
 import { SplashScreen } from '../screens/SplashScreen';
 import { CreateAccountScreen } from '../screens/CreateAccountScreen';
 import { LoginScreen } from '../screens/LoginScreen';
+import { AdminLoginScreen } from '../screens/AdminLoginScreen';
+import { AdminPortalScreen } from '../screens/AdminPortalScreen';
 import { RegisterScreen } from '../screens/RegisterScreen';
 import { TabNavigator } from './TabNavigator';
 import { ListingDetailScreen } from '../screens/ListingDetailScreen';
@@ -34,6 +36,8 @@ export const AppNavigator: React.FC = () => {
       <Stack.Screen name="Splash" component={SplashScreen} />
       <Stack.Screen name="CreateAccount" component={CreateAccountScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="AdminLogin" component={AdminLoginScreen} />
+      <Stack.Screen name="AdminPortal" component={AdminPortalScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
       <Stack.Screen name="MainTabs" component={TabNavigator} />
       <Stack.Screen name="PaymentsPayouts" component={PaymentsPayoutsScreen} />

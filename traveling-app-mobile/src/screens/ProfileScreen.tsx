@@ -16,6 +16,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
+  ShieldCheck,
   User as UserIcon,
   Settings,
   CreditCard,
@@ -158,6 +159,10 @@ export const ProfileScreen: React.FC = () => {
 
         {/* Menu Items Block */}
         <View className="px-5 py-3">
+          {user?.role === 'admin' && <TouchableOpacity accessibilityRole="button" accessibilityLabel="Admin Portal" onPress={() => navigation.navigate('AdminPortal')} className="flex-row items-center py-4 border-b border-gray-100">
+            <View className="w-10 h-10 rounded-full bg-cyan-50 items-center justify-center mr-3"><ShieldCheck size={20} color="#00BCD4" /></View>
+            <Text className="flex-1 text-sm font-medium text-gray-800">Admin Portal</Text><ChevronRight size={18} color="#9CA3AF" />
+          </TouchableOpacity>}
           {/* 1. Personal Information */}
           <TouchableOpacity
             onPress={() => {
