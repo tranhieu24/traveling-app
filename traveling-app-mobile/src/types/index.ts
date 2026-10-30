@@ -124,6 +124,11 @@ export interface BookingRefund {
 export interface Booking {
   id: string;
   booking_code: string;
+  guest_id?: string;
+  host_name?: string;
+  host_phone?: string;
+  cancellation_reason?: string | null;
+  cancelled_at?: string | null;
   listing_id: string;
   listing_title: string;
   listing_city: string;
@@ -135,6 +140,8 @@ export interface Booking {
   total_nights: number;
   number_of_guests: number;
   base_price_total: number | string;
+  tax_amount?: number | string;
+  discount_amount?: number | string;
   cleaning_fee: number | string;
   service_fee: number | string;
   total_price: number | string;
@@ -186,7 +193,7 @@ export type RootStackParamList = {
   Register: undefined;
   Settings: undefined;
   HelpCenter: undefined;
-  PaymentsPayouts: undefined;
+  PaymentsPayouts: { tab?: 'payments' | 'payouts' } | undefined;
   MainTabs: NavigatorScreenParams<BottomTabParamList> | undefined;
   ListingDetail: { listingId: string };
   SearchSheet: { step?: 'where' | 'when' | 'who' } | undefined;
