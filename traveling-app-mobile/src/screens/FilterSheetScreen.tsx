@@ -1,185 +1,275 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
   ScrollView,
-  SafeAreaView,
+  StyleSheet,
+  Text,
   TextInput,
+  View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../types';
 import { useNavigation } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
-import { X, Check } from 'lucide-react-native';
+import { X } from 'lucide-react-native';
 import { useFilterStore } from '../store/useFilterStore';
 import { apiClient } from '../services/apiClient';
 import { Amenity } from '../types';
-import { Button } from '../components/common/Button';
+import { AdvancedFilters, EMPTY_ADVANCED, ROOM_TYPES, validateAdvanced } from '../utils/search';
+import {
+  Checkbox,
+  Counter,
+  CYAN,
+  searchStyles as shared,
+} from '../components/search/SearchControls';
+import { PriceRangeSlider } from '../components/search/PriceRangeSlider';
 
 export const FilterSheetScreen: React.FC = () => {
-  const navigation = useNavigation();
-  const {
-    minPrice,
-    maxPrice,
-    setPriceRange,
-    bedrooms,
-    beds,
-    bathrooms,
-    setRooms,
-    selectedAmenities,
-    toggleAmenity,
-    resetFilters,
-  } = useFilterStore();
-
-  const { data: amenities = [] } = useQuery<Amenity[]>({
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const dismiss = () =>
+    navigation.canGoBack()
+      ? navigation.goBack()
+      : navigation.reset({
+          index: 0,
+          routes: [{ name: 'MainTabs', params: { screen: 'SearchTab' } }],
+        });
+  const state = useFilterStore();
+  const [draft, setDraft] = useState<AdvancedFilters>(() => ({
+    minPrice: state.minPrice,
+    maxPrice: state.maxPrice,
+    bedrooms: state.bedrooms,
+    beds: state.beds,
+    bathrooms: state.bathrooms,
+    roomTypes: [...state.roomTypes],
+    selectedAmenities: [...state.selectedAmenities],
+  }));
+  const [minimum, setMinimum] = useState(state.minPrice?.toString() || ''),
+    [maximum, setMaximum] = useState(state.maxPrice?.toString() || '');
+  const [error, setError] = useState('');
+  const amenities = useQuery<Amenity[]>({
     queryKey: ['amenities'],
-    queryFn: async () => {
-      const res = await apiClient.get('/amenities');
+    queryFn: async ({ signal }) => {
+      const res = await apiClient.get('/amenities', { signal });
+      if (!Array.isArray(res.data.data)) throw new Error('Could not load facilities.');
       return res.data.data;
     },
   });
-
-  const roomOptions = [null, 1, 2, 3, 4];
-
+  const prices = {
+    minPrice: minimum.trim() ? Number(minimum) : null,
+    maxPrice: maximum.trim() ? Number(maximum) : null,
+  };
+  const clear = () => {
+    setDraft({ ...EMPTY_ADVANCED });
+    setMinimum('');
+    setMaximum('');
+    setError('');
+  };
+  const apply = () => {
+    try {
+      const next = { ...draft, ...prices };
+      validateAdvanced(next);
+      state.setAdvancedFilters(next);
+      dismiss();
+    } catch (failure) {
+      setError((failure as Error).message);
+    }
+  };
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      {/* Header */}
-      <View className="flex-row items-center justify-between px-4 py-3 border-b border-gray-100">
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          className="w-9 h-9 rounded-full bg-gray-100 items-center justify-center"
+    <View style={s.overlay}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Dismiss filters"
+        onPress={dismiss}
+        style={StyleSheet.absoluteFill}
+      />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={s.sheet}
+      >
+        <View style={s.header}>
+          <Text style={s.headerTitle}>Filters</Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Close filters"
+            onPress={dismiss}
+            style={s.close}
+          >
+            <X size={20} color="#8D949D" />
+          </Pressable>
+        </View>
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={s.content}
         >
-          <X size={18} color="#222222" />
-        </TouchableOpacity>
-        <Text className="text-base font-bold text-dark">Filters</Text>
-        <TouchableOpacity onPress={resetFilters}>
-          <Text className="text-xs font-semibold text-dark-muted underline">Reset</Text>
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView className="flex-1 p-4">
-        {/* PRICE RANGE */}
-        <View className="mb-6 pb-6 border-b border-gray-100">
-          <Text className="text-base font-bold text-dark mb-1">Price Range</Text>
-          <Text className="text-xs text-dark-muted mb-4">Nightly prices before taxes and fees</Text>
-
-          <View className="flex-row space-x-4">
-            <View className="flex-1 border border-gray-200 rounded-xl p-3 bg-gray-50">
-              <Text className="text-[10px] text-dark-muted uppercase font-semibold">Minimum</Text>
-              <View className="flex-row items-center mt-1">
-                <Text className="text-sm font-bold text-dark mr-1">$</Text>
-                <TextInput
-                  value={minPrice !== null ? minPrice.toString() : ''}
-                  onChangeText={(val) => setPriceRange(val ? parseFloat(val) : null, maxPrice)}
-                  placeholder="0"
-                  keyboardType="numeric"
-                  className="flex-1 text-sm font-bold text-dark"
-                />
-              </View>
-            </View>
-
-            <View className="flex-1 border border-gray-200 rounded-xl p-3 bg-gray-50">
-              <Text className="text-[10px] text-dark-muted uppercase font-semibold">Maximum</Text>
-              <View className="flex-row items-center mt-1">
-                <Text className="text-sm font-bold text-dark mr-1">$</Text>
-                <TextInput
-                  value={maxPrice !== null ? maxPrice.toString() : ''}
-                  onChangeText={(val) => setPriceRange(minPrice, val ? parseFloat(val) : null)}
-                  placeholder="1000+"
-                  keyboardType="numeric"
-                  className="flex-1 text-sm font-bold text-dark"
-                />
-              </View>
-            </View>
-          </View>
-        </View>
-
-        {/* ROOMS & BEDS */}
-        <View className="mb-6 pb-6 border-b border-gray-100">
-          <Text className="text-base font-bold text-dark mb-4">Rooms and Beds</Text>
-
-          {/* Bedrooms */}
-          <Text className="text-xs font-semibold text-dark mb-2">Bedrooms</Text>
-          <View className="flex-row space-x-2 mb-4">
-            {roomOptions.map((opt) => (
-              <TouchableOpacity
-                key={opt === null ? 'any-bed' : opt}
-                onPress={() => setRooms(opt, beds, bathrooms)}
-                className={`flex-1 py-2 rounded-xl border items-center ${
-                  bedrooms === opt ? 'bg-primary border-primary' : 'bg-white border-gray-200'
-                }`}
-              >
-                <Text className={`text-xs font-bold ${bedrooms === opt ? 'text-white' : 'text-dark'}`}>
-                  {opt === null ? 'Any' : `${opt}+`}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* Bathrooms */}
-          <Text className="text-xs font-semibold text-dark mb-2">Bathrooms</Text>
-          <View className="flex-row space-x-2">
-            {roomOptions.map((opt) => (
-              <TouchableOpacity
-                key={opt === null ? 'any-bath' : opt}
-                onPress={() => setRooms(bedrooms, beds, opt)}
-                className={`flex-1 py-2 rounded-xl border items-center ${
-                  bathrooms === opt ? 'bg-primary border-primary' : 'bg-white border-gray-200'
-                }`}
-              >
-                <Text className={`text-xs font-bold ${bathrooms === opt ? 'text-white' : 'text-dark'}`}>
-                  {opt === null ? 'Any' : `${opt}+`}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* AMENITIES CHECKLIST */}
-        <View className="mb-6">
-          <Text className="text-base font-bold text-dark mb-3">Amenities</Text>
-          <View className="flex-row flex-wrap justify-between">
-            {amenities.map((amenity) => {
-              const isChecked = selectedAmenities.includes(amenity.id);
-              return (
-                <TouchableOpacity
-                  key={amenity.id}
-                  onPress={() => toggleAmenity(amenity.id)}
-                  activeOpacity={0.8}
-                  className={`w-[48%] mb-3 p-3 rounded-xl border flex-row items-center justify-between ${
-                    isChecked ? 'border-primary bg-primary-50' : 'border-gray-200 bg-white'
-                  }`}
-                >
-                  <Text
-                    className={`text-xs font-semibold flex-1 mr-1 ${
-                      isChecked ? 'text-primary font-bold' : 'text-dark'
-                    }`}
-                    numberOfLines={1}
-                  >
-                    {amenity.name}
-                  </Text>
-                  <View
-                    className={`w-5 h-5 rounded-md items-center justify-center border ${
-                      isChecked ? 'bg-primary border-primary' : 'border-gray-300'
-                    }`}
-                  >
-                    {isChecked && <Check size={12} color="#FFFFFF" strokeWidth={3} />}
+          <View style={s.section}>
+            <Text style={shared.heading}>Price range</Text>
+            <Text style={[shared.muted, { fontSize: 12, marginTop: -8, marginBottom: 15 }]}>
+              Nightly price in USD, before taxes and fees
+            </Text>
+            <PriceRangeSlider
+              minimum={prices.minPrice}
+              maximum={prices.maxPrice}
+              onChange={(low, high) => {
+                setMinimum(String(low));
+                setMaximum(String(high));
+                setError('');
+              }}
+            />
+            <View style={s.priceRow}>
+              {(['Minimum', 'Maximum'] as const).map((label, index) => (
+                <React.Fragment key={label}>
+                  {index === 1 && <Text style={shared.muted}>{'\u2014'}</Text>}
+                  <View style={s.priceBox}>
+                    <Text style={s.priceLabel}>{label}</Text>
+                    <View style={s.inputRow}>
+                      <Text style={shared.text}>US$</Text>
+                      <TextInput
+                        accessibilityLabel={`${label} nightly price`}
+                        keyboardType="decimal-pad"
+                        value={index ? maximum : minimum}
+                        onChangeText={index ? setMaximum : setMinimum}
+                        placeholder={index ? '250' : '10'}
+                        placeholderTextColor="#A2A8B0"
+                        style={s.input}
+                      />
+                    </View>
                   </View>
-                </TouchableOpacity>
-              );
-            })}
+                </React.Fragment>
+              ))}
+            </View>
           </View>
-        </View>
-      </ScrollView>
-
-      {/* Footer Actions */}
-      <View className="p-4 border-t border-gray-200 bg-white">
-        <Button
-          title="Show Results"
-          onPress={() => navigation.goBack()}
-          variant="primary"
-          size="lg"
-        />
-      </View>
-    </SafeAreaView>
+          <View style={s.section}>
+            <Text style={shared.heading}>Type of place</Text>
+            {ROOM_TYPES.map((type) => (
+              <Checkbox
+                key={type.value}
+                label={type.title}
+                description={type.description}
+                checked={draft.roomTypes.includes(type.value)}
+                onPress={() =>
+                  setDraft((value) => ({
+                    ...value,
+                    roomTypes: value.roomTypes.includes(type.value)
+                      ? value.roomTypes.filter((item) => item !== type.value)
+                      : [...value.roomTypes, type.value],
+                  }))
+                }
+              />
+            ))}
+          </View>
+          <View style={s.section}>
+            <Text style={shared.heading}>Rooms and beds</Text>
+            {(['bedrooms', 'beds', 'bathrooms'] as const).map((key) => (
+              <View key={key} style={s.countRow}>
+                <Text style={shared.text}>{key[0].toUpperCase() + key.slice(1)}</Text>
+                <Counter
+                  label={key}
+                  value={draft[key] ?? 0}
+                  any
+                  onChange={(value) => setDraft((old) => ({ ...old, [key]: value || null }))}
+                />
+              </View>
+            ))}
+          </View>
+          <View style={[s.section, { borderBottomWidth: 0 }]}>
+            <Text style={shared.heading}>Facilities</Text>
+            <Text style={[shared.muted, { fontSize: 12 }]}>
+              Stays must include every selected facility.
+            </Text>
+            {amenities.isLoading ? (
+              <ActivityIndicator color={CYAN} style={{ padding: 24 }} />
+            ) : amenities.isError ? (
+              <Pressable accessibilityRole="button" onPress={() => amenities.refetch()}>
+                <Text style={shared.error}>Could not load facilities. Tap to retry.</Text>
+              </Pressable>
+            ) : (
+              amenities.data?.map((amenity) => (
+                <Checkbox
+                  key={amenity.id}
+                  label={amenity.name}
+                  checked={draft.selectedAmenities.includes(amenity.id)}
+                  onPress={() =>
+                    setDraft((old) => ({
+                      ...old,
+                      selectedAmenities: old.selectedAmenities.includes(amenity.id)
+                        ? old.selectedAmenities.filter((id) => id !== amenity.id)
+                        : [...old.selectedAmenities, amenity.id],
+                    }))
+                  }
+                />
+              ))
+            )}
+          </View>
+          {!!error && (
+            <Text accessibilityRole="alert" style={shared.error}>
+              {error}
+            </Text>
+          )}
+        </ScrollView>
+        <SafeAreaView edges={['bottom']}>
+          <View style={shared.footer}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Clear advanced filters"
+              onPress={clear}
+            >
+              <Text style={shared.clear}>Clear all</Text>
+            </Pressable>
+            <Pressable accessibilityRole="button" onPress={apply} style={shared.action}>
+              <Text style={shared.actionText}>View Results</Text>
+            </Pressable>
+          </View>
+        </SafeAreaView>
+      </KeyboardAvoidingView>
+    </View>
   );
 };
+const s = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: 'rgba(20,28,35,0.3)', justifyContent: 'flex-end' },
+  sheet: {
+    height: '78%',
+    maxHeight: 800,
+    width: '100%',
+    maxWidth: 520,
+    alignSelf: 'center',
+    backgroundColor: 'white',
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
+    overflow: 'hidden',
+  },
+  header: {
+    height: 66,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F1F3',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: { color: '#30343A', fontSize: 18, fontWeight: '600' },
+  close: {
+    position: 'absolute',
+    right: 16,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  content: { paddingHorizontal: 20, paddingBottom: 16 },
+  section: { paddingVertical: 25, borderBottomWidth: 1, borderBottomColor: '#ECEEF1' },
+  priceRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  priceBox: { flex: 1, borderWidth: 1, borderColor: '#9FA6AF', borderRadius: 6, padding: 10 },
+  priceLabel: { color: '#979EA8', fontSize: 12, marginBottom: 3 },
+  inputRow: { flexDirection: 'row', gap: 4, alignItems: 'center' },
+  input: { flex: 1, minWidth: 0, color: '#30343A', fontSize: 15, paddingVertical: 3 },
+  countRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 15,
+    gap: 10,
+  },
+});

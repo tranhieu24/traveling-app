@@ -5,11 +5,14 @@ export const receiptParams = z.object({ bookingId: z.string().uuid() });
 export const paginationSchema = z.object({ page: z.coerce.number().int().min(1).max(100000).default(1), limit: z.coerce.number().int().min(1).max(50).default(12) });
 const date = z.string().refine(isDate, 'A real YYYY-MM-DD date is required');
 const nonnegative = z.number().finite().min(0).max(99999999.99).multipleOf(0.01);
+export const destinationQuerySchema = z.object({ q: z.string().trim().min(1).max(100), limit: z.coerce.number().int().min(1).max(20).default(8) });
 export const listingFilterSchema = paginationSchema.extend({
   categoryId: z.string().uuid().optional(), q: z.string().trim().min(1).max(200).optional(),
   region: z.string().trim().min(1).max(100).optional(), city: z.string().trim().min(1).max(100).optional(),
   country: z.string().trim().min(1).max(100).optional(), propertyType: z.string().trim().min(1).max(50).optional(),
   roomType: z.enum(['entire_place','private_room','dormitory']).optional(),
+  roomTypes: z.union([z.string(),z.array(z.string())]).transform(v => [...new Set(Array.isArray(v) ? v : v.split(','))]).pipe(z.array(z.enum(['entire_place','private_room','dormitory'])).max(3)).optional(),
+  cityExact: z.enum(['true','false']).transform(v => v === 'true').optional(),
   minPrice: z.coerce.number().finite().min(0).optional(), maxPrice: z.coerce.number().finite().min(0).optional(),
   guests: z.coerce.number().int().min(1).max(1000).optional(),
   bedrooms: z.coerce.number().int().min(0).max(1000).optional(), beds: z.coerce.number().int().min(0).max(1000).optional(), bathrooms: z.coerce.number().int().min(0).max(1000).optional(),

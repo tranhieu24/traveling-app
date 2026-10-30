@@ -7,6 +7,8 @@ export interface ListingFilterParams {
   q?: string;
   country?: string;
   roomType?: string;
+  roomTypes?: string[];
+  cityExact?: boolean;
   propertyType?: string;
   region?: string;
   city?: string;
@@ -50,8 +52,13 @@ export class ListingRepository {
     }
 
     if (filters.city) {
-      conditions.push(`LOWER(l.city) LIKE LOWER($${paramIndex++})`);
-      values.push(`%${filters.city}%`);
+      conditions.push(filters.cityExact ? `LOWER(l.city) = LOWER($${paramIndex++})` : `LOWER(l.city) LIKE LOWER($${paramIndex++})`);
+      values.push(filters.cityExact ? filters.city : `%${filters.city}%`);
+    }
+
+    if (filters.roomTypes?.length) {
+      conditions.push(`l.room_type = ANY($${paramIndex++}::text[])`);
+      values.push(filters.roomTypes);
     }
 
     if (filters.minPrice !== undefined) {

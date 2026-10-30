@@ -32,6 +32,8 @@ export const Header: React.FC<HeaderProps> = ({
         {showBack && (
           <TouchableOpacity
             onPress={handleBack}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
             className="w-10 h-10 rounded-full items-center justify-center bg-gray-50 active:bg-gray-200"
             activeOpacity={0.7}
           >

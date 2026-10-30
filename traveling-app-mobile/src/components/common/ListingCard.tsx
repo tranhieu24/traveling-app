@@ -3,18 +3,21 @@ import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Tex
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQueryClient } from '@tanstack/react-query';
-import { Heart, ImageOff, Star } from 'lucide-react-native';
+import { Bed, Heart, ImageOff, Star } from 'lucide-react-native';
 import { Listing, RootStackParamList } from '../../types';
 import { apiClient } from '../../services/apiClient';
+import { formatPaymentMoney } from '../../utils/paymentSummary';
 import { useAuth } from '../../context/AuthContext';
 
 interface ListingCardProps {
   listing: Listing;
+  showTotalPrice?: boolean;
+  showBedroomCount?: boolean;
   onPress: () => void;
   onFavoriteToggle?: (isFav: boolean) => void;
 }
 
-export const ListingCard: React.FC<ListingCardProps> = ({ listing, onPress, onFavoriteToggle }) => {
+export const ListingCard: React.FC<ListingCardProps> = ({ listing, onPress, onFavoriteToggle, showTotalPrice = false, showBedroomCount = false }) => {
   const { user } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const queryClient = useQueryClient();
@@ -40,7 +43,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, onPress, onFa
     listing.cover_photo,
     ...(listing.photos || []).map((photo) => photo.photo_url),
   ].filter((url): url is string => !!url))];
-  const price = Number(listing.price_per_night);
+  const price = showTotalPrice ? (listing.pricing ? Number(listing.pricing.tripTotal) : NaN) : Number(listing.price_per_night);
   const rating = Number(listing.rating_avg);
 
   const handleFavoritePress = async () => {
@@ -154,8 +157,8 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, onPress, onFa
           </View>
         </View>
         <View style={styles.secondRow}>
-          <Text style={styles.category} numberOfLines={1}>{listing.category_name || listing.property_type}</Text>
-          <Text style={styles.price}><Text style={styles.priceAmount}>${Number.isFinite(price) ? price.toFixed(0) : '—'}</Text>/night</Text>
+          {showBedroomCount ? <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 5 }}><Bed size={14} color="#93979F" /><Text style={styles.category}>{listing.bedrooms} {listing.bedrooms === 1 ? 'bedroom' : 'bedrooms'}</Text></View> : <Text style={styles.category} numberOfLines={1}>{listing.category_name || listing.property_type}</Text>}
+          <Text style={styles.price}><Text style={styles.priceAmount}>{Number.isFinite(price) ? formatPaymentMoney(price, listing.currency || 'USD') : '--'}</Text>{showTotalPrice ? ' total' : '/night'}</Text>
         </View>
       </Pressable>
     </View>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 import {
   View,
   Text,
@@ -11,11 +12,12 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
-import { CalendarCheck, Calendar } from 'lucide-react-native';
+import { AlertCircle, CalendarCheck, Calendar } from 'lucide-react-native';
 import { RootStackParamList, Booking } from '../types';
 import { apiClient } from '../services/apiClient';
 import { useAuth } from '../context/AuthContext';
 import { SkeletonListingList } from '../components/common/SkeletonLoader';
+import { EmptyState } from '../components/common/EmptyState';
 
 const STATUS_TABS = [
   { key: 'all', label: 'All' },
@@ -26,12 +28,14 @@ const STATUS_TABS = [
 
 export const BookingsScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
 
   const {
     data: bookings = [],
     isLoading,
+    isError,
+    error,
     isRefetching,
     refetch,
   } = useQuery<Booking[]>({
@@ -40,9 +44,10 @@ export const BookingsScreen: React.FC = () => {
       if (!user) return [];
       const params = selectedStatus !== 'all' ? { status: selectedStatus } : {};
       const res = await apiClient.get('/bookings', { params });
+      if (!res.data.success || !Array.isArray(res.data.data)) throw new Error('Could not load bookings.');
       return res.data.data;
     },
-    enabled: !!user,
+    enabled: !authLoading && !!user,
   });
 
   const getStatusBadge = (status: string) => {
@@ -58,68 +63,74 @@ export const BookingsScreen: React.FC = () => {
     }
   };
 
+  const emptyCopy: Record<string, { title: string; description: string }> = {
+    all: { title: 'No trips booked... yet!', description: 'Time to dust off your bags and start planning your next adventure.' },
+    confirmed: { title: 'No confirmed bookings yet', description: 'Your confirmed reservations will appear here.' },
+    pending: { title: 'No pending bookings', description: 'You do not have any reservations waiting for confirmation.' },
+    cancelled: { title: 'No cancelled bookings', description: 'Your cancelled reservations will appear here.' },
+  };
+  const currentEmpty = emptyCopy[selectedStatus] || emptyCopy.all;
+  const sessionExpired = axios.isAxiosError(error) && error.response?.status === 401;
+
   const renderEmptyState = () => (
     <View className="bg-gray-50 flex-1 justify-center items-center px-6">
       <CalendarCheck size={64} color="#00BCD4" />
-      <Text className="text-2xl font-bold text-gray-800 mt-4 mb-2 text-center">
-        No trips booked... yet!
-      </Text>
-      <Text className="text-sm text-gray-500 text-center max-w-xs leading-5">
-        Time to dust off your bags and start planning your next adventure.
-      </Text>
+      <Text className="text-xl font-bold text-gray-800 mt-4 mb-2 text-center">{currentEmpty.title}</Text>
+      <Text className="text-sm text-gray-500 text-center max-w-xs leading-5">{currentEmpty.description}</Text>
       <TouchableOpacity
-        onPress={() => navigation.navigate('MainTabs')}
+        accessibilityRole="button"
+        accessibilityLabel={selectedStatus === 'all' ? 'Start searching' : 'View all bookings'}
+        onPress={() => selectedStatus === 'all' ? navigation.navigate('MainTabs', { screen: 'SearchTab' }) : setSelectedStatus('all')}
         activeOpacity={0.85}
         className="bg-[#00BCD4] py-3 px-8 rounded-xl shadow-sm mt-6"
       >
-        <Text className="text-white font-semibold text-base text-center">
-          Start searching
-        </Text>
+        <Text className="text-white font-semibold text-base text-center">{selectedStatus === 'all' ? 'Start searching' : 'View all bookings'}</Text>
       </TouchableOpacity>
     </View>
   );
 
   return (
     <SafeAreaView className="flex-1 bg-white">
-      {isLoading ? (
-        <View className="flex-1 p-4 bg-white">
-          <SkeletonListingList count={2} />
+      <View className="px-5 py-4 border-b border-gray-100 bg-white">
+        <Text className="text-2xl font-bold text-gray-900">Trips & Bookings</Text>
+      </View>
+      {user && (
+        <View className="flex-row px-4 py-2 border-b border-gray-100 bg-gray-50">
+          {STATUS_TABS.map((tab) => {
+            const isActive = selectedStatus === tab.key;
+            return (
+              <TouchableOpacity
+                key={tab.key}
+                accessibilityRole="tab"
+                accessibilityLabel={`Booking status: ${tab.label}`}
+                accessibilityState={{ selected: isActive }}
+                aria-selected={isActive}
+                onPress={() => setSelectedStatus(tab.key)}
+                className={`flex-1 py-2 items-center rounded-lg ${isActive ? 'bg-white shadow-sm' : ''}`}
+              >
+                <Text className={`text-xs font-bold ${isActive ? 'text-[#00BCD4]' : 'text-gray-500'}`}>{tab.label}</Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
-      ) : !user || bookings.length === 0 ? (
-        renderEmptyState()
-      ) : (
-        <>
-          {/* Header */}
-          <View className="px-5 py-4 border-b border-gray-100 bg-white">
-            <Text className="text-2xl font-bold text-gray-900">
-              Trips & Bookings
-            </Text>
-          </View>
-
-          {/* Tabs Filter Bar */}
-          <View className="flex-row px-4 py-2 border-b border-gray-100 bg-gray-50">
-            {STATUS_TABS.map((tab) => {
-              const isActive = selectedStatus === tab.key;
-              return (
-                <TouchableOpacity
-                  key={tab.key}
-                  onPress={() => setSelectedStatus(tab.key)}
-                  className={`flex-1 py-2 items-center rounded-lg ${
-                    isActive ? 'bg-white shadow-sm' : ''
-                  }`}
-                >
-                  <Text
-                    className={`text-xs font-bold ${
-                      isActive ? 'text-[#00BCD4]' : 'text-gray-500'
-                    }`}
-                  >
-                    {tab.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
+      )}
+      {authLoading || (!!user && isLoading) ? (
+        <View className="flex-1 p-4 bg-white"><SkeletonListingList count={2} /></View>
+      ) : !user ? (
+        <View className="flex-1 bg-gray-50">
+          <EmptyState icon={<CalendarCheck size={56} color="#00BCD4" />} title="Log in to view your bookings" description="Your reservations will appear here after you log in." actionTitle="Log in" onAction={() => navigation.navigate('Login')} />
+        </View>
+      ) : isError ? (
+        <View className="flex-1 bg-gray-50">
+          <EmptyState
+            icon={<AlertCircle size={48} color="#00BCD4" />}
+            title="Unable to load bookings"
+            description={sessionExpired ? 'Your session has expired. Please log in again.' : 'Please check your connection and try again.'}
+            actionTitle={sessionExpired ? 'Log in' : 'Try again'}
+            onAction={() => { if (sessionExpired) navigation.navigate('Login'); else void refetch(); }}
+          />
+        </View>
+      ) : bookings.length === 0 ? renderEmptyState() : (
           <FlatList
             data={bookings}
             keyExtractor={(item) => item.id}
@@ -195,7 +206,6 @@ export const BookingsScreen: React.FC = () => {
               );
             }}
           />
-        </>
       )}
     </SafeAreaView>
   );

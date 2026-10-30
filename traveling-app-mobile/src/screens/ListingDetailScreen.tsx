@@ -42,12 +42,12 @@ export const ListingDetailScreen: React.FC = () => {
   const route = useRoute<RouteProp<RootStackParamList, 'ListingDetail'>>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { listingId } = route.params;
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const detailQueryKey = ['listing_detail', listingId, user?.id];
   const savingFavorite = useRef(false);
   const sharing = useRef(false);
-  const { checkInDate, checkOutDate, guests } = useFilterStore();
+  const { checkInDate, checkOutDate, guests, adults, children } = useFilterStore();
 
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [isQuoting, setIsQuoting] = useState(false);
@@ -127,6 +127,7 @@ export const ListingDetailScreen: React.FC = () => {
   };
 
   const handleReserve = async () => {
+    if (authLoading || isQuoting) return;
     if (!user) {
       setNotice({ title: 'Login required', message: 'Please sign in to make a reservation.', login: true });
       return;
@@ -152,11 +153,11 @@ export const ListingDetailScreen: React.FC = () => {
         listingId,
         checkInDate: inDate,
         checkOutDate: outDate,
-        guests: Math.min(guests || 1, listing?.max_guests || 2),
+        guests: guests || 1,
       });
 
       if (quoteRes.data.success) {
-        navigation.navigate('OrderReview', { quote: quoteRes.data.data });
+        navigation.navigate('OrderReview', { quote: { ...quoteRes.data.data, adults: adults || 1, children } });
       }
     } catch (error: any) {
       setNotice({ title: 'Reservation error', message: error.response?.data?.error?.message || 'Unable to quote pricing for these dates.' });
@@ -387,7 +388,8 @@ export const ListingDetailScreen: React.FC = () => {
         <Button
           title="Reserve"
           onPress={handleReserve}
-          loading={isQuoting}
+          loading={isQuoting || authLoading}
+            disabled={authLoading}
           variant="primary"
           size="lg"
           className="px-8"

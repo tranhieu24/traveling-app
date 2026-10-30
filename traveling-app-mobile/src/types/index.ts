@@ -1,3 +1,5 @@
+import type { NavigatorScreenParams } from '@react-navigation/native';
+
 export interface User {
   id: string;
   email: string;
@@ -31,6 +33,9 @@ export interface ListingPhoto {
   is_cover: boolean;
 }
 
+export type RoomType = 'entire_place' | 'private_room' | 'dormitory';
+export interface ListingPricing { currency: string; nightlyRate: number; roomSubtotal: number; cleaningFee: number; serviceFee: number; discountAmount: number; taxRate: number; taxAmount: number; tripTotal: number; totalNights: number }
+
 export interface Listing {
   id: string;
   title: string;
@@ -61,6 +66,9 @@ export interface Listing {
   host_name?: string;
   host_avatar?: string;
   is_favorite?: boolean;
+  nightly_rate?: number;
+  currency?: string;
+  pricing?: ListingPricing | null;
 }
 
 export interface Review {
@@ -77,6 +85,40 @@ export interface Review {
   user_id: string;
   user_name: string;
   user_avatar?: string;
+}
+
+export type PaymentPlan = 'full' | 'deposit' | 'balance';
+
+export interface BookingPayment {
+  id: string;
+  booking_id?: string;
+  idempotency_key?: string;
+  expires_at?: string;
+  requested_plan?: 'full' | 'deposit' | 'balance';
+  amount: number | string;
+  currency?: string;
+  payment_status: 'pending' | 'succeeded' | 'failed' | 'timed_out' | 'refunded';
+  payment_method?: string;
+  provider?: string;
+  provider_payment_id?: string | null;
+  transaction_reference?: string | null;
+  paid_at?: string | null;
+  created_at?: string;
+  is_simulated?: boolean;
+}
+
+export interface BookingRefund {
+  id: string;
+  payment_id: string;
+  booking_id: string;
+  amount: number | string;
+  status: 'requested' | 'approved' | 'processing' | 'succeeded' | 'failed' | 'rejected';
+  reason: string;
+  decision_reason?: string | null;
+  provider_refund_id?: string | null;
+  succeeded_at?: string | null;
+  created_at: string;
+  updated_at?: string;
 }
 
 export interface Booking {
@@ -96,8 +138,15 @@ export interface Booking {
   cleaning_fee: number | string;
   service_fee: number | string;
   total_price: number | string;
-  booking_status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
-  payment_status: 'pending' | 'paid' | 'refunded' | 'failed';
+  booking_status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'expired';
+  payment_status: 'pending' | 'partially_paid' | 'paid' | 'refunded' | 'failed';
+  payments?: BookingPayment[];
+  refunds?: BookingRefund[];
+  payment_plan?: 'full' | 'deposit';
+  payment_due_at?: string | null;
+  amount_paid?: number | string;
+  amount_refunded?: number | string;
+  balance_due?: number | string;
   special_requests?: string;
   transaction_reference?: string;
   payment_method?: string;
@@ -107,6 +156,12 @@ export interface Booking {
 }
 
 export interface BookingQuote {
+  currency?: string;
+  taxAmount?: number;
+  taxRate?: number;
+  discountAmount?: number;
+  adults?: number;
+  children?: number;
   listingId: string;
   title: string;
   city: string;
@@ -129,13 +184,17 @@ export type RootStackParamList = {
   CreateAccount: undefined;
   Login: undefined;
   Register: undefined;
-  MainTabs: undefined;
+  Settings: undefined;
+  HelpCenter: undefined;
+  PaymentsPayouts: undefined;
+  MainTabs: NavigatorScreenParams<BottomTabParamList> | undefined;
   ListingDetail: { listingId: string };
-  SearchSheet: undefined;
+  SearchSheet: { step?: 'where' | 'when' | 'who' } | undefined;
   FilterSheet: undefined;
   SearchResults: undefined;
   OrderReview: { quote: BookingQuote };
-  BookingSuccess: { bookingId: string; bookingCode: string };
+  Payment: { bookingId: string; plan?: PaymentPlan };
+  BookingSuccess: { bookingId: string; bookingCode?: string };
   BookingDetail: { bookingId: string };
   AllReviews: { listingId: string; ratingAvg: number; reviewCount: number };
   WriteReview: { listingId: string; listingTitle: string };

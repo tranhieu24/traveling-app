@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import axios from 'axios';
+import { useQueryClient } from '@tanstack/react-query';
 import Constants from 'expo-constants';
 import { apiClient } from '../services/apiClient';
 import { storage } from '../utils/storage';
@@ -14,6 +16,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ requiresEmailConfirmation: boolean }>;
   signOut: () => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
 
@@ -41,11 +44,12 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 // --- Provider ---
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchProfile = async (_currentToken?: string) => {
+  const fetchProfile = async (currentToken?: string) => {
     try {
       const res = await apiClient.get('/auth/me');
       if (res.data.success) {
@@ -53,6 +57,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (e) {
       console.warn('[AuthContext] Could not fetch user profile:', e);
+      if (axios.isAxiosError(e) && e.response?.status === 401) {
+        const savedToken = await storage.getItem(AUTH_TOKEN_KEY);
+        // Ignore a delayed failure belonging to an earlier login.
+        if (currentToken && savedToken !== currentToken) return;
+        await storage.removeItem(AUTH_TOKEN_KEY);
+        setToken(null);
+      }
       setUser(null);
     }
   };
@@ -116,24 +127,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     setIsLoading(true);
     try {
-      await supabase.auth.signOut();
-      await storage.removeItem(AUTH_TOKEN_KEY);
-      setToken(null);
-      setUser(null);
+      const { error } = await supabase.auth.signOut({ scope: 'local' });
+      if (error) console.warn('[AuthContext] Session revocation error:', error);
     } catch (e) {
       console.warn('[AuthContext] Sign out error:', e);
     } finally {
-      setIsLoading(false);
+      // Clear this device even if revoking the remote session fails.
+      try {
+        await storage.removeItem(AUTH_TOKEN_KEY);
+        setToken(null);
+        setUser(null);
+        queryClient.clear();
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    if (!user?.email) throw new Error('Please log in to change your password.');
+    if (!currentPassword) throw new Error('Enter your current password.');
+    if (newPassword.length < 6) throw new Error('Use at least 6 characters for your new password.');
+    if (newPassword === currentPassword) throw new Error('Choose a different password.');
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: currentPassword,
+    });
+    if (error) throw error;
+    if (!data.session || data.user?.id !== user.id) {
+      await signOut();
+      throw new Error('Your session changed. Please log in again.');
+    }
+
+    // Reauthentication refreshes the SDK session; keep API requests in sync.
+    await storage.setItem(AUTH_TOKEN_KEY, data.session.access_token);
+    setToken(data.session.access_token);
+    const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+    if (updateError) throw updateError;
+  };
+
   const refreshProfile = async () => {
-    await fetchProfile();
+    await fetchProfile(token || undefined);
   };
 
   return (
     <AuthContext.Provider
-      value={{ user, token, isLoading, signIn, signUp, signOut, refreshProfile }}
+      value={{ user, token, isLoading, signIn, signUp, signOut, changePassword, refreshProfile }}
     >
       {children}
     </AuthContext.Provider>

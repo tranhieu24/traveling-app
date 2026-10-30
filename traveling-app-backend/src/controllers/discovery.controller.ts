@@ -3,8 +3,14 @@ import { AuthenticatedRequest, sendSuccess, AppError } from '../types';
 import { categoryRepository } from '../repositories/category.repository';
 import { amenityRepository } from '../repositories/amenity.repository';
 import { listingRepository } from '../repositories/listing.repository';
+import { destinationRepository } from '../repositories/destination.repository';
 
 export class DiscoveryController {
+  async getDestinations(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try { return sendSuccess(res, await destinationRepository.search(String(req.query.q), Number(req.query.limit))); }
+    catch (error) { next(error); }
+  }
+
   async getCategories(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
       const categories = await categoryRepository.getAll();

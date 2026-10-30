@@ -10,6 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as Linking from 'expo-linking';
 import {
@@ -28,11 +29,17 @@ import { Button } from '../components/common/Button';
 
 export const BookingDetailScreen: React.FC = () => {
   const route = useRoute<RouteProp<RootStackParamList, 'BookingDetail'>>();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const queryClient = useQueryClient();
   const { bookingId } = route.params;
 
   const [isCancelling, setIsCancelling] = useState(false);
+
+  const handleBack = () => {
+    if (navigation.canGoBack()) navigation.goBack();
+    else navigation.replace('MainTabs', { screen: 'BookingsTab' });
+  };
+
 
   const { data: booking, isLoading, refetch } = useQuery({
     queryKey: ['booking_detail', bookingId],
@@ -82,9 +89,17 @@ export const BookingDetailScreen: React.FC = () => {
 
   if (isLoading || !booking) {
     return (
-      <View className="flex-1 bg-white items-center justify-center">
-        <ActivityIndicator size="large" color="#00BCD4" />
-      </View>
+      <SafeAreaView className="flex-1 bg-white">
+        <Header title="Reservation Details" onBack={handleBack} />
+        <View className="flex-1 items-center justify-center px-6">
+          {isLoading ? <ActivityIndicator size="large" color="#00BCD4" /> : (
+            <>
+              <Text className="text-sm text-dark-muted text-center mb-4">Unable to load reservation details. Please try again.</Text>
+              <Button title="Try again" onPress={() => { void refetch(); }} variant="outline" />
+            </>
+          )}
+        </View>
+      </SafeAreaView>
     );
   }
 
@@ -93,7 +108,7 @@ export const BookingDetailScreen: React.FC = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-white">
-      <Header title="Reservation Details" />
+      <Header title="Reservation Details" onBack={handleBack} />
 
       <ScrollView className="flex-1 p-5" showsVerticalScrollIndicator={false}>
         {/* Status Banner */}
@@ -202,6 +217,16 @@ export const BookingDetailScreen: React.FC = () => {
           </View>
         </View>
 
+        {Number(booking.amount_paid || 0) > 0 && (
+          <View className="pb-5 mb-5 border-b border-gray-100">
+            <View className="flex-row justify-between mb-2"><Text className="text-xs text-dark">Amount paid</Text><Text className="text-xs font-semibold text-dark">${Number(booking.amount_paid).toFixed(2)}</Text></View>
+            <View className="flex-row justify-between"><Text className="text-xs text-dark">Remaining balance</Text><Text className="text-xs font-semibold text-primary">${Number(booking.balance_due || 0).toFixed(2)}</Text></View>
+            {booking.booking_status === 'confirmed' && Number(booking.balance_due || 0) > 0 && (
+              <Button title="Pay remaining balance" accessibilityRole="button" accessibilityLabel="Pay remaining balance" onPress={() => navigation.navigate('Payment', { bookingId, plan: 'balance' })} className="mt-4" />
+            )}
+          </View>
+        )}
+
         {/* Host Contact */}
         {booking.host_phone && (
           <View className="pb-5 mb-5 border-b border-gray-100 flex-row items-center justify-between">
@@ -212,6 +237,18 @@ export const BookingDetailScreen: React.FC = () => {
                 <Text className="text-xs text-dark-muted">{booking.host_phone}</Text>
               </View>
             </View>
+          </View>
+        )}
+
+        {booking.booking_status === 'pending' && (
+          <View className="mb-6">
+            <Button
+              title="Continue payment"
+              accessibilityRole="button"
+              accessibilityLabel="Continue reservation payment"
+              onPress={() => navigation.navigate('Payment', { bookingId })}
+              variant="primary"
+            />
           </View>
         )}
 
