@@ -39,7 +39,7 @@ export interface ListingPricing { currency: string; nightlyRate: number; roomSub
 export interface Listing {
   id: string;
   title: string;
-  description?: string;
+  description?: string | null;
   property_type: string;
   room_type: string;
   address?: string;
@@ -47,8 +47,10 @@ export interface Listing {
   state_province?: string;
   country: string;
   region: string;
-  latitude?: number;
-  longitude?: number;
+  latitude?: number | string | null;
+  longitude?: number | string | null;
+  check_in_time?: string | null;
+  check_out_time?: string | null;
   price_per_night: number | string;
   cleaning_fee: number | string;
   service_fee: number | string;
@@ -203,7 +205,7 @@ export type RootStackParamList = {
   Payment: { bookingId: string; plan?: PaymentPlan };
   BookingSuccess: { bookingId: string; bookingCode?: string };
   BookingDetail: { bookingId: string };
-  AllReviews: { listingId: string; ratingAvg: number; reviewCount: number };
+  AllReviews: { listingId: string; ratingAvg: number; reviewCount: number; listingTitle?: string };
   WriteReview: { listingId: string; listingTitle: string };
 };
 
