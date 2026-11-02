@@ -209,9 +209,7 @@ const ExploreScreen: React.FC = () => {
             refreshControl={
               <RefreshControl
                 refreshing={isRefetching && !isFetchingNextPage}
-                onRefresh={async () => {
-                  await refetch();
-                }}
+                onRefresh={() => void refetch()}
                 tintColor="#00BCD4"
               />
             }

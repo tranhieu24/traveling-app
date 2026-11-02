@@ -10,11 +10,13 @@ import { paymentRepository as p } from '../repositories/payment.repository';
 import { reportRepository } from '../repositories/report.repository';
 import { supabaseAdmin } from '../config/supabase';
 import { transaction } from '../services/transaction';
+import { uploadAdminMedia } from '../services/adminMedia.service';
 const router=Router();
 router.use(requireAuth,requireAdmin);
 type Handler=(req:AuthenticatedRequest,res:Response)=>Promise<any>;
 const handle=(fn:Handler)=>(req:AuthenticatedRequest,res:Response,next:NextFunction)=>Promise.resolve(fn(req,res)).catch(next);
 router.get('/session',handle(async(req,res)=>sendSuccess(res,req.user)));
+router.post('/media',handle(async(req,res)=>sendSuccess(res,await uploadAdminMedia(req.body?.base64,req.body?.contentType),201)));
 router.post('/logout',handle(async(req,res)=>{
   const token=req.headers.authorization!.split(' ')[1];
   const {error}=await supabaseAdmin.auth.admin.signOut(token,'global');

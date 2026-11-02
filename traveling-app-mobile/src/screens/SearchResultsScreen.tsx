@@ -175,7 +175,7 @@ export const SearchResultsScreen: React.FC = () => {
               >
                 <Text style={{ color: CYAN }}>Could not refresh stays. Try again</Text>
               </Pressable>
-            ) : null
+            ) : undefined
           }
         />
       )}

@@ -41,7 +41,7 @@ export const createReviewSchema = z.object({ rating:z.number().int().min(1).max(
   cleanlinessRating:z.number().int().min(1).max(5).optional(), accuracyRating:z.number().int().min(1).max(5).optional(), checkinRating:z.number().int().min(1).max(5).optional(), communicationRating:z.number().int().min(1).max(5).optional(), locationRating:z.number().int().min(1).max(5).optional(), valueRating:z.number().int().min(1).max(5).optional() });
 export const toggleFavoriteSchema = z.object({listingId:z.string().uuid()});
 export const updateProfileSchema = z.object({fullName:z.string().trim().min(2).max(100).optional(),avatarUrl:z.string().url().max(2000).optional(),phoneNumber:z.string().max(30).optional()}).strict();
-export const adminQuerySchema = paginationSchema.extend({q:z.string().trim().max(200).optional(),status:z.string().max(30).optional(),isActive:z.enum(['true','false']).optional()});
+export const adminQuerySchema = paginationSchema.extend({q:z.string().trim().max(200).optional(),status:z.string().max(30).optional(),isActive:z.enum(['true','false']).optional(),categoryId:z.string().uuid().optional(),city:z.string().trim().min(1).max(100).optional()});
 export const categorySchema = z.object({name:z.string().trim().min(1).max(50),slug:z.string().regex(/^[a-z0-9-]{1,50}$/),iconName:z.string().min(1).max(50),description:z.string().max(1000).nullable().optional(),isActive:z.boolean().default(true)}).strict();
 export const categoryPatchSchema = categorySchema.partial().strict();
 export const listingSchema = z.object({

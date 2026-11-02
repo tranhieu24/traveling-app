@@ -5,7 +5,6 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
-  SafeAreaView,
   TextInput,
   Alert,
   Modal,
@@ -13,9 +12,11 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
+  ShieldCheck,
   User as UserIcon,
   Settings,
   CreditCard,
@@ -87,8 +88,15 @@ export const ProfileScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+    <SafeAreaView
+      edges={['top', 'left', 'right']}
+      style={{ flex: 1, backgroundColor: '#FFFFFF' }}
+    >
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 24 }}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header Profile Card */}
         <View className="p-6 bg-white border-b border-gray-100">
           <View className="flex-row items-center">
@@ -158,6 +166,10 @@ export const ProfileScreen: React.FC = () => {
 
         {/* Menu Items Block */}
         <View className="px-5 py-3">
+          {user?.role === 'admin' && <TouchableOpacity accessibilityRole="button" accessibilityLabel="Admin Portal" onPress={() => navigation.navigate('AdminPortal')} className="flex-row items-center py-4 border-b border-gray-100">
+            <View className="w-10 h-10 rounded-full bg-cyan-50 items-center justify-center mr-3"><ShieldCheck size={20} color="#00BCD4" /></View>
+            <Text className="flex-1 text-sm font-medium text-gray-800">Admin Portal</Text><ChevronRight size={18} color="#9CA3AF" />
+          </TouchableOpacity>}
           {/* 1. Personal Information */}
           <TouchableOpacity
             onPress={() => {

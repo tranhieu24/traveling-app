@@ -20,7 +20,7 @@ export class AdminRepository {
       coupons:{from:'coupons x',search:'x.code',where:'true',status:"CASE WHEN NOT x.is_active THEN 'inactive' WHEN now()<x.starts_at THEN 'upcoming' WHEN now()>=x.ends_at THEN 'expired' WHEN x.used_count>=x.max_uses THEN 'exhausted' ELSE 'active' END",active:true},
       customers:{from:'users x',search:"concat_ws(' ',x.full_name,x.email,x.phone_number)",where:"x.role<>'admin'",status:'x.account_status',active:false},
       bookings:{from:'bookings x JOIN users u ON u.id=x.guest_id JOIN listings l ON l.id=x.listing_id',search:"concat_ws(' ',x.booking_code,u.phone_number,u.email,l.title)",where:'true',status:'x.booking_status',active:false},
-      refunds:{from:'refunds x',search:"concat_ws(' ',x.reason,x.id)",where:'true',status:'x.status',active:false},
+      refunds:{from:'refunds x JOIN bookings b ON b.id=x.booking_id JOIN listings l ON l.id=b.listing_id JOIN users u ON u.id=b.guest_id JOIN payments p ON p.id=x.payment_id',search:"concat_ws(' ',x.reason,x.id,b.booking_code,u.email,l.title)",where:'true',status:'x.status',active:false},
       'audit-logs':{from:'admin_audit_logs x',search:"concat_ws(' ',x.action,x.entity_type)",where:'true',status:'',active:false},
     };
     const spec=specs[resource],params:any[]=[];
@@ -28,9 +28,13 @@ export class AdminRepository {
     if(q.q) {params.push('%'+q.q+'%');where+=' AND '+spec.search+' ILIKE $'+params.length;}
     if(q.status && spec.status) {params.push(q.status);where+=' AND '+spec.status+'=$'+params.length;}
     if(q.isActive!==undefined && spec.active) {params.push(q.isActive==='true');where+=' AND x.is_active=$'+params.length;}
+    if(resource==='listings' && q.categoryId) {params.push(q.categoryId);where+=' AND x.category_id=$'+params.length;}
+    if(resource==='listings' && q.city) {params.push('%'+q.city+'%');where+=' AND x.city ILIKE $'+params.length;}
+    const projection=resource==='bookings'?'x.*,l.title AS listing_title,u.full_name AS guest_name,u.email AS guest_email,u.phone_number AS guest_phone':
+      resource==='refunds'?'x.*,b.booking_code,b.check_in_date,b.check_out_date,b.cancellation_reason,l.title AS listing_title,u.full_name AS guest_name,u.email AS guest_email,p.provider,p.is_simulated':'x.*';
     const total=(await pool.query('SELECT count(*)::int n FROM '+spec.from+' WHERE '+where,params)).rows[0].n;
     params.push(q.limit,(q.page-1)*q.limit);
-    const rows=(await pool.query('SELECT x.* FROM '+spec.from+' WHERE '+where+' ORDER BY x.created_at DESC,x.id LIMIT $'+(params.length-1)+' OFFSET $'+params.length,params)).rows;
+    const rows=(await pool.query('SELECT '+projection+' FROM '+spec.from+' WHERE '+where+' ORDER BY x.created_at DESC,x.id LIMIT $'+(params.length-1)+' OFFSET $'+params.length,params)).rows;
     return {items:rows,pagination:{page:q.page,limit:q.limit,total,totalPages:Math.ceil(total/q.limit)}};
   }
   async get(resource:Resource,id:string) {

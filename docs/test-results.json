@@ -1,6 +1,6 @@
 {
-  "startedAt": "2026-10-28T07:56:52.342Z",
-  "finishedAt": "2026-10-28T07:56:59.947Z",
+  "startedAt": "2026-11-02T05:11:52.066Z",
+  "finishedAt": "2026-11-02T05:12:04.322Z",
   "postgres": "PostgreSQL 18.4 on x86_64-windows, compiled by msvc-19.44.35226, 64-bit",
   "database": "new isolated local PostgreSQL; no live database used",
   "auth": "Supabase methods mocked in test process only",
@@ -11,77 +11,77 @@
     {
       "name": "Migration preserves historical mock payment/refund ledger",
       "passed": true,
-      "ms": 6
+      "ms": 9
     },
     {
       "name": "Auth missing/expired/invalid/blocked; non-admin cannot access admin",
       "passed": true,
-      "ms": 223
+      "ms": 315
     },
     {
       "name": "Booking rejects impossible/past/reversed dates, fractional guests and capacity",
       "passed": true,
-      "ms": 43
+      "ms": 83
     },
     {
       "name": "Search validates UUIDs, date pair, min/max and pagination",
       "passed": true,
-      "ms": 17
+      "ms": 28
     },
     {
       "name": "Search combines location/type/category/amenities and server trip pricing",
       "passed": true,
-      "ms": 19
+      "ms": 39
     },
     {
       "name": "Two concurrent HTTP bookings: exactly one 201/one 409, no automatic payment",
       "passed": true,
-      "ms": 73
+      "ms": 93
     },
     {
       "name": "Database exclusion independently rejects overlapping dates",
       "passed": true,
-      "ms": 4
+      "ms": 9
     },
     {
       "name": "Back-to-back stays allowed; frontend totals ignored",
       "passed": true,
-      "ms": 9
+      "ms": 10
     },
     {
       "name": "Deposit $30 then balance; concurrent idempotent initialization; listing no duplicate rows",
       "passed": true,
-      "ms": 74
+      "ms": 110
     },
     {
       "name": "Ownership blocks booking, payment, refund and PDF access by other users",
       "passed": true,
-      "ms": 18
+      "ms": 26
     },
     {
       "name": "Review denied before completed at server and database",
       "passed": true,
-      "ms": 5
+      "ms": 7
     },
     {
       "name": "Complete after checkout; concurrent duplicate reviews; completed cancellation refused",
       "passed": true,
-      "ms": 31
+      "ms": 39
     },
     {
       "name": "Receipt after completed streams PDF with private no-store cache",
       "passed": true,
-      "ms": 86
+      "ms": 115
     },
     {
       "name": "Cancellation creates requested refund; cannot process before admin approval",
       "passed": true,
-      "ms": 86
+      "ms": 104
     },
     {
       "name": "Admin approval and mock refund succeed once; repeated processing refused",
       "passed": true,
-      "ms": 23
+      "ms": 29
     },
     {
       "name": "Invalid terminal booking/payment/refund transitions refused",
@@ -91,42 +91,42 @@
     {
       "name": "Verified webhook replay atomic under concurrent delivery",
       "passed": true,
-      "ms": 76
+      "ms": 103
     },
     {
       "name": "Webhook signature and amount mismatches refused without ledger mutation",
       "passed": true,
-      "ms": 28
+      "ms": 27
     },
     {
       "name": "Failed and timed-out payment attempts remain unpaid; new attempt can succeed",
       "passed": true,
-      "ms": 39
+      "ms": 81
     },
     {
       "name": "Expired hold released; late success requests refund without resurrecting booking",
       "passed": true,
-      "ms": 29
+      "ms": 48
     },
     {
       "name": "Coupon global quota serialized across different accommodations",
       "passed": true,
-      "ms": 25
+      "ms": 42
     },
     {
       "name": "Coupon applicability/per-user limits; merged PATCH validation",
       "passed": true,
-      "ms": 25
+      "ms": 55
     },
     {
       "name": "Favorites isolate owners; concurrent toggles serialize",
       "passed": true,
-      "ms": 23
+      "ms": 27
     },
     {
       "name": "Admin CRUD, soft hide, category linkage and audit trail",
       "passed": true,
-      "ms": 30
+      "ms": 55
     },
     {
       "name": "Account blocking revokes refresh sessions and old JWTs; failed auth sync retry",
@@ -136,22 +136,22 @@
     {
       "name": "RLS denies direct business reads/writes/role edits; runtime audit is append-only",
       "passed": true,
-      "ms": 3
+      "ms": 6
     },
     {
       "name": "Stripe test adapter and signed callbacks (SDK mocked; no provider network)",
       "passed": true,
-      "ms": 48
+      "ms": 71
     },
     {
       "name": "Revenue from succeeded transactions/refunds; exported Excel parses",
       "passed": true,
-      "ms": 63
+      "ms": 82
     },
     {
       "name": "Disabled provider refuses payment; no automatic succeeded row",
       "passed": true,
-      "ms": 13
+      "ms": 8
     },
     {
       "name": "Admin cannot confirm unpaid booking; database refuses premature/terminal transitions",
@@ -161,17 +161,17 @@
     {
       "name": "Confirmed deposit survives balance timeout; unpaid completion and late cancellation refused",
       "passed": true,
-      "ms": 33
+      "ms": 50
     },
     {
       "name": "Expired coupon and minimum subtotal rejected; admin can search coupon status",
       "passed": true,
-      "ms": 26
+      "ms": 22
     },
     {
       "name": "Configured tax priced on server and snapshotted; client tax ignored",
       "passed": true,
-      "ms": 7
+      "ms": 13
     },
     {
       "name": "OpenAPI covers every actual route; Postman operation count and empty token templates",

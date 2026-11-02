@@ -71,6 +71,42 @@
               "dormitory"
             ]
           },
+          "roomTypes": {
+            "allOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "entire_place",
+                    "private_room",
+                    "dormitory"
+                  ]
+                },
+                "maxItems": 3
+              }
+            ]
+          },
+          "cityExact": {
+            "type": "string",
+            "enum": [
+              "true",
+              "false"
+            ]
+          },
           "minPrice": {
             "type": "number",
             "minimum": 0
@@ -141,6 +177,26 @@
             "default": "recommended"
           }
         },
+        "additionalProperties": false
+      },
+      "DestinationQuery": {
+        "type": "object",
+        "properties": {
+          "q": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20,
+            "default": 8
+          }
+        },
+        "required": [
+          "q"
+        ],
         "additionalProperties": false
       },
       "PaginationQuery": {
@@ -220,6 +276,15 @@
               "true",
               "false"
             ]
+          },
+          "categoryId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "city": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
           }
         },
         "additionalProperties": false
@@ -2168,6 +2233,117 @@
         "type": "object",
         "additionalProperties": true
       },
+      "Destination": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "city",
+              "country"
+            ]
+          },
+          "city": {
+            "type": "string",
+            "nullable": true
+          },
+          "country": {
+            "type": "string"
+          },
+          "region": {
+            "type": "string",
+            "nullable": true
+          },
+          "matches": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "kind",
+          "city",
+          "country",
+          "region",
+          "matches"
+        ]
+      },
+      "ReviewEligibility": {
+        "type": "object",
+        "properties": {
+          "listingId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "listingTitle": {
+            "type": "string"
+          },
+          "canReview": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "eligible",
+              "already_reviewed",
+              "completed_stay_required"
+            ]
+          },
+          "existingReview": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Review"
+              }
+            ],
+            "nullable": true
+          }
+        },
+        "required": [
+          "listingId",
+          "listingTitle",
+          "canReview",
+          "reason",
+          "existingReview"
+        ]
+      },
+      "AdminMediaRequest": {
+        "type": "object",
+        "properties": {
+          "base64": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 5592408,
+            "pattern": "^[A-Za-z0-9+/]+={0,2}$",
+            "description": "Canonical base64 image bytes, without a data URL prefix; decoded size at most 4 MiB."
+          },
+          "contentType": {
+            "type": "string",
+            "enum": [
+              "image/jpeg",
+              "image/png",
+              "image/webp"
+            ]
+          }
+        },
+        "required": [
+          "base64",
+          "contentType"
+        ]
+      },
+      "AdminMedia": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "iconName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "url",
+          "iconName"
+        ]
+      },
       "MockEvent": {
         "type": "object",
         "properties": {
@@ -2730,6 +2906,174 @@
         }
       }
     },
+    "/api/v1/destinations": {
+      "get": {
+        "summary": "Gợi ý thành phố và quốc gia có chỗ ở đang hoạt động",
+        "operationId": "get__api_v1_destinations",
+        "tags": [
+          "destinations"
+        ],
+        "description": "Search active listings in active categories by city/country. q is required; limit defaults to 8, maximum 20. Returns an array without pagination.",
+        "x-permission": "public",
+        "x-error-codes": "VALIDATION_ERROR",
+        "security": [],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20,
+              "default": 8
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Gợi ý thành phố và quốc gia có chỗ ở đang hoạt động",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Destination"
+                      }
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                },
+                "example": {
+                  "success": true,
+                  "data": [
+                    {
+                      "kind": "city",
+                      "city": "Da Nang",
+                      "country": "Vietnam",
+                      "region": "Asia",
+                      "matches": 1
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input/signature",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid input/signature",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource unavailable or not owned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Resource unavailable or not owned",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Business conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Business conflict",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Rate limited",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Unexpected server error",
+                    "details": []
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/amenities": {
       "get": {
         "summary": "Danh sách tiện nghi",
@@ -2983,6 +3327,52 @@
                 "entire_place",
                 "private_room",
                 "dormitory"
+              ]
+            }
+          },
+          {
+            "name": "roomTypes",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "allOf": [
+                {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "entire_place",
+                      "private_room",
+                      "dormitory"
+                    ]
+                  },
+                  "maxItems": 3
+                }
+              ]
+            }
+          },
+          {
+            "name": "cityExact",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
               ]
             }
           },
@@ -3450,6 +3840,198 @@
                   "success": false,
                   "error": {
                     "code": "NOT_FOUND",
+                    "message": "Business conflict",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Rate limited",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Unexpected server error",
+                    "details": []
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/listings/{id}/review-eligibility": {
+      "get": {
+        "summary": "Kiểm tra quyền viết đánh giá của khách hiện tại",
+        "operationId": "get__api_v1_listings__id__review_eligibility",
+        "tags": [
+          "listings"
+        ],
+        "description": "Requires a completed stay by the authenticated user at this listing and no existing review. Eligibility does not reserve the right to submit; POST reviews rechecks the rules.",
+        "x-permission": "authenticated",
+        "x-error-codes": "LISTING_NOT_FOUND,VALIDATION_ERROR",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "11111111-1111-4111-8111-111111111111"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Kiểm tra quyền viết đánh giá của khách hiện tại",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ReviewEligibility"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "listingId": "11111111-1111-4111-8111-111111111111",
+                    "listingTitle": "Beach Apartment",
+                    "canReview": false,
+                    "reason": "completed_stay_required",
+                    "existingReview": null
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input/signature",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid input/signature",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked Supabase access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "AUTH_REQUIRED",
+                    "message": "Missing, invalid, expired or revoked Supabase access token",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Account blocked or permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "Account blocked or permission denied",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource unavailable or not owned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Resource unavailable or not owned",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Business conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "LISTING_NOT_FOUND",
                     "message": "Business conflict",
                     "details": []
                   }
@@ -6630,6 +7212,234 @@
         }
       }
     },
+    "/api/v1/admin/media": {
+      "post": {
+        "summary": "Tải ảnh chỗ ở và danh mục cho quản trị",
+        "operationId": "post__api_v1_admin_media",
+        "tags": [
+          "Admin"
+        ],
+        "description": "Accepts canonical base64 JPEG/PNG/WebP up to 4 MiB and validates file signatures. Stores public listing images in the admin-listing-images Supabase bucket. The server must have storage configured. Requires public.users.role=admin and account_status=active (server checked).",
+        "x-permission": "admin",
+        "x-error-codes": "INVALID_IMAGE,STORAGE_UNAVAILABLE",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Tải ảnh chỗ ở và danh mục cho quản trị",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/AdminMedia"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "url": "https://example.test/listing.png",
+                    "iconName": "media:example.png"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input/signature",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid input/signature",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked Supabase access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "AUTH_REQUIRED",
+                    "message": "Missing, invalid, expired or revoked Supabase access token",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Account blocked or permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "Account blocked or permission denied",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource unavailable or not owned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Resource unavailable or not owned",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Business conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "INVALID_IMAGE",
+                    "message": "Business conflict",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Body too large",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Rate limited",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Unexpected server error",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Dependency unavailable or payment mode disabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Dependency unavailable or payment mode disabled",
+                    "details": []
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminMediaRequest"
+              },
+              "example": {
+                "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aWQAAAABJRU5ErkJggg==",
+                "contentType": "image/png"
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/listings": {
       "get": {
         "summary": "Tìm kiếm quản trị: listings",
@@ -6696,6 +7506,25 @@
                 "true",
                 "false"
               ]
+            }
+          },
+          {
+            "name": "categoryId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "city",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
             }
           }
         ],
@@ -7781,6 +8610,25 @@
                 "false"
               ]
             }
+          },
+          {
+            "name": "categoryId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "city",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
           }
         ],
         "responses": {
@@ -8807,6 +9655,25 @@
                 "true",
                 "false"
               ]
+            }
+          },
+          {
+            "name": "categoryId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "city",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
             }
           }
         ],
@@ -9860,6 +10727,25 @@
                 "false"
               ]
             }
+          },
+          {
+            "name": "categoryId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "city",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
           }
         ],
         "responses": {
@@ -10107,6 +10993,25 @@
                 "true",
                 "false"
               ]
+            }
+          },
+          {
+            "name": "categoryId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "city",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
             }
           }
         ],
@@ -10366,6 +11271,25 @@
                 "false"
               ]
             }
+          },
+          {
+            "name": "categoryId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "city",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
           }
         ],
         "responses": {
@@ -10614,6 +11538,25 @@
                 "true",
                 "false"
               ]
+            }
+          },
+          {
+            "name": "categoryId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "city",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
             }
           }
         ],

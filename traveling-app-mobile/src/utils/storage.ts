@@ -7,6 +7,8 @@
  */
 import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
+import { createSecureChunks } from './secureChunks';
+const nativeStorage = createSecureChunks(SecureStore);
 
 export const storage = {
   /**
@@ -20,11 +22,10 @@ export const storage = {
           ? localStorage.getItem(key)
           : null;
       } catch (e) {
-        console.warn('[storage.getItem] localStorage error:', e);
-        return null;
+        throw new Error('Could not access browser sign-in storage. Please enable site storage.');
       }
     }
-    return SecureStore.getItemAsync(key);
+    return nativeStorage.getItem(key);
   },
 
   /**
@@ -37,11 +38,11 @@ export const storage = {
           localStorage.setItem(key, value);
         }
       } catch (e) {
-        console.warn('[storage.setItem] localStorage error:', e);
+        throw new Error('Could not access browser sign-in storage. Please enable site storage.');
       }
       return;
     }
-    await SecureStore.setItemAsync(key, value);
+    await nativeStorage.setItem(key, value);
   },
 
   /**
@@ -54,10 +55,10 @@ export const storage = {
           localStorage.removeItem(key);
         }
       } catch (e) {
-        console.warn('[storage.removeItem] localStorage error:', e);
+        throw new Error('Could not access browser sign-in storage. Please enable site storage.');
       }
       return;
     }
-    await SecureStore.deleteItemAsync(key);
+    await nativeStorage.removeItem(key);
   },
 };

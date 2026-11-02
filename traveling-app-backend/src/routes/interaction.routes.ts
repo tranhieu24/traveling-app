@@ -11,6 +11,7 @@ router.get('/favorites', requireAuth, validate(paginationSchema,'query'), intera
 router.post('/favorites/toggle', requireAuth, validate(toggleFavoriteSchema, 'body'), interactionController.toggleFavorite);
 
 // Reviews
+router.get('/listings/:id/review-eligibility', requireAuth, validate(uuidParams, 'params'), interactionController.getReviewEligibility);
 router.get('/listings/:id/reviews', validate(uuidParams,'params'),validate(paginationSchema,'query'),interactionController.getListingReviews);
 router.post('/listings/:id/reviews', requireAuth,validate(uuidParams,'params'), validate(createReviewSchema, 'body'), interactionController.createReview);
 

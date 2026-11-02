@@ -229,6 +229,59 @@
       ]
     },
     {
+      "name": "destinations",
+      "item": [
+        {
+          "name": "GET /api/v1/destinations",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/destinations?q={{q}}",
+            "header": [],
+            "description": "Search active listings in active categories by city/country. q is required; limit defaults to 8, maximum 20. Returns an array without pagination.\nErrors: VALIDATION_ERROR",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "GET",
+                "url": "{{baseUrl}}/api/v1/destinations?q={{q}}",
+                "header": [],
+                "description": "Search active listings in active categories by city/country. q is required; limit defaults to 8, maximum 20. Returns an array without pagination.\nErrors: VALIDATION_ERROR",
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"kind\": \"city\",\n      \"city\": \"Da Nang\",\n      \"country\": \"Vietnam\",\n      \"region\": \"Asia\",\n      \"matches\": 1\n    }\n  ]\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "amenities",
       "item": [
         {
@@ -392,6 +445,68 @@
                 }
               ],
               "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"11111111-1111-4111-8111-111111111111\",\n    \"title\": \"Beach Apartment\",\n    \"city\": \"Da Nang\",\n    \"country\": \"Vietnam\",\n    \"region\": \"Asia\",\n    \"room_type\": \"entire_place\",\n    \"price_per_night\": \"100.00\",\n    \"nightly_rate\": 100,\n    \"max_guests\": 4,\n    \"bedrooms\": 2,\n    \"beds\": 3,\n    \"bathrooms\": 1\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/listings/{id}/review-eligibility",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/listings/{{listingId}}/review-eligibility",
+            "header": [],
+            "description": "Requires a completed stay by the authenticated user at this listing and no existing review. Eligibility does not reserve the right to submit; POST reviews rechecks the rules.\nErrors: LISTING_NOT_FOUND,VALIDATION_ERROR",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "GET",
+                "url": "{{baseUrl}}/api/v1/listings/{{listingId}}/review-eligibility",
+                "header": [],
+                "description": "Requires a completed stay by the authenticated user at this listing and no existing review. Eligibility does not reserve the right to submit; POST reviews rechecks the rules.\nErrors: LISTING_NOT_FOUND,VALIDATION_ERROR",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"listingId\": \"11111111-1111-4111-8111-111111111111\",\n    \"listingTitle\": \"Beach Apartment\",\n    \"canReview\": false,\n    \"reason\": \"completed_stay_required\",\n    \"existingReview\": null\n  }\n}"
             }
           ],
           "event": [
@@ -1532,6 +1647,96 @@
                 }
               ],
               "body": "{\n  \"success\": true,\n  \"data\": {\n    \"signedOut\": true\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/v1/admin/media",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/admin/media",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Accepts canonical base64 JPEG/PNG/WebP up to 4 MiB and validates file signatures. Stores public listing images in the admin-listing-images Supabase bucket. The server must have storage configured. Requires public.users.role=admin and account_status=active (server checked).\nErrors: INVALID_IMAGE,STORAGE_UNAVAILABLE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"base64\": \"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aWQAAAABJRU5ErkJggg==\",\n  \"contentType\": \"image/png\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "POST",
+                "url": "{{baseUrl}}/api/v1/admin/media",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Accepts canonical base64 JPEG/PNG/WebP up to 4 MiB and validates file signatures. Stores public listing images in the admin-listing-images Supabase bucket. The server must have storage configured. Requires public.users.role=admin and account_status=active (server checked).\nErrors: INVALID_IMAGE,STORAGE_UNAVAILABLE",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"base64\": \"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aWQAAAABJRU5ErkJggg==\",\n  \"contentType\": \"image/png\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"url\": \"https://example.test/listing.png\",\n    \"iconName\": \"media:example.png\"\n  }\n}"
             }
           ],
           "event": [

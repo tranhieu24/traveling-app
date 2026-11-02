@@ -21,14 +21,16 @@ export const TabNavigator: React.FC = () => {
         tabBarInactiveTintColor: '#808892',
         tabBarStyle: {
           height: 68 + insets.bottom,
-          paddingBottom: 10 + insets.bottom,
-          paddingTop: 10,
+          paddingBottom: 4 + insets.bottom,
+          paddingTop: 4,
           backgroundColor: '#FFFFFF',
           borderTopColor: '#E5E8EB',
           elevation: 0,
         },
         tabBarLabelStyle: {
           fontSize: 10,
+          lineHeight: 14,
+          flexShrink: 0,
           fontWeight: '500',
           marginTop: 3,
         },

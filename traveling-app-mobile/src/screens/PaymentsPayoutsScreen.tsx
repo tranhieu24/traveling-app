@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
@@ -49,7 +49,14 @@ const filters: { key: PaymentHistoryFilter; label: string }[] = [
 export const PaymentsPayoutsScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user, isLoading: authLoading } = useAuth();
+  const route = useRoute<RouteProp<RootStackParamList, 'PaymentsPayouts'>>();
   const [tab, setTab] = useState<'payments' | 'payouts'>('payments');
+  useEffect(() => {
+    if (route.params?.tab) {
+      setTab(route.params.tab === 'payouts' ? 'payouts' : 'payments');
+      navigation.setParams({ tab: undefined });
+    }
+  }, [route.params?.tab, navigation]);
   const [filter, setFilter] = useState<PaymentHistoryFilter>('all');
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [receiptNotice, setReceiptNotice] = useState<{

@@ -79,6 +79,7 @@ export const ListingShareDialog: React.FC<ListingShareDialogProps> = ({ listing,
           </View>
           {Platform.OS === 'web' && (
             <Pressable
+              cssInterop={false}
               accessibilityRole="button"
               accessibilityLabel={copied ? 'Link copied' : 'Copy link'}
               disabled={copying}

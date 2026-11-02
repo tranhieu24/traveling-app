@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import {
   ActivityIndicator, Keyboard, KeyboardAvoidingView, Platform, Pressable,
-  ScrollView, StyleSheet, Text, TextInput, View, type TextInputInstance,
+  ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -23,9 +23,9 @@ export const RegisterScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { signUp, isLoading } = useAuth();
   const fieldRefs = {
-    fullName: useRef<TextInputInstance>(null),
-    email: useRef<TextInputInstance>(null),
-    password: useRef<TextInputInstance>(null),
+    fullName: useRef<React.ComponentRef<typeof TextInput>>(null),
+    email: useRef<React.ComponentRef<typeof TextInput>>(null),
+    password: useRef<React.ComponentRef<typeof TextInput>>(null),
   };
   const submittingRef = useRef(false);
   const [values, setValues] = useState({ fullName: '', email: '', password: '' });
@@ -81,6 +81,7 @@ export const RegisterScreen: React.FC = () => {
           <Text accessibilityRole="header" style={styles.confirmationTitle}>Check your email</Text>
           <Text style={styles.confirmationMessage}>Check the inbox for {confirmationEmail} for a confirmation link. Confirm your email, then come back to log in.</Text>
           <Pressable
+            cssInterop={false}
             accessibilityRole="button"
             onPress={() => navigation.replace('Login')}
             style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}
@@ -98,6 +99,7 @@ export const RegisterScreen: React.FC = () => {
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
             <Pressable
+              cssInterop={false}
               accessibilityRole="button"
               accessibilityLabel="Go back"
               disabled={busy}
@@ -177,6 +179,7 @@ export const RegisterScreen: React.FC = () => {
               </View>
             )}
             <Pressable
+              cssInterop={false}
               accessibilityRole="button"
               accessibilityState={{ disabled: busy, busy }}
               disabled={busy}
