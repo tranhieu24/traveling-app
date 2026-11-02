@@ -10,7 +10,9 @@
     "test:auth": "node --test scripts/auth.test.cjs",
     "start:dev-client": "expo start --dev-client",
     "test:sdk": "node --test scripts/sdk.test.cjs",
-    "test:native-ui": "node --test scripts/native-ui.test.cjs"
+    "test:native-ui": "node --test scripts/native-ui.test.cjs",
+    "start:lan": "expo start --go --lan",
+    "start:tunnel": "expo start --go --tunnel --clear"
   },
   "dependencies": {
     "@expo/metro-runtime": "~58.0.15",

@@ -11,12 +11,17 @@
       "bundleIdentifier": "com.travelingapp.mobile"
     },
     "extra": {
-      "apiUrl": "http://192.168.1.166:5000/api/v1",
+      "apiUrl": "http://192.168.100.166:5000/api/v1",
       "supabaseUrl": "https://iopoikkmkerkxessljyp.supabase.co",
       "supabaseAnonKey": "sb_publishable_GNDmiJBIwX449aVQnoXwfg_gmOU8EZ9"
     },
     "android": {
       "package": "com.travelingapp.mobile"
-    }
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-status-bar",
+      "expo-font"
+    ]
   }
 }

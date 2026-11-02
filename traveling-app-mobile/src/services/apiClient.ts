@@ -6,7 +6,6 @@ import Constants from 'expo-constants';
 import { resolveApiBaseUrl } from '../utils/apiUrl';
 import { readAuthToken } from '../utils/authToken';
 
-
 type GuestRetryConfig = InternalAxiosRequestConfig & { _retryAsGuest?: boolean };
 
 const isPublicDiscoveryRequest = (config: GuestRetryConfig): boolean =>

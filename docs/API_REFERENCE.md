@@ -90,6 +90,38 @@ Success HTTP 200.
 
 Endpoint error codes: `Common errors above`. HTTP responses: 200, 400, 404, 409, 429, 500.
 
+## GET /api/v1/destinations
+
+Gợi ý thành phố và quốc gia có chỗ ở đang hoạt động
+
+Permission: **public**. Search active listings in active categories by city/country. q is required; limit defaults to 8, maximum 20. Returns an array without pagination.
+
+| Location | Parameter | Required | Schema/default |
+|---|---|---|---|
+| query | `q` | yes | `{"type":"string","minLength":1,"maxLength":100}` |
+| query | `limit` | no | `{"type":"integer","minimum":1,"maximum":20,"default":8}` |
+
+Request body: none.
+
+Success HTTP 200.
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "kind": "city",
+      "city": "Da Nang",
+      "country": "Vietnam",
+      "region": "Asia",
+      "matches": 1
+    }
+  ]
+}
+```
+
+Endpoint error codes: `VALIDATION_ERROR`. HTTP responses: 200, 400, 404, 409, 429, 500.
+
 ## GET /api/v1/amenities
 
 Danh sách tiện nghi
@@ -133,6 +165,8 @@ Permission: **optional**. q matches title/city/country/address; all amenities ar
 | query | `country` | no | `{"type":"string","minLength":1,"maxLength":100}` |
 | query | `propertyType` | no | `{"type":"string","minLength":1,"maxLength":50}` |
 | query | `roomType` | no | `{"type":"string","enum":["entire_place","private_room","dormitory"]}` |
+| query | `roomTypes` | no | `{"allOf":[{"anyOf":[{"type":"string"},{"type":"array","items":{"type":"string"}}]},{"type":"array","items":{"type":"string","enum":["entire_place","private_room","dormitory"]},"maxItems":3}]}` |
+| query | `cityExact` | no | `{"type":"string","enum":["true","false"]}` |
 | query | `minPrice` | no | `{"type":"number","minimum":0}` |
 | query | `maxPrice` | no | `{"type":"number","minimum":0}` |
 | query | `guests` | no | `{"type":"integer","minimum":1,"maximum":1000}` |
@@ -213,6 +247,35 @@ Success HTTP 200.
 ```
 
 Endpoint error codes: `NOT_FOUND,VALIDATION_ERROR`. HTTP responses: 200, 400, 401, 403, 404, 409, 429, 500.
+
+## GET /api/v1/listings/{id}/review-eligibility
+
+Kiểm tra quyền viết đánh giá của khách hiện tại
+
+Permission: **authenticated**. Requires a completed stay by the authenticated user at this listing and no existing review. Eligibility does not reserve the right to submit; POST reviews rechecks the rules.
+
+| Location | Parameter | Required | Schema/default |
+|---|---|---|---|
+| path | `id` | yes | `{"type":"string","format":"uuid"}` |
+
+Request body: none.
+
+Success HTTP 200.
+
+```json
+{
+  "success": true,
+  "data": {
+    "listingId": "11111111-1111-4111-8111-111111111111",
+    "listingTitle": "Beach Apartment",
+    "canReview": false,
+    "reason": "completed_stay_required",
+    "existingReview": null
+  }
+}
+```
+
+Endpoint error codes: `LISTING_NOT_FOUND,VALIDATION_ERROR`. HTTP responses: 200, 400, 401, 403, 404, 409, 429, 500.
 
 ## GET /api/v1/listings/{id}/reviews
 
@@ -796,6 +859,35 @@ Success HTTP 200.
 
 Endpoint error codes: `AUTH_UNAVAILABLE,SESSION_REVOKED`. HTTP responses: 200, 400, 401, 403, 404, 409, 429, 500, 503.
 
+## POST /api/v1/admin/media
+
+Tải ảnh chỗ ở và danh mục cho quản trị
+
+Permission: **admin**. Accepts canonical base64 JPEG/PNG/WebP up to 4 MiB and validates file signatures. Stores public listing images in the admin-listing-images Supabase bucket. The server must have storage configured. Requires public.users.role=admin and account_status=active (server checked).
+
+Request schema: `AdminMediaRequest` in OpenAPI.
+
+```json
+{
+  "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aWQAAAABJRU5ErkJggg==",
+  "contentType": "image/png"
+}
+```
+
+Success HTTP 201.
+
+```json
+{
+  "success": true,
+  "data": {
+    "url": "https://example.test/listing.png",
+    "iconName": "media:example.png"
+  }
+}
+```
+
+Endpoint error codes: `INVALID_IMAGE,STORAGE_UNAVAILABLE`. HTTP responses: 201, 400, 401, 403, 404, 409, 413, 429, 500, 503.
+
 ## GET /api/v1/admin/listings
 
 Tìm kiếm quản trị: listings
@@ -809,6 +901,8 @@ Permission: **admin**. page/limit/q; isActive=true|false. Coupons also accept st
 | query | `q` | no | `{"type":"string","maxLength":200}` |
 | query | `status` | no | `{"type":"string","maxLength":30}` |
 | query | `isActive` | no | `{"type":"string","enum":["true","false"]}` |
+| query | `categoryId` | no | `{"type":"string","format":"uuid"}` |
+| query | `city` | no | `{"type":"string","minLength":1,"maxLength":100}` |
 
 Request body: none.
 
@@ -1033,6 +1127,8 @@ Permission: **admin**. page/limit/q; isActive=true|false. Coupons also accept st
 | query | `q` | no | `{"type":"string","maxLength":200}` |
 | query | `status` | no | `{"type":"string","maxLength":30}` |
 | query | `isActive` | no | `{"type":"string","enum":["true","false"]}` |
+| query | `categoryId` | no | `{"type":"string","format":"uuid"}` |
+| query | `city` | no | `{"type":"string","minLength":1,"maxLength":100}` |
 
 Request body: none.
 
@@ -1200,6 +1296,8 @@ Permission: **admin**. page/limit/q; isActive=true|false. Coupons also accept st
 | query | `q` | no | `{"type":"string","maxLength":200}` |
 | query | `status` | no | `{"type":"string","maxLength":30}` |
 | query | `isActive` | no | `{"type":"string","enum":["true","false"]}` |
+| query | `categoryId` | no | `{"type":"string","format":"uuid"}` |
+| query | `city` | no | `{"type":"string","minLength":1,"maxLength":100}` |
 
 Request body: none.
 
@@ -1392,6 +1490,8 @@ Permission: **admin**. q searches full name/email/phone; status=active|blocked. 
 | query | `q` | no | `{"type":"string","maxLength":200}` |
 | query | `status` | no | `{"type":"string","maxLength":30}` |
 | query | `isActive` | no | `{"type":"string","enum":["true","false"]}` |
+| query | `categoryId` | no | `{"type":"string","format":"uuid"}` |
+| query | `city` | no | `{"type":"string","minLength":1,"maxLength":100}` |
 
 Request body: none.
 
@@ -1433,6 +1533,8 @@ Permission: **admin**. q searches booking code/guest phone/email/accommodation t
 | query | `q` | no | `{"type":"string","maxLength":200}` |
 | query | `status` | no | `{"type":"string","maxLength":30}` |
 | query | `isActive` | no | `{"type":"string","enum":["true","false"]}` |
+| query | `categoryId` | no | `{"type":"string","format":"uuid"}` |
+| query | `city` | no | `{"type":"string","minLength":1,"maxLength":100}` |
 
 Request body: none.
 
@@ -1484,6 +1586,8 @@ Permission: **admin**. q searches reason/ID; status=requested|approved|processin
 | query | `q` | no | `{"type":"string","maxLength":200}` |
 | query | `status` | no | `{"type":"string","maxLength":30}` |
 | query | `isActive` | no | `{"type":"string","enum":["true","false"]}` |
+| query | `categoryId` | no | `{"type":"string","format":"uuid"}` |
+| query | `city` | no | `{"type":"string","minLength":1,"maxLength":100}` |
 
 Request body: none.
 
@@ -1526,6 +1630,8 @@ Permission: **admin**. q searches action/entity type. Read-only; runtime cannot 
 | query | `q` | no | `{"type":"string","maxLength":200}` |
 | query | `status` | no | `{"type":"string","maxLength":30}` |
 | query | `isActive` | no | `{"type":"string","enum":["true","false"]}` |
+| query | `categoryId` | no | `{"type":"string","format":"uuid"}` |
+| query | `city` | no | `{"type":"string","minLength":1,"maxLength":100}` |
 
 Request body: none.
 
