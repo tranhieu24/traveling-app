@@ -105,7 +105,7 @@ const ExploreScreen: React.FC = () => {
       <View style={styles.searchField}>
         <TouchableOpacity
           accessibilityRole="button"
-          accessibilityLabel="Where do you want to stay?"
+          accessibilityLabel="Bạn muốn ở đâu?"
           accessibilityHint="Choose a destination, travel dates, and guests"
           onPress={() => navigation.navigate('SearchSheet')}
           activeOpacity={0.8}
@@ -120,7 +120,7 @@ const ExploreScreen: React.FC = () => {
               ]}
               numberOfLines={1}
             >
-              {destination.kind !== 'anywhere' ? destination.label : 'Where do you want to stay?'}
+              {destination.kind !== 'anywhere' ? destination.label : "Bạn muốn ở đâu?"}
             </Text>
             {!!checkInDate && (
               <Text style={styles.searchDetails} numberOfLines={1}>
@@ -131,7 +131,7 @@ const ExploreScreen: React.FC = () => {
         </TouchableOpacity>
         <TouchableOpacity
           accessibilityRole="button"
-          accessibilityLabel={filterCount > 0 ? `Filters, ${filterCount} active` : 'Filters'}
+          accessibilityLabel={filterCount > 0 ? `Filters, ${filterCount} active` : "Bộ lọc"}
           onPress={() => navigation.navigate('FilterSheet')}
           activeOpacity={0.8}
           style={styles.filterButton}
@@ -165,9 +165,9 @@ const ExploreScreen: React.FC = () => {
         ) : invalid || (isError && !listings.length) || categoriesError ? (
           <EmptyState
             icon={<MapPin size={44} color="#00BCD4" />}
-            title="Unable to load stays"
-            description={invalid || 'Please check your connection and try again.'}
-            actionTitle="Try again"
+            title="Chưa tải được chỗ ở"
+            description={invalid || "Vui lòng kiểm tra kết nối rồi thử lại."}
+            actionTitle="Thử lại"
             onAction={() => {
               if (invalid) state.resetFilters();
               else void Promise.all([refetch(), refetchCategories()]);
@@ -176,9 +176,9 @@ const ExploreScreen: React.FC = () => {
         ) : listings.length === 0 ? (
           <EmptyState
             icon={<MapPin size={48} color="#00BCD4" />}
-            title="No accommodations found"
-            description="Try loosening your search filters or selecting another category to discover more stays."
-            actionTitle="Reset All Filters"
+            title="Chưa tìm thấy chỗ ở phù hợp"
+            description="Thử điều chỉnh bộ lọc hoặc chọn danh mục khác để khám phá thêm chỗ ở."
+            actionTitle="Xóa bộ lọc"
             onAction={() => useFilterStore.getState().resetFilters()}
           />
         ) : (

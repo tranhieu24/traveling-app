@@ -20,10 +20,10 @@ import { SkeletonListingList } from '../components/common/SkeletonLoader';
 import { EmptyState } from '../components/common/EmptyState';
 
 const STATUS_TABS = [
-  { key: 'all', label: 'All' },
-  { key: 'confirmed', label: 'Confirmed' },
-  { key: 'pending', label: 'Pending' },
-  { key: 'cancelled', label: 'Cancelled' },
+  { key: 'all', label: "Tất cả" },
+  { key: 'confirmed', label: "Đã xác nhận" },
+  { key: 'pending', label: "Chờ thanh toán" },
+  { key: 'cancelled', label: "Đã hủy" },
 ];
 
 export const BookingsScreen: React.FC = () => {
@@ -53,11 +53,11 @@ export const BookingsScreen: React.FC = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'confirmed':
-        return { bg: 'bg-emerald-50', text: 'text-emerald-600', label: 'Confirmed' };
+        return { bg: 'bg-emerald-50', text: 'text-emerald-600', label: "Đã xác nhận" };
       case 'pending':
-        return { bg: 'bg-amber-50', text: 'text-amber-600', label: 'Pending' };
+        return { bg: 'bg-amber-50', text: 'text-amber-600', label: "Chờ thanh toán" };
       case 'cancelled':
-        return { bg: 'bg-gray-100', text: 'text-gray-500', label: 'Cancelled' };
+        return { bg: 'bg-gray-100', text: 'text-gray-500', label: "Đã hủy" };
       default:
         return { bg: 'bg-gray-100', text: 'text-gray-700', label: status };
     }
@@ -67,7 +67,7 @@ export const BookingsScreen: React.FC = () => {
     all: { title: 'No trips booked... yet!', description: 'Time to dust off your bags and start planning your next adventure.' },
     confirmed: { title: 'No confirmed bookings yet', description: 'Your confirmed reservations will appear here.' },
     pending: { title: 'No pending bookings', description: 'You do not have any reservations waiting for confirmation.' },
-    cancelled: { title: 'No cancelled bookings', description: 'Your cancelled reservations will appear here.' },
+    cancelled: { title: "Chưa có đơn đã hủy", description: "Các đơn bạn hủy sẽ xuất hiện tại đây." },
   };
   const currentEmpty = emptyCopy[selectedStatus] || emptyCopy.all;
   const sessionExpired = axios.isAxiosError(error) && error.response?.status === 401;
@@ -121,15 +121,15 @@ export const BookingsScreen: React.FC = () => {
         <View className="flex-1 p-4 bg-white"><SkeletonListingList count={2} /></View>
       ) : !user ? (
         <View className="flex-1 bg-gray-50">
-          <EmptyState icon={<CalendarCheck size={56} color="#00BCD4" />} title="Log in to view your bookings" description="Your reservations will appear here after you log in." actionTitle="Log in" onAction={() => navigation.navigate('Login')} />
+          <EmptyState icon={<CalendarCheck size={56} color="#00BCD4" />} title="Log in to view your bookings" description="Your reservations will appear here after you log in." actionTitle="Đăng nhập" onAction={() => navigation.navigate('Login')} />
         </View>
       ) : isError ? (
         <View className="flex-1 bg-gray-50">
           <EmptyState
             icon={<AlertCircle size={48} color="#00BCD4" />}
             title="Unable to load bookings"
-            description={sessionExpired ? 'Your session has expired. Please log in again.' : 'Please check your connection and try again.'}
-            actionTitle={sessionExpired ? 'Log in' : 'Try again'}
+            description={sessionExpired ? 'Your session has expired. Please log in again.' : "Vui lòng kiểm tra kết nối rồi thử lại."}
+            actionTitle={sessionExpired ? "Đăng nhập" : "Thử lại"}
             onAction={() => { if (sessionExpired) navigation.navigate('Login'); else void refetch(); }}
           />
         </View>

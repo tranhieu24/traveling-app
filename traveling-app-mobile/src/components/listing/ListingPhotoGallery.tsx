@@ -9,7 +9,7 @@ export const ListingImage = ({ url, contain = false }: { url?: string; contain?:
   return !url || failed ? (
     <View style={s.missing}>
       <ImageOff size={30} color="#A2AAB5" />
-      <Text style={s.missingText}>Photo unavailable</Text>
+      <Text style={s.missingText}>Chưa có ảnh</Text>
     </View>
   ) : (
     <Image

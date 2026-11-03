@@ -3,6 +3,11 @@ import { isDate, validateStay } from '../domain/booking';
 export const uuidParams = z.object({ id: z.string().uuid() });
 export const receiptParams = z.object({ bookingId: z.string().uuid() });
 export const paginationSchema = z.object({ page: z.coerce.number().int().min(1).max(100000).default(1), limit: z.coerce.number().int().min(1).max(50).default(12) });
+export const supportStatusSchema=z.object({status:z.enum(['open','waiting_guest','resolved'])}).strict();
+export const supportReplySchema=z.object({body:z.string().trim().min(1).max(3000),requestId:z.string().uuid()}).strict();
+export const supportCreateSchema=supportReplySchema.extend({bookingId:z.string().uuid(),subject:z.string().trim().min(3).max(150)}).strict();
+export const supportListSchema=paginationSchema.extend({bookingId:z.string().uuid().optional(),status:supportStatusSchema.shape.status.optional()});
+export const arrivalGuideSchema=z.object({instructions:z.string().trim().min(10).max(5000),contact:z.string().trim().max(300).default(''),revision:z.number().int().nonnegative()}).strict();
 const date = z.string().refine(isDate, 'A real YYYY-MM-DD date is required');
 const nonnegative = z.number().finite().min(0).max(99999999.99).multipleOf(0.01);
 export const destinationQuerySchema = z.object({ q: z.string().trim().min(1).max(100), limit: z.coerce.number().int().min(1).max(20).default(8) });
@@ -28,7 +33,8 @@ const checkStay = (v: z.infer<typeof stay>, c: z.RefinementCtx) => {
   try { validateStay(v.checkInDate,v.checkOutDate,v.guests); } catch(e: any) { c.addIssue({code:'custom',path:['checkInDate'],message:e.message}); }
 };
 export const bookingQuoteSchema = stay.superRefine(checkStay);
-export const createBookingSchema = stay.extend({ specialRequests: z.string().max(500).optional(), paymentPlan: z.enum(['full','deposit']).default('full'),
+export const checkoutContactSchema = z.object({fullName:z.string().trim().min(2).max(100),email:z.string().trim().email().max(255),phone:z.string().trim().regex(/^[+()0-9 .-]{7,30}$/).optional()}).strict();
+export const createBookingSchema = stay.extend({ requestId:z.string().uuid().optional(), expectedTotalCents:z.number().int().nonnegative().optional(), checkout:z.object({contact:checkoutContactSchema,policyVersion:z.string().max(50),accepted:z.literal(true)}).strict().optional(), specialRequests: z.string().max(500).optional(), paymentPlan: z.enum(['full','deposit']).default('full'),
   paymentMethod: z.string().max(50).optional(), mockCardLast4: z.string().regex(/^\d{4}$/).optional(),
 }).superRefine(checkStay);
 export const bookingListSchema = paginationSchema.extend({status: z.enum(['all','pending','confirmed','cancelled','completed','expired']).default('all')});

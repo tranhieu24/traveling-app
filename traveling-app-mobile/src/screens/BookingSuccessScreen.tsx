@@ -1,3 +1,4 @@
+import { MediaNotice } from '../components/common/MediaNotice';
 import React, { useRef, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,12 +14,12 @@ import { downloadBookingReceipt } from '../services/bookingReceipt';
 import { getPaymentSummary, PaymentConfirmationState } from '../utils/paymentSummary';
 
 const STATUS_COPY: Record<PaymentConfirmationState, { title: string; description?: string }> = {
-  success: { title: 'Payment success!' },
-  pending: { title: 'Payment pending', description: 'Your payment has not been confirmed yet. Check your booking for the current status.' },
-  failed: { title: 'Payment not completed', description: 'Your payment was not successful. Open your booking to check the details before trying again.' },
-  refunded: { title: 'Payment refunded', description: 'View your booking for the payment and refund history.' },
-  cancelled: { title: 'Booking cancelled', description: 'View your booking for its payment and refund status.' },
-  expired: { title: 'Booking expired', description: 'The reservation hold has expired. View your booking for details.' },
+  success: { title: "Đã ghi nhận thanh toán!" },
+  pending: { title: "Đang chờ xác nhận", description: 'Your payment has not been confirmed yet. Check your booking for the current status.' },
+  failed: { title: "Thanh toán chưa hoàn tất", description: 'Your payment was not successful. Open your booking to check the details before trying again.' },
+  refunded: { title: "Đã hoàn tiền", description: 'View your booking for the payment and refund history.' },
+  cancelled: { title: "Đặt phòng đã hủy", description: 'View your booking for its payment and refund status.' },
+  expired: { title: "Đặt phòng đã hết hạn", description: 'The reservation hold has expired. View your booking for details.' },
 };
 
 export const BookingSuccessScreen: React.FC = () => {
@@ -70,21 +71,21 @@ export const BookingSuccessScreen: React.FC = () => {
           {authLoading || (!!user && isLoading) ? (
             <View style={styles.fallback}>
               <ActivityIndicator size="large" color="#00B8CE" />
-              <Text style={styles.fallbackText}>Loading payment details...</Text>
+              <Text style={styles.fallbackText}>Đang tải thông tin thanh toán...</Text>
             </View>
           ) : loginRequired ? (
             <View style={styles.fallback}>
               <AlertCircle size={48} color="#00B8CE" />
               <Text accessibilityRole="header" style={styles.fallbackTitle}>View your payment</Text>
               <Text style={styles.fallbackText}>Log in to view your payment details and receipt.</Text>
-              <Pressable accessibilityRole="button" accessibilityLabel="Log in to view payment" onPress={() => navigation.navigate('Login')} style={styles.retryButton}><Text style={styles.retryLabel}>Log in</Text></Pressable>
+              <Pressable accessibilityRole="button" accessibilityLabel="Log in to view payment" onPress={() => navigation.navigate('Login')} style={styles.retryButton}><Text style={styles.retryLabel}>Đăng nhập</Text></Pressable>
             </View>
           ) : isError || !summary || !copy ? (
             <View style={styles.fallback}>
               <AlertCircle size={48} color="#9CA3AF" />
-              <Text accessibilityRole="header" style={styles.fallbackTitle}>Unable to load payment</Text>
-              <Text style={styles.fallbackText}>Please check your connection and try again.</Text>
-              <Pressable accessibilityRole="button" accessibilityLabel="Retry payment details" onPress={() => { void refetch(); }} style={styles.retryButton}><Text style={styles.retryLabel}>Try again</Text></Pressable>
+              <Text accessibilityRole="header" style={styles.fallbackTitle}>Chưa tải được thanh toán</Text>
+              <Text style={styles.fallbackText}>Vui lòng kiểm tra kết nối rồi thử lại.</Text>
+              <Pressable accessibilityRole="button" accessibilityLabel="Retry payment details" onPress={() => { void refetch(); }} style={styles.retryButton}><Text style={styles.retryLabel}>Thử lại</Text></Pressable>
             </View>
           ) : (
             <>
@@ -98,17 +99,18 @@ export const BookingSuccessScreen: React.FC = () => {
               <Text accessibilityRole="header" style={[styles.title, width < 360 && styles.smallTitle]}>{copy.title}</Text>
               {!!copy.description && <Text style={styles.description}>{copy.description}</Text>}
               <View style={styles.details}>
-                <View style={styles.detailRow}><Text style={styles.label}>{summary.state === 'pending' ? 'Booking ref' : 'Ref number'}</Text><Text selectable style={styles.value}>{summary.reference || bookingCode || '--'}</Text></View>
-                <View style={styles.detailRow}><Text style={styles.label}>Date</Text><Text style={styles.value}>{summary.dateLabel}</Text></View>
-                <View style={styles.detailRow}><Text style={styles.label}>Time</Text><Text style={styles.value}>{summary.timeLabel}</Text></View>
-                <View style={styles.detailRow}><Text style={styles.label}>Payment method</Text><Text style={styles.value}>{summary.paymentMethod}</Text></View>
+                <View style={styles.detailRow}><Text style={styles.label}>{summary.state === 'pending' ? "Mã đặt phòng" : "Mã giao dịch"}</Text><Text selectable style={styles.value}>{summary.reference || bookingCode || '--'}</Text></View>
+                <View style={styles.detailRow}><Text style={styles.label}>Ngày</Text><Text style={styles.value}>{summary.dateLabel}</Text></View>
+                <View style={styles.detailRow}><Text style={styles.label}>Thời gian</Text><Text style={styles.value}>{summary.timeLabel}</Text></View>
+                <View style={styles.detailRow}><Text style={styles.label}>Phương thức thanh toán</Text><Text style={styles.value}>{summary.paymentMethod}</Text></View>
               </View>
-              <View style={styles.amountRow}><Text style={styles.label}>{summary.state === 'pending' ? 'Amount due' : 'Amount'}</Text><Text style={styles.amount}>{summary.amountLabel}</Text></View>
+              <MediaNotice context={booking?.photo_context} compact/>
+              <View style={styles.amountRow}><Text style={styles.label}>{summary.state === 'pending' ? "Số tiền cần trả" : "Số tiền"}</Text><Text style={styles.amount}>{summary.amountLabel}</Text></View>
               {summary.state === 'success' && !!summary.balanceLabel && <Text style={styles.balance}>Remaining balance: {summary.balanceLabel}</Text>}
-              {summary.isTestPayment && <Text style={styles.testPayment}>Test payment - No real charge</Text>}
+              {summary.isTestPayment && <Text style={styles.testPayment}>Giao dịch test - không trừ tiền thật</Text>}
               {canContinuePayment && (
-                <Pressable accessibilityRole="button" accessibilityLabel="Continue payment" onPress={() => navigation.replace('Payment', { bookingId })} style={styles.continuePaymentButton}>
-                  <Text style={styles.viewBookingLabel}>Continue payment</Text>
+                <Pressable accessibilityRole="button" accessibilityLabel="Continue payment" onPress={() => navigation.replace("Payment", { bookingId })} style={styles.continuePaymentButton}>
+                  <Text style={styles.viewBookingLabel}>Tiếp tục thanh toán</Text>
                 </Pressable>
               )}
               <Pressable
@@ -119,7 +121,7 @@ export const BookingSuccessScreen: React.FC = () => {
                 style={({ pressed }) => [styles.receiptButton, !summary.canDownloadReceipt && styles.disabled, pressed && styles.pressed]}
               >
                 {downloading ? <ActivityIndicator size="small" color="#7A8089" /> : <Download size={19} color="#8C929A" strokeWidth={2} />}
-                <Text style={styles.receiptLabel}>{downloading ? 'Preparing receipt...' : 'Get PDF receipt'}</Text>
+                <Text style={styles.receiptLabel}>{downloading ? "Đang chuẩn bị chứng từ..." : "Tải chứng từ PDF"}</Text>
               </Pressable>
               {!!receiptError && <Text accessibilityRole="alert" style={styles.receiptError}>{receiptError}</Text>}
               {!!receiptMessage && <Text accessibilityLiveRegion="polite" style={styles.receiptMessage}>{receiptMessage}</Text>}
@@ -139,7 +141,7 @@ export const BookingSuccessScreen: React.FC = () => {
             ],
           })}
           style={({ pressed }) => [styles.viewBookingButton, (!user || authLoading) && styles.disabled, pressed && styles.pressed]}
-        ><Text style={styles.viewBookingLabel}>View booking</Text></Pressable>
+        ><Text style={styles.viewBookingLabel}>Xem đặt phòng</Text></Pressable>
       </View>
     </SafeAreaView>
   );

@@ -1,4 +1,6 @@
+import { ForgotPasswordScreen,ResetPasswordScreen } from '../screens/PasswordRecoveryScreen';
 import React from 'react';
+import { SupportScreen,AdminSupportScreen } from '../screens/SupportScreen';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 import { AuthCallbackScreen } from '../screens/AuthCallbackScreen';
@@ -36,6 +38,10 @@ export const AppNavigator: React.FC = () => {
     >
       <Stack.Screen name="Splash" component={SplashScreen} />
       <Stack.Screen name="AuthCallback" component={AuthCallbackScreen} />
+      <Stack.Screen name="Support" component={SupportScreen} />
+      <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+      <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+      <Stack.Screen name="AdminSupport" component={AdminSupportScreen} />
       <Stack.Screen name="CreateAccount" component={CreateAccountScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="AdminLogin" component={AdminLoginScreen} />

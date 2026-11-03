@@ -11,9 +11,9 @@ import { RootStackParamList } from '../types';
 import { useAuth } from '../context/AuthContext';
 
 const FIELDS = [
-  { key: 'fullName', label: 'Full name', placeholder: 'Enter your full name', icon: User, autoComplete: 'name', textContentType: 'name' },
-  { key: 'email', label: 'Email address', placeholder: 'Enter your email address', icon: Mail, autoComplete: 'email', textContentType: 'emailAddress' },
-  { key: 'password', label: 'Password', placeholder: 'Create a password', icon: Lock, autoComplete: 'new-password', textContentType: 'newPassword' },
+  { key: 'fullName', label: "Họ và tên", placeholder: "Nhập họ và tên", icon: User, autoComplete: 'name', textContentType: 'name' },
+  { key: 'email', label: "Địa chỉ email", placeholder: "Nhập địa chỉ email", icon: Mail, autoComplete: 'email', textContentType: 'emailAddress' },
+  { key: 'password', label: "Mật khẩu", placeholder: "Tạo mật khẩu", icon: Lock, autoComplete: 'new-password', textContentType: 'newPassword' },
 ] as const;
 
 type FieldName = (typeof FIELDS)[number]['key'];
@@ -108,7 +108,7 @@ export const RegisterScreen: React.FC = () => {
             >
               <ArrowLeft size={23} color="#292C30" />
             </Pressable>
-            <Text accessibilityRole="header" style={styles.title}>Continue with email</Text>
+            <Text accessibilityRole="header" style={styles.title}>Tiếp tục với email</Text>
           </View>
 
           <View style={styles.form}>
@@ -192,9 +192,9 @@ export const RegisterScreen: React.FC = () => {
           </View>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Already have an account?</Text>
+            <Text style={styles.footerText}>Đã có tài khoản?</Text>
             <Pressable accessibilityRole="link" hitSlop={8} disabled={busy} onPress={() => navigation.navigate('Login')}>
-              <Text style={styles.loginLink}>Log in</Text>
+              <Text style={styles.loginLink}>Đăng nhập</Text>
             </Pressable>
           </View>
         </ScrollView>

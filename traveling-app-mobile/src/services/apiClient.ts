@@ -57,7 +57,12 @@ apiClient.interceptors.request.use(
 // An expired saved session must not prevent anonymous discovery.
 // Retry only public reads, once, without credentials. Protected calls keep 401.
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const body=response.data;
+    if(body?.data?.booking_status && body.serverTime) body.data.server_time=body.serverTime;
+    if(body?.data?.booking?.booking_status && body.serverTime) body.data.booking.server_time=body.serverTime;
+    return response;
+  },
   async (error: unknown) => {
     if (!axios.isAxiosError(error)) return Promise.reject(error);
     const config = error.config as GuestRetryConfig | undefined;

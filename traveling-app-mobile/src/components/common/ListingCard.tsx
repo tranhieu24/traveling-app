@@ -1,3 +1,4 @@
+import { MediaNotice } from './MediaNotice';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -67,7 +68,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, onPress, onFa
       void queryClient.invalidateQueries({ queryKey: ['listing_detail', listing.id] });
     } catch {
       setIsFavorite(previousStatus);
-      Alert.alert('Could not update favorites', 'Please check your connection and try again.');
+      Alert.alert('Could not update favorites', "Vui lòng kiểm tra kết nối rồi thử lại.");
     } finally {
       savingFavorite.current = false;
       setLoadingFav(false);
@@ -76,6 +77,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, onPress, onFa
 
   return (
     <View style={styles.card}>
+      <MediaNotice context={listing.photo_context} compact/>
       <View style={styles.imageContainer} onLayout={(event) => {
         const width = event.nativeEvent.layout.width;
         setImageWidth(width);

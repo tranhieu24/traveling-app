@@ -41,7 +41,7 @@ import { formatPaymentMoney } from '../utils/paymentSummary';
 import { PaymentBookingCard, RefundCard } from '../components/payments/AccountPaymentCards';
 
 const filters: { key: PaymentHistoryFilter; label: string }[] = [
-  { key: 'all', label: 'All' },
+  { key: 'all', label: "Tất cả" },
   { key: 'outstanding', label: 'To pay' },
   { key: 'paid', label: 'Paid' },
 ];
@@ -164,21 +164,21 @@ export const PaymentsPayoutsScreen: React.FC = () => {
             onPress={() => navigation.navigate('Login')}
             style={s.primary}
           >
-            <Text style={s.primaryLabel}>Log in</Text>
+            <Text style={s.primaryLabel}>Đăng nhập</Text>
           </Pressable>
         </View>
       ) : account.isError && !account.data ? (
         <View style={s.center}>
           <AlertCircle size={36} color="#00B8CE" />
           <Text style={s.emptyTitle}>Unable to load payments</Text>
-          <Text style={s.centerCopy}>Please check your connection and try again.</Text>
+          <Text style={s.centerCopy}>Vui lòng kiểm tra kết nối rồi thử lại.</Text>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Retry payment history"
             onPress={() => void account.refetch()}
             style={s.primary}
           >
-            <Text style={s.primaryLabel}>Try again</Text>
+            <Text style={s.primaryLabel}>Thử lại</Text>
           </Pressable>
         </View>
       ) : (
@@ -286,7 +286,7 @@ export const PaymentsPayoutsScreen: React.FC = () => {
                     booking={booking}
                     onOpen={() => navigation.navigate('BookingDetail', { bookingId: booking.id })}
                     onPay={(plan) =>
-                      navigation.navigate('Payment', { bookingId: booking.id, plan })
+                      navigation.navigate("Payment", { bookingId: booking.id, plan })
                     }
                     onReceipt={() => void download(booking)}
                     downloading={downloadingId === booking.id}
@@ -407,7 +407,7 @@ export const PaymentsPayoutsScreen: React.FC = () => {
             style={s.help}
           >
             <HelpCircle size={18} color="#94A0AC" />
-            <Text style={s.helpLabel}>Need help with a payment or refund?</Text>
+            <Text style={s.helpLabel}>Bạn cần hỗ trợ thanh toán hoặc hoàn tiền?</Text>
             <ArrowUpRight size={17} color="#94A0AC" />
           </Pressable>
           <Text style={s.updated}>

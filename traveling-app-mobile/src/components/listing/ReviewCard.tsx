@@ -30,7 +30,7 @@ export const ReviewCard = ({
   return (
     <Pressable
       accessibilityRole={onPress ? 'button' : undefined}
-      accessibilityLabel={onPress ? `Read review by ${review.user_name || 'Guest'}` : undefined}
+      accessibilityLabel={onPress ? `Read review by ${review.user_name || "Khách"}` : undefined}
       onPress={onPress}
       style={[s.card, compact && s.compact]}
     >
@@ -48,7 +48,7 @@ export const ReviewCard = ({
         )}
         <View style={s.person}>
           <Text style={s.name} numberOfLines={1}>
-            {review.user_name || 'Guest'}
+            {review.user_name || "Khách"}
           </Text>
           <Text style={s.date}>{reviewDate(review.created_at)}</Text>
         </View>

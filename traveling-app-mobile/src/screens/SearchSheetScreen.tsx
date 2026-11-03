@@ -175,7 +175,7 @@ export const SearchSheetScreen: React.FC = () => {
             summary('Location', destination?.label || 'Choose destination', 'where')
           ) : (
             <View style={s.card}>
-              <Text style={shared.title}>Where to?</Text>
+              <Text style={shared.title}>Bạn muốn đến đâu?</Text>
               <View style={s.inputRow}>
                 <Search size={21} color="#30343A" />
                 <TextInput
@@ -260,7 +260,7 @@ export const SearchSheetScreen: React.FC = () => {
           )}
           {step !== 'when' ? (
             summary(
-              step === 'where' ? 'When' : 'Dates',
+              step === 'where' ? "Thời gian" : "Ngày lưu trú",
               checkIn && checkOut ? searchDateLabel(checkIn, checkOut) : 'Add time',
               'when'
             )
@@ -268,7 +268,7 @@ export const SearchSheetScreen: React.FC = () => {
             <View style={s.card}>
               <Text style={shared.title}>When staying</Text>
               <View style={s.segment}>
-                {['Choose dates', 'Anytime'].map((label, index) => (
+                {['Choose dates', "Linh hoạt ngày"].map((label, index) => (
                   <Pressable
                     key={label}
                     accessibilityRole="button"
@@ -297,7 +297,7 @@ export const SearchSheetScreen: React.FC = () => {
               </View>
               {anytime ? (
                 <Text style={[shared.muted, { paddingVertical: 24 }]}>
-                  Flexible dates? Browse all available stays and choose dates before booking.
+                  Chưa chốt lịch? Bạn có thể xem các chỗ ở và chọn ngày trước khi đặt.
                 </Text>
               ) : (
                 <>
@@ -350,15 +350,15 @@ export const SearchSheetScreen: React.FC = () => {
           )}
           {step !== 'who' ? (
             summary(
-              'Guests',
+              "Số khách",
               adults + children ? `${adults + children} guests` : 'Add guests',
               'who'
             )
           ) : (
             <View style={s.card}>
-              <Text style={shared.title}>How many guests?</Text>
+              <Text style={shared.title}>Có bao nhiêu khách?</Text>
               <View style={s.guestRow}>
-                <Text style={shared.text}>Adults</Text>
+                <Text style={shared.text}>Người lớn</Text>
                 <Counter
                   label="adults"
                   value={adults}
@@ -367,7 +367,7 @@ export const SearchSheetScreen: React.FC = () => {
                 />
               </View>
               <View style={s.guestRow}>
-                <Text style={shared.text}>Children</Text>
+                <Text style={shared.text}>Trẻ em</Text>
                 <Counter
                   label="children"
                   value={children}
@@ -395,7 +395,7 @@ export const SearchSheetScreen: React.FC = () => {
               accessibilityLabel="Clear search choices"
               onPress={clear}
             >
-              <Text style={shared.clear}>Clear all</Text>
+              <Text style={shared.clear}>Xóa tất cả</Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
@@ -406,7 +406,7 @@ export const SearchSheetScreen: React.FC = () => {
               style={[shared.action, disabled && { opacity: 0.45 }]}
             >
               <Search size={20} color="white" />
-              <Text style={shared.actionText}>Search</Text>
+              <Text style={shared.actionText}>Tìm kiếm</Text>
             </Pressable>
           </View>
         </View>

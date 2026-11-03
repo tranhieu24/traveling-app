@@ -115,9 +115,9 @@ export const SearchResultsScreen: React.FC = () => {
       )}
       {invalid || (results.isError && !listings.length) ? (
         <EmptyState
-          title="Unable to load stays"
-          description={invalid || 'Please check your connection and try again.'}
-          actionTitle={invalid ? 'Edit search' : 'Try again'}
+          title="Chưa tải được chỗ ở"
+          description={invalid || "Vui lòng kiểm tra kết nối rồi thử lại."}
+          actionTitle={invalid ? 'Edit search' : "Thử lại"}
           onAction={() => (invalid ? navigation.navigate('SearchSheet') : void results.refetch())}
         />
       ) : results.isLoading ? (

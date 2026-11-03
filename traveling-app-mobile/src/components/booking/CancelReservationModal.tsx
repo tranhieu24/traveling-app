@@ -88,12 +88,13 @@ export const CancelReservationModal = ({
               </Pressable>
             </View>
             <Text accessibilityRole="header" style={s.title}>
-              Cancel reservation?
+              Hủy đặt phòng?
             </Text>
             <Text style={s.description}>
               Your stay will be cancelled when you confirm. Tell us why so your request can be
               reviewed.
             </Text>
+            {!!booking.policy_snapshot&&<Text style={s.description}>{booking.policy_snapshot.cancellation}</Text>}
             <View style={s.booking}>
               <Text style={s.bookingTitle}>{booking.listing_title}</Text>
               <Text style={s.bookingDates}>
@@ -107,7 +108,7 @@ export const CancelReservationModal = ({
               <Text style={s.reference}>{booking.booking_code}</Text>
             </View>
             <Text style={s.label}>
-              Reason for cancellation <Text style={{ color: '#D85865' }}>*</Text>
+              Lý do hủy <Text style={{ color: '#D85865' }}>*</Text>
             </Text>
             <TextInput
               accessibilityLabel="Reason for cancellation"
@@ -161,7 +162,7 @@ export const CancelReservationModal = ({
               style={[s.confirm, busy && { opacity: 0.6 }]}
             >
               {busy && <ActivityIndicator color="white" size="small" />}
-              <Text style={s.confirmLabel}>{busy ? 'Cancelling...' : 'Confirm cancellation'}</Text>
+              <Text style={s.confirmLabel}>{busy ? 'Cancelling...' : "Xác nhận hủy"}</Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
@@ -170,7 +171,7 @@ export const CancelReservationModal = ({
               onPress={onClose}
               style={s.keep}
             >
-              <Text style={s.keepLabel}>Keep reservation</Text>
+              <Text style={s.keepLabel}>Giữ đặt phòng</Text>
             </Pressable>
           </View>
         </View>

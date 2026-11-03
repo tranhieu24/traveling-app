@@ -3,146 +3,33 @@ import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from '
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { ChevronLeft, RefreshCw, Star } from 'lucide-react-native';
 import { RootStackParamList } from '../types';
 import { useAuth } from '../context/AuthContext';
-import { fetchAllListingReviews } from '../services/listingDetail';
-import { reviewStats } from '../utils/listingDetail';
+import { fetchReviewPage, fetchReviewSummary } from '../services/listingDetail';
 import { ReviewCard } from '../components/listing/ReviewCard';
 
 export const AllReviewsScreen: React.FC = () => {
-  const {
-    params: { listingId, listingTitle },
-  } = useRoute<RouteProp<RootStackParamList, 'AllReviews'>>();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { user } = useAuth();
-  const result = useQuery({
-    queryKey: ['listing_reviews', listingId, 'all'],
-    queryFn: ({ signal }) => fetchAllListingReviews(listingId, signal),
-  });
-  const stats = reviewStats(result.data || []);
-  const back = () =>
-    navigation.canGoBack()
-      ? navigation.goBack()
-      : navigation.replace('ListingDetail', { listingId });
-  return (
-    <SafeAreaView edges={['top', 'bottom']} style={s.screen}>
-      <View style={s.frame}>
-        <View style={s.header}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Back from guest reviews"
-            onPress={back}
-            style={s.icon}
-          >
-            <ChevronLeft size={26} color="#929BA7" />
-          </Pressable>
-          <Text accessibilityRole="header" style={s.headerTitle}>
-            Reviews
-          </Text>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Refresh guest reviews"
-            disabled={result.isFetching}
-            onPress={() => void result.refetch()}
-            style={s.icon}
-          >
-            <RefreshCw size={17} color="#9BA6B3" />
-          </Pressable>
-        </View>
-        {result.isLoading ? (
-          <View style={s.center}>
-            <ActivityIndicator color="#00B8CE" />
-          </View>
-        ) : result.isError ? (
-          <View style={s.center}>
-            <Text style={s.emptyTitle}>Unable to load reviews</Text>
-            <Text style={s.copy}>Please check your connection and try again.</Text>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Retry all guest reviews"
-              onPress={() => result.refetch()}
-              style={s.button}
-            >
-              <Text style={s.buttonText}>Try again</Text>
-            </Pressable>
-          </View>
-        ) : !stats.total ? (
-          <View style={s.center}>
-            <Star size={36} color="#EAC44C" />
-            <Text style={s.emptyTitle}>No reviews yet</Text>
-            <Text style={s.copy}>This stay has no guest reviews yet.</Text>
-          </View>
-        ) : (
-          <FlatList
-            data={result.data}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={s.content}
-            renderItem={({ item }) => <ReviewCard review={item} />}
-            ListHeaderComponent={
-              <>
-                <View style={s.summary}>
-                  <Text style={s.score}>
-                    {stats.average.toFixed(1)}
-                    <Text style={s.outOf}>/5</Text>
-                  </Text>
-                  <Text style={s.total}>
-                    {stats.total} {stats.total === 1 ? 'review' : 'reviews'}
-                  </Text>
-                </View>
-                <View style={s.chart}>
-                  {[5, 4, 3, 2, 1].map((star) => (
-                    <View key={star} style={s.chartRow}>
-                      <Text style={s.starLabel}>{star}</Text>
-                      <Star size={12} color="#EAC44C" fill="#EAC44C" />
-                      <View
-                        accessibilityRole="progressbar"
-                        accessibilityLabel={`${star} star reviews`}
-                        accessibilityValue={{
-                          min: 0,
-                          max: stats.total,
-                          now: stats.counts[star - 1],
-                          text: `${stats.counts[star - 1]} of ${stats.total} reviews`,
-                        }}
-                        style={s.track}
-                      >
-                        <View
-                          style={[
-                            s.fill,
-                            { width: `${(stats.counts[star - 1] / stats.total) * 100}%` },
-                          ]}
-                        />
-                      </View>
-                      <Text style={s.chartCount}>{stats.counts[star - 1]}</Text>
-                    </View>
-                  ))}
-                </View>
-              </>
-            }
-          />
-        )}
-        <View style={s.footer}>
-          <Text style={s.eligibility}>Reviews can be submitted after a completed stay.</Text>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Write a review for this stay"
-            onPress={() =>
-              user
-                ? navigation.navigate('WriteReview', {
-                    listingId,
-                    listingTitle: listingTitle || 'Your stay',
-                  })
-                : navigation.navigate('Login')
-            }
-            style={s.write}
-          >
-            <Text style={s.writeText}>Write a review</Text>
-          </Pressable>
-        </View>
-      </View>
-    </SafeAreaView>
-  );
+  const {params:{listingId,listingTitle}}=useRoute<RouteProp<RootStackParamList,'AllReviews'>>();
+  const navigation=useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const {user}=useAuth();
+  const result=useInfiniteQuery({queryKey:['listing_reviews',listingId,'pages'],initialPageParam:1,queryFn:({pageParam,signal})=>fetchReviewPage(listingId,pageParam,12,signal),getNextPageParam:(last,_all,page)=>page<last.totalPages?page+1:undefined});
+  const summary=useQuery({queryKey:['listing_reviews',listingId,'summary'],queryFn:({signal})=>fetchReviewSummary(listingId,signal)});
+  const reviews=[...new Map(result.data?.pages.flatMap(page=>page.reviews).map(review=>[review.id,review])||[]).values()];
+  const stats=summary.data;
+  const refresh=()=>{void result.refetch();void summary.refetch();};
+  return <SafeAreaView edges={['top','bottom']} style={s.screen}><View style={s.frame}>
+    <View style={s.header}><Pressable accessibilityRole="button" accessibilityLabel="Quay lại từ đánh giá" style={s.icon} onPress={()=>navigation.canGoBack()?navigation.goBack():navigation.replace('ListingDetail',{listingId})}><ChevronLeft size={26} color="#617483"/></Pressable><Text accessibilityRole="header" style={s.headerTitle}>Đánh giá của khách</Text><Pressable accessibilityRole="button" accessibilityLabel="Tải lại đánh giá" onPress={refresh} style={s.icon}><RefreshCw size={18} color="#617483"/></Pressable></View>
+    {result.isLoading ? <View style={s.center}><ActivityIndicator color="#008A9A"/></View> : result.isError&&!reviews.length ? <View style={s.center}><Text style={s.emptyTitle}>Chưa tải được đánh giá</Text><Pressable onPress={refresh} style={s.button}><Text style={s.buttonText}>Thử lại</Text></Pressable></View> : <FlatList data={reviews} keyExtractor={item=>item.id} renderItem={({item})=><ReviewCard review={item}/>} contentContainerStyle={s.content}
+      ListHeaderComponent={<>
+        {stats ? <><View style={s.summary}><Text style={s.score}>{stats.total?stats.average.toFixed(1):'—'}<Text style={s.outOf}>/5</Text></Text><Text style={s.total}>{stats.total} đánh giá · Điểm tổng thể</Text></View><View style={s.chart}>{[5,4,3,2,1].map(star=><View key={star} style={s.chartRow}><Text style={s.starLabel}>{star}</Text><Star size={12} color="#EAC44C" fill="#EAC44C"/><View accessibilityRole="progressbar" accessibilityLabel={`${star} sao`} accessibilityValue={{min:0,max:stats.total||1,now:stats.counts[star-1]}} style={s.track}><View style={[s.fill,{width:`${stats.total?stats.counts[star-1]/stats.total*100:0}%`}]}/></View><Text style={s.chartCount}>{stats.counts[star-1]}</Text></View>)}</View></> : summary.isError ? <Pressable onPress={()=>void summary.refetch()} style={s.button}><Text>Chưa tải được thống kê. Chạm để thử lại.</Text></Pressable> : <ActivityIndicator/>}
+      </>}
+      ListEmptyComponent={<View style={s.center}><Text style={s.emptyTitle}>Chưa có đánh giá</Text><Text style={s.copy}>Đánh giá sẽ xuất hiện sau khi khách hoàn thành lưu trú.</Text></View>}
+      ListFooterComponent={<View style={{gap:12,paddingVertical:16}}>{result.isFetchNextPageError&&<Text accessibilityRole="alert">Chưa tải được trang tiếp theo. Các đánh giá đã tải vẫn được giữ.</Text>}{result.hasNextPage&&<Pressable accessibilityRole="button" disabled={result.isFetchingNextPage} onPress={()=>void result.fetchNextPage()} style={s.button}><Text style={s.buttonText}>{result.isFetchingNextPage?'Đang tải...':'Xem thêm Đánh giá'}</Text></Pressable>}</View>}/>
+    }
+    <View style={s.footer}><Text style={s.eligibility}>Chỉ khách đã hoàn thành lưu trú mới được viết đánh giá.</Text><Pressable accessibilityRole="button" accessibilityLabel="Viết đánh giá cho chỗ ở" style={s.write} onPress={()=>user?navigation.navigate('WriteReview',{listingId,listingTitle:listingTitle||'Chỗ ở của bạn'}):navigation.navigate('Login')}><Text style={s.writeText}>Viết đánh giá</Text></Pressable></View>
+  </View></SafeAreaView>;
 };
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#F0F2F5' },

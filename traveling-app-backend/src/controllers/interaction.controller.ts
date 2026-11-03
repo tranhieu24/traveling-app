@@ -4,6 +4,9 @@ import { favoriteRepository } from '../repositories/favorite.repository';
 import { reviewRepository } from '../repositories/review.repository';
 
 export class InteractionController {
+  async getReviewSummary(req: AuthenticatedRequest,res: Response,next: NextFunction) {
+    try { return sendSuccess(res,await reviewRepository.getSummary(req.params.id)); } catch(error) {next(error);}
+  }
   async getReviewEligibility(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
       if (!req.user) throw new AppError('Unauthorized', 401, 'UNAUTHORIZED');

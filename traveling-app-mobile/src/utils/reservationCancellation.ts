@@ -1,5 +1,5 @@
 import type { Booking } from '../types';
-import { isIsoDate, isoToday } from './checkout';
+import { isIsoDate, isoToday, addIsoDays } from './checkout';
 
 export const cancellationEligibility = (
   booking: Booking,
@@ -12,11 +12,11 @@ export const cancellationEligibility = (
     return { allowed: false, reason: 'This reservation can no longer be cancelled.' };
   if (booking.booking_status === 'confirmed') {
     const checkIn = booking.check_in_date.slice(0, 10);
-    if (!isIsoDate(checkIn) || checkIn <= today)
+    if (!isIsoDate(checkIn) || addIsoDays(checkIn,-(booking.policy_snapshot?.cancellationCutoffDays??0)) <= today)
       return {
         allowed: false,
         reason:
-          'Confirmed reservations can only be cancelled before the check-in date (UTC). Contact support for help.',
+          'Đã quá hạn hủy theo chính sách lưu trong đơn (UTC). Vui lòng gửi yêu cầu hỗ trợ.',
       };
   }
   return { allowed: true };

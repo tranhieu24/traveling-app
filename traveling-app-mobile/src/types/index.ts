@@ -24,7 +24,9 @@ export interface Amenity {
   category: string;
 }
 
+export interface MediaContext {contextLevel:'verified_property'|'illustrative';sourcePageUrl:string;creator:string;licenseName:string;licenseUrl:string;attributionText:string;altText:string;caption?:string}
 export interface ListingPhoto {
+  media_context?: MediaContext | null;
   id: string;
   listing_id: string;
   photo_url: string;
@@ -37,6 +39,7 @@ export type RoomType = 'entire_place' | 'private_room' | 'dormitory';
 export interface ListingPricing { currency: string; nightlyRate: number; roomSubtotal: number; cleaningFee: number; serviceFee: number; discountAmount: number; taxRate: number; taxAmount: number; tripTotal: number; totalNights: number }
 
 export interface Listing {
+  photo_context?: MediaContext | null;
   id: string;
   title: string;
   description?: string | null;
@@ -77,12 +80,12 @@ export interface Review {
   id: string;
   rating: number;
   comment: string;
-  cleanliness_rating: number;
-  accuracy_rating: number;
-  checkin_rating: number;
-  communication_rating: number;
-  location_rating: number;
-  value_rating: number;
+  cleanliness_rating?: number;
+  accuracy_rating?: number;
+  checkin_rating?: number;
+  communication_rating?: number;
+  location_rating?: number;
+  value_rating?: number;
   created_at: string;
   user_id: string;
   user_name: string;
@@ -124,6 +127,11 @@ export interface BookingRefund {
 }
 
 export interface Booking {
+  photo_context?: MediaContext | null;
+  server_time?: string;
+  contact_snapshot?: {fullName:string;email:string;phone?:string} | null;
+  policy_snapshot?: CheckoutPolicy | null;
+  policy_accepted_at?: string | null;
   id: string;
   booking_code: string;
   guest_id?: string;
@@ -164,7 +172,11 @@ export interface Booking {
   created_at: string;
 }
 
+export interface CheckoutPolicy { version:string; currency:string; depositAmount:number; cancellationCutoffDays?:number; timezone:string; cancellation:string; payment:string; hold:string }
 export interface BookingQuote {
+  photoContext?: MediaContext | null;
+  policy?: CheckoutPolicy;
+  serverTime?: string;
   currency?: string;
   taxAmount?: number;
   taxRate?: number;
@@ -191,6 +203,10 @@ export interface BookingQuote {
 export type RootStackParamList = {
   Splash: undefined;
   AuthCallback: undefined;
+  ForgotPassword: undefined;
+  ResetPassword: undefined;
+  Support: { bookingId?: string } | undefined;
+  AdminSupport: undefined;
   CreateAccount: undefined;
   Login: undefined;
   AdminLogin: undefined;

@@ -37,9 +37,9 @@ export function SocialSignInButtons({ disabled = false }: { disabled?: boolean }
       const profile = await signInWithSocialProvider(id);
       if (profile && !navigated.current) {
         navigated.current = true;
-        navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
+        navigation.reset({ index: 0, routes: [{ name: profile.role === 'admin' ? 'AdminPortal' : 'MainTabs' }] });
       } else if (!profile)
-        setMessage('Sign-in cancelled. You can try again or continue with email.');
+        setMessage('Bạn đã hủy đăng nhập. Có thể thử lại hoặc dùng email.');
     } catch (e) {
       setFailed(true);
       setMessage(e instanceof Error ? e.message : 'Unable to sign in. Please try again.');
@@ -58,7 +58,7 @@ export function SocialSignInButtons({ disabled = false }: { disabled?: boolean }
         style={[styles.button, { borderColor: '#BFC1C5', opacity: 0.55 }]}
       >
         <FontAwesome name="apple" size={21} color="#292C30" />
-        <Text style={[styles.text, { color: '#292C30' }]}>Apple - Coming soon</Text>
+        <Text style={[styles.text, { color: '#292C30' }]}>Apple - Sắp ra mắt</Text>
       </Pressable>
       {providers.map((item) => (
         <Pressable
@@ -83,7 +83,7 @@ export function SocialSignInButtons({ disabled = false }: { disabled?: boolean }
             <FontAwesome name={item.icon} size={21} color={item.color} />
           )}
           <Text style={[styles.text, { color: item.color }]}>
-            {provider === item.id ? `Connecting to ${item.name}...` : `Continue with ${item.name}`}
+            {provider === item.id ? `?ang k?t n?i ${item.name}...` : `Tiếp tục v?i ${item.name}`}
           </Text>
         </Pressable>
       ))}

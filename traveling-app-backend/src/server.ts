@@ -9,8 +9,13 @@ const startServer = async () => {
     if (!ENV.DATABASE_URL || !/^postgres(ql)?:\/\//.test(ENV.DATABASE_URL)) throw new Error('Configure DATABASE_URL explicitly before starting');
     if (!ENV.SUPABASE_URL || !ENV.SUPABASE_SERVICE_ROLE_KEY) throw new Error('Configure Supabase server credentials before starting');
     await pool.query('SELECT account_status,tokens_valid_after FROM public.users LIMIT 0');
+    await pool.query('SELECT contact_snapshot,policy_snapshot,client_request_id FROM public.bookings LIMIT 0');
+    await pool.query('SELECT media_context FROM public.listing_photos LIMIT 0');
+    await pool.query('SELECT id FROM public.support_tickets LIMIT 0');
+    await pool.query('SELECT body FROM public.support_messages LIMIT 0');
+    await pool.query('SELECT revision FROM public.booking_arrival_guides LIMIT 0');
     const schema = await pool.query("SELECT to_regprocedure('public.enforce_refund_state()') AS guard");
-    if (!schema.rows[0].guard) throw new Error('Review and apply backend migrations 001-004 before starting');
+    if (!schema.rows[0].guard) throw new Error('Review and apply backend migrations 001-006 before starting');
     // Kiểm tra kết nối Database
     const dbTest = await pool.query('SELECT NOW()');
     console.log(`[Database Connected]: PostgreSQL ready at ${dbTest.rows[0].now}`);

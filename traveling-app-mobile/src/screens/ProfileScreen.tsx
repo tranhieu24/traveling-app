@@ -121,7 +121,7 @@ export const ProfileScreen: React.FC = () => {
               {user && (
                 <View className="mt-2 bg-cyan-50 px-2.5 py-0.5 rounded-full self-start">
                   <Text className="text-[11px] font-semibold text-[#00BCD4] uppercase">
-                    {user.role || 'Guest'}
+                    {user.role || "Khách"}
                   </Text>
                 </View>
               )}
@@ -157,7 +157,7 @@ export const ProfileScreen: React.FC = () => {
                 className="bg-[#00BCD4] py-2.5 px-4 rounded-lg items-center"
               >
                 <Text className="text-white font-semibold text-sm">
-                  {isSaving ? 'Saving...' : 'Save Changes'}
+                  {isSaving ? 'Saving...' : "Lưu thay đổi"}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -183,7 +183,7 @@ export const ProfileScreen: React.FC = () => {
               <UserIcon size={20} color="#00BCD4" />
             </View>
             <Text className="text-sm font-semibold text-gray-800 flex-1">
-              Personal Information
+              Thông tin cá nhân
             </Text>
             <ChevronRight size={18} color="#9CA3AF" />
           </TouchableOpacity>
@@ -209,7 +209,7 @@ export const ProfileScreen: React.FC = () => {
           <TouchableOpacity
             accessibilityRole="button"
             accessibilityLabel="Settings & Notifications"
-            onPress={() => navigation.navigate('Settings')}
+            onPress={() => navigation.navigate("Settings")}
             className="flex-row items-center py-4 border-b border-gray-100"
             activeOpacity={0.7}
           >
@@ -234,7 +234,7 @@ export const ProfileScreen: React.FC = () => {
               <HelpCircle size={20} color="#00BCD4" />
             </View>
             <Text className="text-sm font-semibold text-gray-800 flex-1">
-              Help Center
+              Trợ giúp
             </Text>
             <ChevronRight size={18} color="#9CA3AF" />
           </TouchableOpacity>
@@ -276,8 +276,8 @@ export const ProfileScreen: React.FC = () => {
       >
         <View style={logoutStyles.overlay}>
           <View style={logoutStyles.card} accessibilityViewIsModal>
-            <Text accessibilityRole="header" style={logoutStyles.title}>Log out?</Text>
-            <Text style={logoutStyles.message}>Are you sure you want to log out?</Text>
+            <Text accessibilityRole="header" style={logoutStyles.title}>Đăng xuất?</Text>
+            <Text style={logoutStyles.message}>Bạn có muốn đăng xuất khỏi tài khoản?</Text>
             {!!logoutError && <Text accessibilityRole="alert" style={logoutStyles.error}>{logoutError}</Text>}
             <View style={logoutStyles.actions}>
               <Pressable

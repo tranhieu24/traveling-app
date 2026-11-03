@@ -46,7 +46,7 @@ import { reviewDate } from '../utils/listingDetail';
 import { ReviewStars } from '../components/listing/ReviewCard';
 
 type Phase = 'editing' | 'success' | 'already' | 'uncertain' | 'blocked';
-const ratingNames = ['Choose a rating', 'Poor', 'Fair', 'Good', 'Very good', 'Excellent'];
+const ratingNames = ["Chọn số sao", "Rất kém", "Chưa tốt", "Tốt", "Rất tốt", "Xuất sắc"];
 export const WriteReviewScreen: React.FC = () => {
   const {
     params: { listingId, listingTitle },
@@ -87,7 +87,7 @@ export const WriteReviewScreen: React.FC = () => {
       count < 1,
   });
   const data = access.data;
-  const title = data?.listingTitle || listingTitle || 'Your stay';
+  const title = data?.listingTitle || listingTitle || "Chỗ ở của bạn";
   const needsLogin =
     !authLoading &&
     (!user ||
@@ -224,7 +224,7 @@ export const WriteReviewScreen: React.FC = () => {
             <ChevronLeft size={23} color="#687483" />
           </Pressable>
           <Text accessibilityRole="header" style={s.headerTitle}>
-            Write a Review
+            Viết đánh giá
           </Text>
           <Pressable
             accessibilityRole="button"
@@ -256,20 +256,20 @@ export const WriteReviewScreen: React.FC = () => {
               onPress={() => navigation.navigate('Login')}
               style={s.primary}
             >
-              <Text style={s.primaryText}>Log in</Text>
+              <Text style={s.primaryText}>Đăng nhập</Text>
             </Pressable>
           </View>
         ) : !data || forbidden ? (
           <View style={s.center}>
             <Text style={s.stateTitle}>Unable to verify your stay</Text>
-            <Text style={s.stateCopy}>Please check your connection and try again.</Text>
+            <Text style={s.stateCopy}>Vui lòng kiểm tra kết nối rồi thử lại.</Text>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Retry review eligibility"
               onPress={() => void refresh()}
               style={s.primary}
             >
-              <Text style={s.primaryText}>Try again</Text>
+              <Text style={s.primaryText}>Thử lại</Text>
             </Pressable>
           </View>
         ) : (
@@ -347,7 +347,7 @@ export const WriteReviewScreen: React.FC = () => {
                 </View>
               ) : (
                 <>
-                  <Text style={s.subtitle}>How was your stay? Rate your overall experience.</Text>
+                  <Text style={s.subtitle}>Chuyến đi của bạn thế nào? Hãy đánh giá trải nghiệm chung.</Text>
                   <View style={s.verified}>
                     <ShieldCheck size={13} color="#00A6BA" />
                     <Text style={s.verifiedText}>Completed stay</Text>

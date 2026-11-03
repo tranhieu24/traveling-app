@@ -29,29 +29,10 @@ export const fetchReviewPage = async (
     totalPages: Number(body.pagination?.totalPages ?? 1),
   };
 };
-export const fetchAllListingReviews = async (
-  listingId: string,
-  signal?: AbortSignal
-): Promise<Review[]> => {
-  const reviews = new Map<string, Review>();
-  let page = 1,
-    pages = 1,
-    total = 0;
-  do {
-    const result = await fetchReviewPage(listingId, page, 50, signal);
-    if (
-      !Number.isSafeInteger(result.totalPages) ||
-      result.totalPages < 0 ||
-      result.totalPages > 100000 ||
-      (page < result.totalPages && !result.reviews.length)
-    )
-      throw new Error('Review history is incomplete. Please refresh.');
-    pages = result.totalPages;
-    total = result.total;
-    for (const review of result.reviews) reviews.set(review.id, review);
-    page++;
-  } while (page <= pages);
-  if (reviews.size !== total)
-    throw new Error('Reviews changed while loading. Please refresh for the latest list.');
-  return [...reviews.values()];
-};
+export interface ReviewSummary {total:number;average:number;counts:number[]}
+export async function fetchReviewSummary(listingId:string,signal?:AbortSignal):Promise<ReviewSummary> {
+  const {data}=await apiClient.get(`/listings/${encodeURIComponent(listingId)}/review-summary`,{signal});
+  const value=data.data;
+  if(!data.success || !Number.isSafeInteger(value?.total) || !Array.isArray(value.counts) || value.counts.length!==5) throw new Error('Không tải được thống kê đánh giá.');
+  return value;
+}

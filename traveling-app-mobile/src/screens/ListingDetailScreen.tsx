@@ -1,3 +1,4 @@
+import { MediaNotice } from '../components/common/MediaNotice';
 import React, { useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -246,7 +247,7 @@ export const ListingDetailScreen: React.FC = () => {
     } catch {
       setNotice({
         title: 'Could not open map',
-        message: 'Please check your connection and try again.',
+        message: "Vui lòng kiểm tra kết nối rồi thử lại.",
       });
     }
   };
@@ -287,7 +288,7 @@ export const ListingDetailScreen: React.FC = () => {
                   onPress={() => void detail.refetch()}
                   style={s.book}
                 >
-                  <Text style={s.bookLabel}>Try again</Text>
+                  <Text style={s.bookLabel}>Thử lại</Text>
                 </Pressable>
               </>
             )}
@@ -364,6 +365,7 @@ export const ListingDetailScreen: React.FC = () => {
             }
           />
           <View style={s.intro}>
+            <MediaNotice context={listing.photo_context} compact/>
             <Text style={s.title}>{listing.title}</Text>
             <View style={s.location}>
               <MapPin size={15} color="#00B8CE" />
@@ -375,7 +377,7 @@ export const ListingDetailScreen: React.FC = () => {
                 accessibilityLabel="View room map"
                 onPress={() => void openMap()}
               >
-                <Text style={s.mapLink}>View map</Text>
+                <Text style={s.mapLink}>Xem bản đồ</Text>
               </Pressable>
             </View>
             <Pressable
@@ -429,14 +431,14 @@ export const ListingDetailScreen: React.FC = () => {
           </View>
           <View style={s.section}>
             <View style={s.headingRow}>
-              <Text style={s.heading}>Reviews</Text>
+              <Text style={s.heading}>Đánh giá</Text>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="See all reviews"
                 onPress={openReviews}
                 style={s.seeAll}
               >
-                <Text style={s.seeAllText}>See all</Text>
+                <Text style={s.seeAllText}>Xem tất cả</Text>
                 <ChevronRight size={14} color="#A2AAB5" />
               </Pressable>
             </View>
@@ -452,10 +454,10 @@ export const ListingDetailScreen: React.FC = () => {
                 accessibilityLabel="Retry room reviews"
                 onPress={() => reviews.refetch()}
               >
-                <Text style={s.muted}>Unable to load reviews. Tap to retry.</Text>
+                <Text style={s.muted}>Chưa tải được đánh giá. Chạm để thử lại.</Text>
               </Pressable>
             ) : !reviews.data?.reviews.length ? (
-              <Text style={s.muted}>No reviews yet for this stay.</Text>
+              <Text style={s.muted}>Chỗ ở này chưa có đánh giá.</Text>
             ) : (
               <ScrollView
                 horizontal
@@ -469,9 +471,9 @@ export const ListingDetailScreen: React.FC = () => {
             )}
           </View>
           <View style={s.section}>
-            <Text style={s.heading}>Policies</Text>
+            <Text style={s.heading}>Chính sách</Text>
             <HouseRules listing={listing} />
-            <Text style={s.subheading}>Checkin policies</Text>
+            <Text style={s.subheading}>Điều kiện nhận phòng</Text>
             <View style={{ maxHeight: 44, overflow: 'hidden' }}>
               <CheckinPolicy listing={listing} />
             </View>
@@ -481,17 +483,18 @@ export const ListingDetailScreen: React.FC = () => {
               onPress={() => setPanel('policies')}
               style={s.outline}
             >
-              <Text style={s.outlineLabel}>View more</Text>
+              <Text style={s.outlineLabel}>Xem thêm</Text>
               <ChevronRight size={14} color="#A6AEB7" />
             </Pressable>
           </View>
           <View style={s.section}>
-            <Text style={s.heading}>Description</Text>
+            <MediaNotice context={listing.photo_context}/>
+            <Text style={s.heading}>Mô tả</Text>
             <View style={s.descriptionPhoto}>
               <ListingImage url={descriptionPhoto} />
             </View>
             <Text style={s.description} numberOfLines={4}>
-              {listing.description?.trim() || 'No description has been provided for this stay.'}
+              {listing.description?.trim() || "Cơ sở chưa cung cấp mô tả cho chỗ ở này."}
             </Text>
             <Pressable
               accessibilityRole="button"
@@ -499,7 +502,7 @@ export const ListingDetailScreen: React.FC = () => {
               onPress={() => setPanel('description')}
               style={s.outline}
             >
-              <Text style={s.outlineLabel}>View more</Text>
+              <Text style={s.outlineLabel}>Xem thêm</Text>
               <ChevronRight size={14} color="#A6AEB7" />
             </Pressable>
           </View>
@@ -528,7 +531,7 @@ export const ListingDetailScreen: React.FC = () => {
             style={[s.book, (authLoading || quoting) && { opacity: 0.6 }]}
           >
             {quoting && <ActivityIndicator color="white" size="small" />}
-            <Text style={s.bookLabel}>{quoting ? 'Checking...' : 'Book now'}</Text>
+            <Text style={s.bookLabel}>{quoting ? 'Checking...' : "Đặt phòng"}</Text>
           </Pressable>
         </View>
         <ListingPhotoGallery
@@ -579,7 +582,7 @@ export const ListingDetailScreen: React.FC = () => {
                   }}
                   style={s.book}
                 >
-                  <Text style={s.bookLabel}>Log in</Text>
+                  <Text style={s.bookLabel}>Đăng nhập</Text>
                 </Pressable>
               )}
               {notice?.dates && (
@@ -601,7 +604,7 @@ export const ListingDetailScreen: React.FC = () => {
                 onPress={() => setNotice(null)}
                 style={s.outline}
               >
-                <Text style={s.outlineLabel}>Close</Text>
+                <Text style={s.outlineLabel}>Đóng</Text>
               </Pressable>
             </View>
           </View>
@@ -612,7 +615,7 @@ export const ListingDetailScreen: React.FC = () => {
 };
 const errorMessage = (error: unknown): string =>
   axios.isAxiosError(error)
-    ? error.response?.data?.error?.message || 'Please check your connection and try again.'
+    ? error.response?.data?.error?.message || "Vui lòng kiểm tra kết nối rồi thử lại."
     : error instanceof Error
       ? error.message
       : 'Please try again.';

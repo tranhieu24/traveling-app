@@ -149,6 +149,7 @@ export interface FavoriteEntity {
 
 export interface ApiResponse<T = any> {
   success: boolean;
+  serverTime?: string;
   data?: T;
   pagination?: {
     page: number;
@@ -185,6 +186,7 @@ export const sendSuccess = <T>(
 ) => {
   const payload: ApiResponse<T> = {
     success: true,
+    serverTime: new Date().toISOString(),
     data,
   };
   if (pagination) {

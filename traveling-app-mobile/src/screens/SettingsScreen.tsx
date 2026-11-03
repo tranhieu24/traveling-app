@@ -161,7 +161,7 @@ export const SettingsScreen: React.FC = () => {
             <>
               <Text style={styles.cardTitle}>Keep your account secure</Text>
               <Text style={styles.description}>Log in to change your account password.</Text>
-              <Pressable accessibilityRole="button" accessibilityLabel="Log in to manage settings" onPress={() => navigation.navigate('Login')} style={styles.primaryButton}><Text style={styles.primaryLabel}>Log in</Text></Pressable>
+              <Pressable accessibilityRole="button" accessibilityLabel="Log in to manage settings" onPress={() => navigation.navigate('Login')} style={styles.primaryButton}><Text style={styles.primaryLabel}>Đăng nhập</Text></Pressable>
             </>
           )}
         </View>

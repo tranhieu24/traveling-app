@@ -1,4 +1,5 @@
-import { randomUUID } from 'crypto';
+import { createHash, randomUUID } from 'crypto';
+import { getCheckoutPolicy,bookingDepositCents,cancellationCutoff } from '../domain/checkout';
 import { pool } from '../config/database';
 import { ENV } from '../config/env';
 import { AppError } from '../types';
@@ -24,7 +25,7 @@ export async function expireListingHolds(c: PoolClient, listingId: string) {
 const bookingSelect = `SELECT b.*, (b.price_per_night*b.total_nights) AS base_price_total,
   b.price_per_night AS nightly_rate, b.total_price AS trip_total,
   l.title listing_title,l.city listing_city,l.country listing_country,l.address listing_address,
-  l.property_type,l.host_id,u.full_name guest_name,u.email guest_email,lp.photo_url cover_photo,
+  l.property_type,l.host_id,u.full_name guest_name,u.email guest_email,lp.photo_url cover_photo,lp.media_context photo_context,
   coalesce(p.paid,0)::numeric(12,2) amount_paid,coalesce(r.refunded,0)::numeric(12,2) amount_refunded,
   (coalesce(p.paid,0)-coalesce(r.refunded,0))::numeric(12,2) net_paid,
   CASE WHEN b.booking_status IN ('cancelled','expired') THEN 0 ELSE greatest(b.total_price-coalesce(p.paid,0)+coalesce(r.refunded,0),0) END::numeric(12,2) balance_due,
@@ -33,7 +34,7 @@ const bookingSelect = `SELECT b.*, (b.price_per_night*b.total_nights) AS base_pr
     WHEN coalesce(p.paid,0)>0 THEN 'partially_paid' ELSE 'pending' END payment_status,
   coalesce(p.transactions,'[]'::jsonb) payments,coalesce(r.refunds,'[]'::jsonb) refunds
  FROM bookings b JOIN listings l ON l.id=b.listing_id JOIN users u ON u.id=b.guest_id
- LEFT JOIN LATERAL (SELECT photo_url FROM listing_photos WHERE listing_id=l.id ORDER BY is_cover DESC,display_order,id LIMIT 1) lp ON true
+ LEFT JOIN LATERAL (SELECT photo_url,media_context FROM listing_photos WHERE listing_id=l.id ORDER BY is_cover DESC,display_order,id LIMIT 1) lp ON true
  LEFT JOIN LATERAL (SELECT sum(amount) FILTER(WHERE payment_status='succeeded') paid,
    count(*) FILTER(WHERE payment_status='succeeded') n,jsonb_agg(to_jsonb(x) ORDER BY x.created_at,x.id) transactions FROM payments x WHERE booking_id=b.id) p ON true
  LEFT JOIN LATERAL (SELECT sum(amount) FILTER(WHERE status='succeeded') refunded,jsonb_agg(to_jsonb(x) ORDER BY x.created_at,x.id) refunds FROM refunds x WHERE booking_id=b.id) r ON true`;
@@ -42,21 +43,31 @@ export class BookingRepository {
   async quoteBooking(listingId: string, checkInDate: string, checkOutDate: string, guests: number, couponCode?: string, userId?: string) {
     const nights = validateStay(checkInDate,checkOutDate,guests);
     return transaction(async c => {
-      const listing = (await c.query("SELECT l.*,lp.photo_url cover_photo FROM listings l JOIN categories cat ON cat.id=l.category_id LEFT JOIN LATERAL (SELECT photo_url FROM listing_photos WHERE listing_id=l.id ORDER BY is_cover DESC,display_order,id LIMIT 1) lp ON true WHERE l.id=$1 AND l.is_active AND cat.is_active",[listingId])).rows[0];
+      const listing = (await c.query("SELECT l.*,lp.photo_url cover_photo,lp.media_context photo_context FROM listings l JOIN categories cat ON cat.id=l.category_id LEFT JOIN LATERAL (SELECT photo_url,media_context FROM listing_photos WHERE listing_id=l.id ORDER BY is_cover DESC,display_order,id LIMIT 1) lp ON true WHERE l.id=$1 AND l.is_active AND cat.is_active",[listingId])).rows[0];
       if (!listing) throw new AppError('Listing unavailable',404,'LISTING_NOT_FOUND');
       validateStay(checkInDate,checkOutDate,guests,listing.max_guests);
       const conflicts = await c.query("SELECT 1 FROM bookings WHERE listing_id=$1 AND (booking_status='confirmed' OR (booking_status='pending' AND payment_due_at>now())) AND check_in_date<$2::date AND check_out_date>$3::date",[listingId,checkOutDate,checkInDate]);
       if (conflicts.rows.length) throw new AppError('Selected dates unavailable',409,'DATES_UNAVAILABLE');
       const coupon = await applyCoupon(c,couponCode,listing,userId,cents(listing.price_per_night)*nights);
       const price = priceStay(listing,nights,coupon.discountCents,ENV.TAX_RATE);
-      return {...price,listingId,title:listing.title,city:listing.city,coverPhoto:listing.cover_photo,checkInDate,checkOutDate,guests,maxGuests:listing.max_guests,
-        pricePerNight:price.nightlyRate,basePriceTotal:price.roomSubtotal,totalPrice:price.tripTotal,quoteIsReservation:false};
+      return {...price,listingId,title:listing.title,city:listing.city,coverPhoto:listing.cover_photo,photoContext:listing.photo_context,checkInDate,checkOutDate,guests,maxGuests:listing.max_guests,
+        pricePerNight:price.nightlyRate,basePriceTotal:price.roomSubtotal,totalPrice:price.tripTotal,quoteIsReservation:false,policy:getCheckoutPolicy(),serverTime:new Date().toISOString()};
     });
   }
 
-  async createBookingWithTransaction(data: {listingId:string;guestId:string;checkInDate:string;checkOutDate:string;guests:number;specialRequests?:string;paymentPlan?:string;couponCode?:string}) {
+  async createBookingWithTransaction(data: {listingId:string;guestId:string;checkInDate:string;checkOutDate:string;guests:number;specialRequests?:string;paymentPlan?:string;couponCode?:string;requestId?:string;expectedTotalCents?:number;checkout?:{contact:{fullName:string;email:string;phone?:string};policyVersion:string;accepted:true}}) {
     const nights = validateStay(data.checkInDate,data.checkOutDate,data.guests);
+    const fingerprint = createHash('sha256').update(JSON.stringify([data.listingId,data.checkInDate,data.checkOutDate,data.guests,data.paymentPlan||'full',data.couponCode||null,data.specialRequests||null,data.checkout||null,data.expectedTotalCents??null])).digest('hex');
     try { return await transaction(async c => {
+      if (data.requestId) {
+        await c.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',[data.guestId+':booking:'+data.requestId]);
+        const previous=(await c.query('SELECT * FROM bookings WHERE guest_id=$1 AND client_request_id=$2',[data.guestId,data.requestId])).rows[0];
+        if(previous) {
+          if(previous.request_fingerprint!==fingerprint) throw new AppError('Mã yêu cầu đã dùng cho dữ liệu khác',409,'BOOKING_REQUEST_CONFLICT');
+          const saved=(await c.query(bookingSelect+' WHERE b.id=$1',[previous.id])).rows[0];
+          return {booking:saved,payment:null};
+        }
+      }
       const listing = (await c.query("SELECT * FROM listings WHERE id=$1 AND is_active FOR UPDATE",[data.listingId])).rows[0];
       if (!listing) throw new AppError('Listing unavailable',404,'LISTING_NOT_FOUND');
       const category = (await c.query('SELECT is_active FROM categories WHERE id=$1 FOR SHARE',[listing.category_id])).rows[0];
@@ -68,9 +79,13 @@ export class BookingRepository {
       const coupon = await applyCoupon(c,data.couponCode,listing,data.guestId,cents(listing.price_per_night)*nights,true);
       const p = priceStay(listing,nights,coupon.discountCents,ENV.TAX_RATE);
       if (p.tripTotal<=0) throw new AppError('Zero-total bookings require a separate complimentary workflow',400,'INVALID_AMOUNT');
+      if(data.expectedTotalCents!==undefined && data.expectedTotalCents!==cents(p.tripTotal)) throw new AppError('Giá đã thay đổi. Vui lòng lấy báo giá mới trước khi đặt.',409,'PRICE_CHANGED');
+      if(data.checkout && data.checkout.policyVersion!==getCheckoutPolicy().version) throw new AppError('Chính sách đã thay đổi. Vui lòng xem lại trước khi đặt.',409,'POLICY_CHANGED');
+      const guest=(await c.query('SELECT full_name,email,phone_number FROM users WHERE id=$1',[data.guestId])).rows[0];
+      const contact=data.checkout?.contact || {fullName:guest.full_name,email:guest.email,phone:guest.phone_number||undefined};
       const b = (await c.query(
-        "INSERT INTO bookings(booking_code,listing_id,guest_id,check_in_date,check_out_date,number_of_guests,price_per_night,cleaning_fee,service_fee,total_price,discount_amount,tax_amount,tax_rate,coupon_id,payment_plan,payment_due_at,special_requests) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,now()+make_interval(mins=>$16),$17) RETURNING *",
-        ['TRV-'+randomUUID().replace(/-/g,'').slice(0,16),data.listingId,data.guestId,data.checkInDate,data.checkOutDate,data.guests,p.nightlyRate,p.cleaningFee,p.serviceFee,p.tripTotal,p.discountAmount,p.taxAmount,p.taxRate,coupon.couponId,data.paymentPlan||'full',ENV.PAYMENT_HOLD_MINUTES,data.specialRequests||null])).rows[0];
+        "INSERT INTO bookings(booking_code,listing_id,guest_id,check_in_date,check_out_date,number_of_guests,price_per_night,cleaning_fee,service_fee,total_price,discount_amount,tax_amount,tax_rate,coupon_id,payment_plan,payment_due_at,special_requests,contact_snapshot,policy_snapshot,policy_accepted_at,client_request_id,request_fingerprint) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,now()+make_interval(mins=>$16),$17,$18::jsonb,$19::jsonb,CASE WHEN $20::boolean THEN now() ELSE NULL END,$21,$22) RETURNING *",
+        ['TRV-'+randomUUID().replace(/-/g,'').slice(0,16),data.listingId,data.guestId,data.checkInDate,data.checkOutDate,data.guests,p.nightlyRate,p.cleaningFee,p.serviceFee,p.tripTotal,p.discountAmount,p.taxAmount,p.taxRate,coupon.couponId,data.paymentPlan||'full',ENV.PAYMENT_HOLD_MINUTES,data.specialRequests||null,JSON.stringify(contact),JSON.stringify(getCheckoutPolicy()),!!data.checkout?.accepted,data.requestId||null,fingerprint])).rows[0];
       if (coupon.couponId) {
         await c.query('UPDATE coupons SET used_count=used_count+1 WHERE id=$1',[coupon.couponId]);
         await c.query('INSERT INTO coupon_redemptions(booking_id,coupon_id,user_id) VALUES($1,$2,$3)',[b.id,coupon.couponId,data.guestId]);
@@ -96,7 +111,7 @@ export class BookingRepository {
       const b = (await c.query('SELECT * FROM bookings WHERE id=$1 AND (guest_id=$2 OR $3) FOR UPDATE',[id,userId,admin])).rows[0];
       if (!b) throw new AppError('Booking not found',404,'BOOKING_NOT_FOUND');
       assertTransition('booking',b.booking_status,'cancelled');
-      if (b.booking_status==='confirmed' && b.check_in_date<=today()) throw new AppError('Cancellation must be requested before check-in date (UTC)',409,'CANCELLATION_WINDOW_CLOSED');
+      if (b.booking_status==='confirmed' && Date.now()>=cancellationCutoff(b)) throw new AppError('Đã quá hạn hủy theo chính sách lưu trong đơn (UTC).',409,'CANCELLATION_WINDOW_CLOSED');
       const result = (await c.query("UPDATE bookings SET booking_status='cancelled',cancelled_at=now(),cancellation_reason=$2 WHERE id=$1 RETURNING *",[id,reason])).rows[0];
       await c.query("UPDATE payments SET payment_status='timed_out',updated_at=now() WHERE booking_id=$1 AND payment_status='pending'",[id]);
       const refunds = await requestRefunds(c,id,reason);
@@ -112,7 +127,7 @@ export class BookingRepository {
       const paid = (await c.query("SELECT coalesce(sum(amount),0) paid FROM payments WHERE booking_id=$1 AND payment_status='succeeded'",[id])).rows[0];
       const refunded = (await c.query("SELECT coalesce(sum(amount),0) refunded FROM refunds WHERE booking_id=$1 AND status='succeeded'",[id])).rows[0];
       const net = cents(paid.paid)-cents(refunded.refunded);
-      const required = target==='completed' || b.payment_plan==='full' ? cents(b.total_price) : Math.min(3000,cents(b.total_price));
+      const required = target==='completed' || b.payment_plan==='full' ? cents(b.total_price) : Math.min(bookingDepositCents(b),cents(b.total_price));
       if (net<required) throw new AppError('Insufficient verified payment',409,'PAYMENT_REQUIRED');
       if (target==='confirmed' && (!b.payment_due_at || new Date(b.payment_due_at).getTime()<=Date.now())) throw new AppError('Payment hold expired',409,'BOOKING_EXPIRED');
       if (target==='completed' && b.check_out_date>today()) throw new AppError('Cannot complete before check-out date (UTC)',409,'STAY_NOT_ENDED');

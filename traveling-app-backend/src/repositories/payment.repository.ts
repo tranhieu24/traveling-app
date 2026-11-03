@@ -1,3 +1,4 @@
+import { bookingDepositCents } from '../domain/checkout';
 import { createHash, randomUUID } from 'crypto';
 import { PoolClient } from 'pg';
 import { z } from 'zod';
@@ -32,7 +33,7 @@ export class PaymentRepository {
       if(remaining<=0) throw new AppError('Booking fully paid',409,'ALREADY_PAID');
       if(plan==='deposit' && (b.payment_plan!=='deposit' || cents(paid.paid)>0)) throw new AppError('Deposit is available only as the first payment of a deposit booking',409,'INVALID_PAYMENT_PLAN');
       if(plan==='balance' && cents(paid.paid)===0) throw new AppError('No deposit paid',409,'INVALID_PAYMENT_PLAN');
-      const amount=plan==='deposit'?Math.min(3000,remaining):remaining;
+      const amount=plan==='deposit'?Math.min(bookingDepositCents(b),remaining):remaining;
       if(ENV.PAYMENT_MODE==='stripe_test' && (amount<50 || amount>99999999)) throw new AppError('Amount outside Stripe limits',400,'PROVIDER_AMOUNT_LIMIT');
       return (await c.query("INSERT INTO payments(booking_id,user_id,amount,currency,payment_method,provider,is_simulated,idempotency_key,requested_plan,expires_at) VALUES($1,$2,$3,'USD',$4::text,$4::text,$5,$6,$7,least(coalesce($8::timestamptz,now()+interval '15 minutes'),now()+interval '15 minutes')) RETURNING *",
         [bookingId,userId,money(amount),ENV.PAYMENT_MODE,ENV.PAYMENT_MODE==='mock',key,plan,b.payment_due_at])).rows[0];
@@ -69,7 +70,7 @@ export class PaymentRepository {
     } else if(cents(paid.paid)>cents(b.total_price)) {
       await c.query("INSERT INTO refunds(payment_id,booking_id,amount,reason) VALUES($1,$2,$3,'Excess late payment; requires approval') ON CONFLICT(payment_id) DO NOTHING",[p.id,b.id,p.amount]);
     } else {
-      const required=b.payment_plan==='deposit'?Math.min(3000,cents(b.total_price)):cents(b.total_price);
+      const required=b.payment_plan==='deposit'?Math.min(bookingDepositCents(b),cents(b.total_price)):cents(b.total_price);
       if(b.booking_status==='pending' && cents(paid.paid)>=required) await c.query("UPDATE bookings SET booking_status='confirmed',payment_due_at=NULL WHERE id=$1",[b.id]);
     }
     return {paymentId:p.id,status:target};

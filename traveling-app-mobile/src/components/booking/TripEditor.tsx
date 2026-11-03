@@ -103,7 +103,7 @@ export const TripEditor: React.FC<Props> = ({ mode, trip, maxGuests, onClose, on
                   const minusDisabled = saving || draft[field] <= minimum;
                   const plusDisabled = saving || draft.adults + draft.children >= maxGuests;
                   return <View key={field} style={styles.guestRow}>
-                    <View style={styles.guestCopy}><Text style={styles.guestTitle}>{field === 'adults' ? 'Adults' : 'Children'}</Text><Text style={styles.muted}>{field === 'adults' ? 'At least one adult' : 'Included in the total guests'}</Text></View>
+                    <View style={styles.guestCopy}><Text style={styles.guestTitle}>{field === 'adults' ? "Người lớn" : "Trẻ em"}</Text><Text style={styles.muted}>{field === 'adults' ? 'At least one adult' : 'Included in the total guests'}</Text></View>
                     <Pressable accessibilityRole="button" accessibilityLabel={`Remove ${field === 'adults' ? 'adult' : 'child'}`} disabled={minusDisabled} onPress={() => setDraft((current) => ({ ...current, [field]: current[field] - 1 }))} style={[styles.counterButton, minusDisabled && styles.disabled]}><Minus size={17} color="#4B5563" /></Pressable>
                     <Text style={styles.counterValue}>{draft[field]}</Text>
                     <Pressable accessibilityRole="button" accessibilityLabel={`Add ${field === 'adults' ? 'adult' : 'child'}`} disabled={plusDisabled} onPress={() => setDraft((current) => ({ ...current, [field]: current[field] + 1 }))} style={[styles.counterButton, plusDisabled && styles.disabled]}><Plus size={17} color="#4B5563" /></Pressable>

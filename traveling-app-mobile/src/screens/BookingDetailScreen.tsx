@@ -1,3 +1,5 @@
+import { TripProgress } from '../components/booking/TripProgress';
+import { MediaNotice } from '../components/common/MediaNotice';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
@@ -30,6 +32,7 @@ import {
 } from '../utils/reservationCancellation';
 import { CancelReservationModal } from '../components/booking/CancelReservationModal';
 import { CancellationStatus } from '../components/booking/CancellationStatus';
+import { BookingHold } from '../components/booking/BookingHold';
 import { Header } from '../components/common/Header';
 import { Button } from '../components/common/Button';
 
@@ -149,7 +152,7 @@ export const BookingDetailScreen: React.FC = () => {
         edges={['top', 'bottom', 'left', 'right']}
         style={{ flex: 1, backgroundColor: '#FFFFFF' }}
       >
-        <Header title="Reservation Details" onBack={handleBack} />
+        <Header title="Chi tiết đặt phòng" onBack={handleBack} />
         <View className="flex-1 items-center justify-center px-6">
           {authLoading || (!!user && isLoading) ? (
             <ActivityIndicator size="large" color="#00BCD4" />
@@ -161,10 +164,10 @@ export const BookingDetailScreen: React.FC = () => {
               <Text className="text-sm text-dark-muted text-center mb-4">
                 {needsLogin
                   ? 'Reservation and payment details are private.'
-                  : 'Please check your connection and try again.'}
+                  : "Vui lòng kiểm tra kết nối rồi thử lại."}
               </Text>
               <Button
-                title={needsLogin ? 'Log in' : 'Try again'}
+                title={needsLogin ? "Đăng nhập" : "Thử lại"}
                 accessibilityRole="button"
                 accessibilityLabel={
                   needsLogin ? 'Log in to view reservation' : 'Retry reservation details'
@@ -189,13 +192,17 @@ export const BookingDetailScreen: React.FC = () => {
       edges={['top', 'bottom', 'left', 'right']}
       style={{ flex: 1, backgroundColor: '#FFFFFF' }}
     >
-      <Header title="Reservation Details" onBack={handleBack} />
+      <Header title="Chi tiết đặt phòng" onBack={handleBack} />
 
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ padding: 20, paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
       >
+        <MediaNotice context={booking.photo_context}/>
+        <BookingHold booking={booking} onRefresh={()=>void refetch()} onRebook={()=>navigation.navigate('ListingDetail',{listingId:booking.listing_id})}/>
+        {booking.guest_id===user?.id&&<><TripProgress bookingId={bookingId}/><Button title="Yêu cầu hỗ trợ đơn này" onPress={()=>navigation.navigate('Support',{bookingId})}/></>}
+        {booking.contact_snapshot && <View className="mb-4 p-4 bg-gray-50 rounded-xl"><Text className="font-bold text-dark mb-2">Thông tin liên hệ của đơn</Text><Text>{booking.contact_snapshot.fullName}</Text><Text>{booking.contact_snapshot.email}</Text>{!!booking.contact_snapshot.phone&&<Text>{booking.contact_snapshot.phone}</Text>}</View>}
         {isError && (
           <View className="mb-4 p-3 rounded-xl bg-amber-50">
             <Text accessibilityRole="alert" className="text-xs text-dark-muted leading-5">
@@ -207,7 +214,7 @@ export const BookingDetailScreen: React.FC = () => {
               onPress={() => void refetch()}
               className="mt-2 py-2"
             >
-              <Text className="text-xs text-primary font-semibold">Try again</Text>
+              <Text className="text-xs text-primary font-semibold">Thử lại</Text>
             </Pressable>
           </View>
         )}
@@ -238,7 +245,7 @@ export const BookingDetailScreen: React.FC = () => {
             >
               <FileText size={14} color="#00BCD4" />
               <Text className="text-xs font-bold text-primary ml-1.5">
-                {receiptBusy ? 'Preparing...' : 'PDF Receipt'}
+                {receiptBusy ? "Đang chuẩn bị..." : "Chứng từ PDF"}
               </Text>
             </TouchableOpacity>
           )}
@@ -311,7 +318,7 @@ export const BookingDetailScreen: React.FC = () => {
 
         {/* Payment Summary */}
         <View className="pb-5 mb-5 border-b border-gray-100">
-          <Text className="text-base font-bold text-dark mb-3">Payment Summary</Text>
+          <Text className="text-base font-bold text-dark mb-3">Tóm tắt thanh toán</Text>
           <View className="flex-row justify-between mb-1.5">
             <Text className="text-xs text-dark">Base Price</Text>
             <Text className="text-xs font-semibold text-dark">
@@ -332,7 +339,7 @@ export const BookingDetailScreen: React.FC = () => {
           </View>
           {Number(booking.discount_amount || 0) > 0 && (
             <View className="flex-row justify-between mb-2">
-              <Text className="text-xs text-dark">Discount</Text>
+              <Text className="text-xs text-dark">Giảm giá</Text>
               <Text className="text-xs font-semibold text-dark">
                 -${Number(booking.discount_amount).toFixed(2)}
               </Text>
@@ -364,7 +371,7 @@ export const BookingDetailScreen: React.FC = () => {
             </View>
             {!isCancelled && booking.booking_status !== 'expired' && (
               <View className="flex-row justify-between">
-                <Text className="text-xs text-dark">Remaining balance</Text>
+                <Text className="text-xs text-dark">Số tiền còn lại</Text>
                 <Text className="text-xs font-semibold text-primary">
                   ${Number(booking.balance_due || 0).toFixed(2)}
                 </Text>
@@ -401,7 +408,7 @@ export const BookingDetailScreen: React.FC = () => {
               accessibilityRole="button"
               accessibilityLabel={paymentAction.label}
               onPress={() =>
-                navigation.navigate('Payment', { bookingId, plan: paymentAction.plan })
+                navigation.navigate("Payment", { bookingId, plan: paymentAction.plan })
               }
             />
           </View>
@@ -429,7 +436,7 @@ export const BookingDetailScreen: React.FC = () => {
                 }}
               >
                 <Text style={{ color: '#D86472', fontSize: 13, fontWeight: '500' }}>
-                  Cancel Reservation
+                  Hủy đặt phòng
                 </Text>
               </Pressable>
               {!eligibility.allowed && (
@@ -452,7 +459,7 @@ export const BookingDetailScreen: React.FC = () => {
         {booking.booking_status === 'completed' && booking.guest_id === user?.id && (
           <View className="mb-6">
             <Button
-              title="Write a Review"
+              title="Viết đánh giá"
               accessibilityRole="button"
               accessibilityLabel="Review completed stay"
               onPress={() =>
@@ -464,7 +471,7 @@ export const BookingDetailScreen: React.FC = () => {
               variant="outline"
             />
             <Text className="text-xs text-dark-muted text-center mt-3">
-              Share your experience after your completed stay.
+              Chia sẻ trải nghiệm sau khi hoàn thành lưu trú.
             </Text>
           </View>
         )}

@@ -5,7 +5,7 @@ export class FavoriteRepository {
   async getUserFavorites(userId:string,page=1,limit=12) {
     const condition="f.user_id=$1 AND l.is_active AND c.is_active";
     const total=(await pool.query('SELECT count(*)::int n FROM favorites f JOIN listings l ON l.id=f.listing_id JOIN categories c ON c.id=l.category_id WHERE '+condition,[userId])).rows[0].n;
-    const rows=(await pool.query("SELECT l.*,c.name category_name,c.slug category_slug,lp.photo_url cover_photo,true is_favorite,f.created_at favorited_at FROM favorites f JOIN listings l ON l.id=f.listing_id JOIN categories c ON c.id=l.category_id LEFT JOIN LATERAL(SELECT photo_url FROM listing_photos WHERE listing_id=l.id ORDER BY is_cover DESC,display_order,id LIMIT 1) lp ON true WHERE "+condition+" ORDER BY f.created_at DESC,l.id LIMIT $2 OFFSET $3",[userId,limit,(page-1)*limit])).rows;
+    const rows=(await pool.query("SELECT l.*,c.name category_name,c.slug category_slug,lp.photo_url cover_photo,lp.media_context photo_context,true is_favorite,f.created_at favorited_at FROM favorites f JOIN listings l ON l.id=f.listing_id JOIN categories c ON c.id=l.category_id LEFT JOIN LATERAL(SELECT photo_url,media_context FROM listing_photos WHERE listing_id=l.id ORDER BY is_cover DESC,display_order,id LIMIT 1) lp ON true WHERE "+condition+" ORDER BY f.created_at DESC,l.id LIMIT $2 OFFSET $3",[userId,limit,(page-1)*limit])).rows;
     return {items:rows,pagination:{page,limit,total,totalPages:Math.ceil(total/limit)}};
   }
   async toggleFavorite(userId:string,listingId:string):Promise<boolean> {

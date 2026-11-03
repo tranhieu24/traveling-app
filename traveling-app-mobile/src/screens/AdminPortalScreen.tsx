@@ -815,6 +815,7 @@ export function AdminPortalScreen() {
 
   const navItems = (
     <View style={{ gap: 6 }}>
+      <AdminButton title="Yêu cầu hỗ trợ" onPress={()=>navigation.navigate('AdminSupport')}/>
       {sections.map((item) => (
         <Pressable
           key={item.key}

@@ -54,10 +54,10 @@ export const CreateAccountScreen: React.FC = () => {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <Text accessibilityRole="header" style={styles.title}>Create an account</Text>
+          <Text accessibilityRole="header" style={styles.title}>Tạo tài khoản</Text>
 
           <View style={styles.form}>
-            <Text style={styles.label} nativeID="mobile-number-label">Enter your mobile number:</Text>
+            <Text style={styles.label} nativeID="mobile-number-label">Số điện thoại của bạn:</Text>
             <View style={styles.phoneRow}>
               <Pressable
                 cssInterop={false}
@@ -102,7 +102,7 @@ export const CreateAccountScreen: React.FC = () => {
               accessibilityState={{ disabled: true }}
               style={({ pressed }) => [styles.continueButton, { opacity: 0.5 }, pressed && styles.pressed]}
             >
-              <Text style={styles.continueText}>Phone sign-up - Coming soon</Text>
+              <Text style={styles.continueText}>Đăng ký qua điện thoại - Sắp ra mắt</Text>
             </Pressable>
 
             <Text style={styles.separator}>or</Text>
@@ -116,7 +116,7 @@ export const CreateAccountScreen: React.FC = () => {
                 style={({ pressed }) => [styles.socialButton, styles.emailButton, pressed && styles.pressed]}
               >
                 <Mail size={21} color="#292C30" />
-                <Text style={[styles.socialText, styles.emailText]}>Continue with email</Text>
+                <Text style={[styles.socialText, styles.emailText]}>Tiếp tục với email</Text>
               </Pressable>
               <SocialSignInButtons />
             </View>
@@ -136,14 +136,14 @@ export const CreateAccountScreen: React.FC = () => {
           </View>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Already had an account?</Text>
+            <Text style={styles.footerText}>Đã có tài khoản?</Text>
             <Pressable
               accessibilityRole="link"
               hitSlop={8}
               disabled={isLoading}
               onPress={() => navigation.navigate('Login')}
             >
-              <Text style={styles.loginLink}>Log in</Text>
+              <Text style={styles.loginLink}>Đăng nhập</Text>
             </Pressable>
           </View>
         </ScrollView>
@@ -204,11 +204,11 @@ export const CreateAccountScreen: React.FC = () => {
                   navigation.navigate('Register');
                 }}
               >
-                <Text style={styles.continueText}>Continue with email</Text>
+                <Text style={styles.continueText}>Tiếp tục với email</Text>
               </Pressable>
             )}
             <Pressable accessibilityRole="button" onPress={() => setNotice(null)} style={styles.dismissButton}>
-              <Text style={styles.dismissText}>Close</Text>
+              <Text style={styles.dismissText}>Đóng</Text>
             </Pressable>
           </View>
         </View>

@@ -21,7 +21,7 @@ export const HelpCenterScreen: React.FC = () => {
       navigation.navigate('Login');
       return;
     }
-    if (action === 'settings') navigation.navigate('Settings');
+    if (action === 'settings') navigation.navigate("Settings");
     else navigation.navigate('MainTabs', { screen: action === 'bookings' ? 'BookingsTab' : action === 'favorites' ? 'FavoritesTab' : 'SearchTab' });
   };
 
@@ -37,13 +37,13 @@ export const HelpCenterScreen: React.FC = () => {
         <Pressable accessibilityRole="button" accessibilityLabel="Back to profile" style={styles.backButton} onPress={() => navigation.canGoBack() ? navigation.goBack() : navigation.replace('MainTabs', { screen: 'ProfileTab' })}>
           <ArrowLeft size={22} color="#292C30" />
         </Pressable>
-        <Text accessibilityRole="header" style={styles.headerTitle}>Help Center</Text>
+        <Text accessibilityRole="header" style={styles.headerTitle}>Trợ giúp</Text>
         <View style={styles.backButton} />
       </View>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
         <View style={styles.hero}>
           <View style={styles.heroIcon}><HelpCircle size={28} color="#008C9E" /></View>
-          <Text accessibilityRole="header" style={styles.heroTitle}>How can we help?</Text>
+          <Text accessibilityRole="header" style={styles.heroTitle}>Bạn cần hỗ trợ điều gì?</Text>
           <Text style={styles.heroDescription}>Find answers and get back to planning your next stay.</Text>
           <View style={styles.searchField}>
             <Search size={20} color="#6B7280" />

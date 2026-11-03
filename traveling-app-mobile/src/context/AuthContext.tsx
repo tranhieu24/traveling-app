@@ -7,7 +7,7 @@ import { apiClient } from '../services/apiClient';
 import { supabase } from '../services/supabase';
 import { createSessionBridge } from '../services/authSession';
 import { createSocialAuth, SocialProvider } from '../services/socialAuth';
-import { FriendlyAuthError, isAuthCallback, safeAuthError } from '../config/auth';
+import { FriendlyAuthError, isAuthCallback, isRecoveryCallback, safeAuthError } from '../config/auth';
 import { storage } from '../utils/storage';
 import { User } from '../types';
 
@@ -124,7 +124,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const initialUrl = await Linking.getInitialURL();
         // The callback screen owns code exchange and navigation.
-        if (initialUrl && isAuthCallback(initialUrl)) return;
+        if (initialUrl && (isAuthCallback(initialUrl)||isRecoveryCallback(initialUrl))) return;
         const { data, error } = await supabase.auth.getSession();
         if (error) throw error;
         if (!mounted.current) return;

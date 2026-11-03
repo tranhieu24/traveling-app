@@ -1,3 +1,5 @@
+import { ArrivalGuideEditor } from './ArrivalGuideEditor';
+import { MediaNotice } from '../common/MediaNotice';
 import React, { useEffect } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
@@ -38,7 +40,7 @@ export function AdminBookingDialog({
   const net = booking ? Number(booking.amount_paid || 0) - Number(booking.amount_refunded || 0) : 0;
   const required = booking
     ? booking.payment_plan === 'deposit'
-      ? Math.min(30, Number(booking.total_price))
+      ? Math.min(Number(booking.policy_snapshot?.depositAmount ?? 30), Number(booking.total_price))
       : Number(booking.total_price)
     : 0;
   const verified = net + 0.001 >= required;
@@ -101,6 +103,9 @@ export function AdminBookingDialog({
               <AdminBadge status={booking.payment_status || 'pending'} />
             </View>
             <Text style={a.sectionTitle}>{booking.listing_title}</Text>
+            <ArrivalGuideEditor bookingId={id} userId={userId} editable={booking.booking_status==='confirmed'}/>
+            <MediaNotice context={booking.photo_context} compact/>
+            {booking.contact_snapshot && <View><Text style={a.sectionTitle}>Liên hệ của đơn</Text>{line('Họ tên',booking.contact_snapshot.fullName)}{line('Email liên hệ',booking.contact_snapshot.email)}{line('Điện thoại',booking.contact_snapshot.phone||'—')}</View>}
             {line('Khách hàng', booking.guest_name || booking.guest_id)}
             {line('Email', booking.guest_email || '—')}
             {line(

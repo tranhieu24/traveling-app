@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 
 export const AUTH_TOKEN_KEY = 'traveling_auth_token';
 export const AUTH_CALLBACK_PATH = 'auth/callback';
+export const RECOVERY_CALLBACK_PATH = 'auth/reset-password';
 const configuredScheme = Constants.expoConfig?.scheme;
 export const AUTH_SCHEME = Array.isArray(configuredScheme)
   ? configuredScheme[0]
@@ -12,6 +13,7 @@ export const NATIVE_AUTH_REDIRECT_URI = `${AUTH_SCHEME}://${AUTH_CALLBACK_PATH}`
 export function getAuthRedirectUri(): string {
   if (Platform.OS === 'web') {
     if (typeof window === 'undefined') throw new Error('Open the app in a browser to sign in.');
+    if (window.self !== window.top) throw new FriendlyAuthError('Hãy mở app trực tiếp trong Chrome, Edge hoặc Safari để đăng nhập Google/Facebook. Trình xem nhúng có thể chặn xác thực.');
     return `${window.location.origin}/${AUTH_CALLBACK_PATH}`;
   }
   if (Constants.appOwnership === 'expo' || Constants.executionEnvironment === 'storeClient') {
@@ -42,6 +44,7 @@ export function isAuthCallback(url: string): boolean {
 export function safeAuthError(error: unknown): Error {
   if (error instanceof FriendlyAuthError) return error;
   const code = (error as { code?: string })?.code;
+  if (['flow_state_not_found','flow_state_expired','bad_code_verifier'].includes(code||'')) return new FriendlyAuthError('Phiên đăng nhập đã hết hạn hoặc không khớp trình duyệt. Hãy mở lại app và đăng nhập trong cùng trình duyệt.');
   if (code === 'invalid_credentials')
     return new FriendlyAuthError('Email or password is incorrect.');
   if (code === 'email_not_confirmed')
@@ -63,4 +66,18 @@ export function captureAuthCallback(url: string) {
 }
 export function getCapturedAuthCallback() {
   return callbackUrl;
+}
+
+let recoveryUrl:string|null=null;
+export const captureRecoveryCallback=(url:string)=>{recoveryUrl=url;};
+export const getCapturedRecoveryCallback=()=>recoveryUrl;
+export const clearRecoveryCallback=()=>{recoveryUrl=null;};
+export const getRecoveryRedirectUri=()=>getAuthRedirectUri().replace(AUTH_CALLBACK_PATH,RECOVERY_CALLBACK_PATH);
+export function isRecoveryCallback(url:string):boolean {
+  try {
+    const actual=new URL(url);
+    if(Platform.OS==='web'&&typeof window!=='undefined')return actual.origin===window.location.origin&&actual.pathname==='/'+RECOVERY_CALLBACK_PATH;
+    const expected=new URL(`${AUTH_SCHEME}://${RECOVERY_CALLBACK_PATH}`);
+    return actual.protocol===expected.protocol&&actual.host===expected.host&&actual.pathname===expected.pathname;
+  }catch{return false;}
 }

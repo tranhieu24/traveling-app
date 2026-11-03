@@ -12,7 +12,7 @@ traveling-app/
 │   ├── schema.sql            # Baseline cũ, chỉ dùng một lần cho database mới
 │   ├── seed.sql              # Seed legacy; cần xem giới hạn trước khi dùng
 │   ├── preflight.sql         # Kiểm tra database chỉ đọc
-│   └── migrations/           # Migration 001–004
+│   └── migrations/           # Migration 001–005
 ├── docs/                     # API, Postman, hướng dẫn và bằng chứng kiểm tra
 ├── .gitignore
 └── README.md
@@ -35,7 +35,7 @@ if (-not (Test-Path -LiteralPath '.env')) {
 }
 ```
 
-Cấu hình `DATABASE_URL`, `SUPABASE_URL` và server key của cùng dự án Supabase. Backend mới yêu cầu migration 001–004; đọc [hướng dẫn database và chạy backend](docs/RUNBOOK.md) trước khi khởi động. Việc gộp source không tự chạy migration hoặc seed trên Supabase.
+Cấu hình `DATABASE_URL`, `SUPABASE_URL` và server key của cùng dự án Supabase. Backend mới yêu cầu migration 001–005; đọc [hướng dẫn database và chạy backend](docs/RUNBOOK.md) và [hướng dẫn nâng cấp Giai đoạn 1](docs/upgrade-runbook.md) trước khi khởi động. Việc gộp source không tự chạy migration hoặc seed trên Supabase.
 
 ```powershell
 npm run typecheck
@@ -76,10 +76,12 @@ npm install
 npx expo start
 ```
 
-Dùng Expo Go hoặc Android Emulator theo môi trường của nhóm frontend. Điện thoại thật cần địa chỉ backend có thể truy cập trong mạng; frontend và backend dùng cùng dự án Supabase Auth. Các thay đổi cần tích hợp được mô tả trong [FRONTEND_INTEGRATION](docs/FRONTEND_INTEGRATION.md).
+Dùng web hoặc development build để kiểm thử đầy đủ. OAuth native không hỗ trợ Expo Go; Stripe native cần build có plugin mới. Điện thoại thật cần địa chỉ backend có thể truy cập trong mạng; frontend và backend dùng cùng dự án Supabase Auth. Các thay đổi cần tích hợp được mô tả trong [FRONTEND_INTEGRATION](docs/FRONTEND_INTEGRATION.md).
 
 ## Tài liệu API và bàn giao
 
+- [Nâng cấp Giai đoạn 1: cấu hình, migration 005, ảnh và demo](docs/upgrade-runbook.md)
+- [Kết quả nghiệm thu nâng cấp và giới hạn](docs/upgrade-acceptance.md)
 - [Hướng dẫn cấu hình, migration và vận hành](docs/RUNBOOK.md)
 - [Danh sách API, request, response và mã lỗi](docs/API_REFERENCE.md)
 - [OpenAPI](docs/openapi.json)

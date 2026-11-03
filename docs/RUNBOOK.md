@@ -6,6 +6,8 @@ Backend chính giữ Express + TypeScript + PostgreSQL + Supabase Auth. Không c
 
 Các bước dưới đây do người quản trị xem xét và chủ động thực hiện. Không chạy toàn bộ schema trên database đang có dữ liệu.
 
+Bản nâng cấp Giai đoạn 1 bổ sung migration 005, Stripe UI và catalog ảnh. Xem [hướng dẫn nâng cấp](upgrade-runbook.md) và [kết quả kiểm tra](upgrade-acceptance.md); không dùng kết quả lịch sử làm nghiệm thu provider thật.
+
 ## Cài và cấu hình
 
 Môi trường đã dùng để kiểm thử: Windows, Node 24.11.0, PostgreSQL nhúng 18.4. Baseline ghi PostgreSQL 15+ nhưng chưa chạy lại toàn bộ trên PostgreSQL 15 hoặc Supabase hosted.
@@ -35,7 +37,7 @@ Supabase trigger tạo public.users vẫn được giữ. Guest đăng nhập b�
 
 1. Sao lưu và xác nhận quy trình restore. Thử trên một bản staging có cấu trúc/dữ liệu đại diện.
 2. Chạy **read-only** `database/preflight.sql` và lưu kết quả nội bộ. Xem constraint names, RLS, grants, policies, trạng thái payment và các review cũ không đủ điều kiện.
-3. Xem lần lượt migration 001–004. Các script có transaction; lỗi phải dừng, không bỏ qua lỗi giữa chừng.
+3. Xem lần lượt migration 001–005. Các script có transaction; lỗi phải dừng, không bỏ qua lỗi giữa chừng.
 4. Migration 001 chỉ được chuyển lịch sử thanh toán khi đã đối soát nguồn gốc mock. Nếu database thực tế từng có payment thật hoặc đã custom schema, phải điều chỉnh migration theo dữ liệu đó trước khi áp dụng.
 5. Xem các policy/grant cũ: các policy cùng loại có thể OR với nhau. Script thêm policy không đủ chứng minh các policy trước đó an toàn. Đặc biệt kiểm tra role inheritance, table/function grants, owner và BYPASSRLS.
 6. Migration 003 truy cập auth.sessions/auth.refresh_tokens để thu hồi phiên. Đây là phần phụ thuộc cấu trúc Supabase đang triển khai; kiểm tra tên cột, kiểu dữ liệu, quyền DBA và thử trên staging. Không chỉnh trực tiếp schema auth bằng suy đoán.
@@ -49,6 +51,7 @@ psql "$env:DATABASE_URL" -v ON_ERROR_STOP=1 -c "SET traveling.approve_legacy_moc
 psql "$env:DATABASE_URL" -v ON_ERROR_STOP=1 -f ../database/migrations/002_rls_and_grants.sql
 psql "$env:DATABASE_URL" -v ON_ERROR_STOP=1 -f ../database/migrations/003_auth_sync.sql
 psql "$env:DATABASE_URL" -v ON_ERROR_STOP=1 -f ../database/migrations/004_state_guards.sql
+psql "$env:DATABASE_URL" -v ON_ERROR_STOP=1 -f ../database/migrations/005_checkout_context.sql
 ```
 
 Các lệnh trên chỉ là hướng dẫn, chưa được thực thi lên Supabase trong đợt gộp source. `psql` cần connection URL staging được người vận hành cung cấp qua biến môi trường; PowerShell không tự nạp `.env`. Nếu không cài `psql`, có thể chạy từng file SQL trong Supabase SQL Editor sau khi xem xét preflight và chọn đúng project. Với migration 001, chỉ khi đã xác nhận toàn bộ payment cũ là mô phỏng mới thêm `SET LOCAL traveling.approve_legacy_mock='yes';` ngay sau `BEGIN;` và chạy cả file trong cùng một lần. Dừng nếu có lỗi, không chạy lại migration đã thành công tùy ý.
@@ -59,10 +62,11 @@ Các lệnh trên chỉ là hướng dẫn, chưa được thực thi lên Supab
 | 002 | role traveling_backend NOLOGIN; RLS/policy backend và public discovery; thu hồi quyền trực tiếp anon/authenticated/PUBLIC với bảng nghiệp vụ. Không tự tạo tài khoản login/password. |
 | 003 | tokens_valid_after và thông tin đồng bộ email/ban; SECURITY DEFINER revoke_customer_sessions chỉ backend được EXECUTE. Owner của function phải là DBA được tin cậy. |
 | 004 | Chốt chuyển trạng thái, không completed trước checkout/chưa trả đủ, snapshot payment/refund bất biến và kiểm tra owner. |
+| 005 | Snapshot liên hệ/chính sách, acceptance và idempotency booking; provenance ảnh. Dữ liệu cũ nullable, không tạo lịch sử đồng ý giả. |
 
 DBA tạo LOGIN riêng bằng phương thức quản lý secrets của tổ chức rồi GRANT traveling_backend cho LOGIN đó. Tài khoản runtime cần có role hiệu lực: dùng INHERIT hoặc SET ROLE trong cấu hình kết nối. Không cấp role traveling_backend cho anon/authenticated/authenticator. Kiểm thử cục bộ chạy request SQL dưới SET ROLE traveling_backend và kiểm tra deny anon/authenticated, không dùng owner để chứng minh RLS.
 
-Dự án Supabase mới: áp baseline public schema một lần, rồi migration 001–004; auth.users do Supabase quản lý. Fixture auth.users trong bộ test chỉ là stub dành cho test PostgreSQL, không phải schema Auth để cài lên Supabase. `database/seed.sql` là seed legacy được giữ nguyên: có các lệnh ghi trực tiếp Auth, payment và review, không tương thích mặc nhiên với các guard sau migration. Không chạy seed này sau migration hoặc trên database hiện hữu; cần xem xét riêng nếu muốn dùng trên database thử nghiệm có thể bỏ.
+Dự án Supabase mới: áp baseline public schema một lần, rồi migration 001–005; auth.users do Supabase quản lý. Fixture auth.users trong bộ test chỉ là stub dành cho test PostgreSQL, không phải schema Auth để cài lên Supabase. `database/seed.sql` là seed legacy được giữ nguyên: có các lệnh ghi trực tiếp Auth, payment và review, không tương thích mặc nhiên với các guard sau migration. Không chạy seed này sau migration hoặc trên database hiện hữu; cần xem xét riêng nếu muốn dùng trên database thử nghiệm có thể bỏ.
 
 Migration không có down script phá dữ liệu: nhiều payment/refund không thể hạ an toàn về một payment/booking. Khi triển khai lỗi, dừng ghi và dùng quy trình khôi phục đã thử hoặc forward fix; không xóa giao dịch để ép rollback.
 
@@ -109,7 +113,7 @@ Cần tài khoản Stripe test, quyền sử dụng của chủ dự án, test s
 
 SDK đã khóa dùng Stripe API 2026-09-30.endive; tạo endpoint snapshot tương thích và kiểm tra lại khi nâng SDK. Dùng Stripe CLI của bạn để forward webhook tới `http://localhost:5000/api/v1/webhooks/stripe_test` trong thử nghiệm. Không dùng event trigger ngẫu nhiên để xác nhận booking: event phải mang metadata paymentId của payment do backend tạo.
 
-Frontend cần tích hợp SDK Stripe test với clientSecret và poll backend. Chưa có giao dịch Stripe account đầu cuối; kiểm thử hiện tại stub request SDK và dùng SDK thật để tạo/xác minh chữ ký fixture. Chưa có đối soát tự động theo lịch với Stripe nếu webhook mất; operator phải kiểm tra pending/processing, resend event hoặc đối chiếu provider object bằng công cụ nhà cung cấp. Không tự ghi succeeded khi đối soát chưa xác minh.
+Frontend đã tích hợp Stripe test: Payment Element web và PaymentSheet native, poll backend; thêm STRIPE_PUBLISHABLE_KEY=pk_test_... ở server và rebuild development client native. Chưa có giao dịch Stripe account đầu cuối; kiểm thử hiện tại stub request SDK và dùng SDK thật để tạo/xác minh chữ ký fixture. Chưa có đối soát tự động theo lịch với Stripe nếu webhook mất; operator phải kiểm tra pending/processing, resend event hoặc đối chiếu provider object bằng công cụ nhà cung cấp. Không tự ghi succeeded khi đối soát chưa xác minh.
 
 Tham chiếu: [PaymentIntent](https://docs.stripe.com/api/payment_intents/create), [refund](https://docs.stripe.com/api/refunds/create), [webhook](https://docs.stripe.com/events/manage-webhook-endpoints).
 

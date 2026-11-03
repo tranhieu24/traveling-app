@@ -44,7 +44,7 @@ export const AmenityIcon = ({ amenity }: { amenity: Amenity }) => {
 export const ListingStats = ({ listing }: { listing: Listing }) => (
   <View style={s.stats}>
     {[
-      `${listing.max_guests} ${listing.max_guests === 1 ? 'Guest' : 'Guests'}`,
+      `${listing.max_guests} ${listing.max_guests === 1 ? "Khách" : "Số khách"}`,
       listing.bedrooms === 0
         ? 'Studio'
         : `${listing.bedrooms} ${listing.bedrooms === 1 ? 'bedroom' : 'bedrooms'}`,
@@ -111,15 +111,15 @@ export const ListingDetailPanels = ({
             {panel === 'facilities'
               ? 'Facilities & services'
               : panel === 'policies'
-                ? 'Policies'
-                : 'Description'}
+                ? "Chính sách"
+                : "Mô tả"}
           </Text>
           <View style={s.back} />
         </View>
         <ScrollView contentContainerStyle={s.content}>
           {panel === 'facilities' ? (
             <>
-              <Text style={s.title}>Facilities</Text>
+              <Text style={s.title}>Tiện nghi</Text>
               <ListingStats listing={listing} />
               {!listing.amenities?.length && (
                 <Text style={s.policy}>No facilities have been listed for this stay.</Text>
@@ -138,9 +138,9 @@ export const ListingDetailPanels = ({
             </>
           ) : panel === 'policies' ? (
             <>
-              <Text style={s.title}>Policies</Text>
+              <Text style={s.title}>Chính sách</Text>
               <HouseRules listing={listing} />
-              <Text style={s.groupTitle}>Checkin policies</Text>
+              <Text style={s.groupTitle}>Điều kiện nhận phòng</Text>
               <CheckinPolicy listing={listing} />
               <Text style={[s.groupTitle, { marginTop: 24 }]}>Guest limit</Text>
               <Text style={s.policy}>
@@ -154,7 +154,7 @@ export const ListingDetailPanels = ({
                 <ListingImage url={descriptionPhoto} />
               </View>
               <Text style={s.description}>
-                {listing.description?.trim() || 'No description has been provided for this stay.'}
+                {listing.description?.trim() || "Cơ sở chưa cung cấp mô tả cho chỗ ở này."}
               </Text>
               <View style={s.location}>
                 <MapPin size={18} color="#00B8CE" />

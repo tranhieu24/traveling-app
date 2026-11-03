@@ -164,12 +164,12 @@ export class ListingRepository {
         l.check_in_time, l.check_out_time,
         l.rating_avg, l.review_count, l.is_active,
         c.name AS category_name, c.slug AS category_slug,
-        lp.photo_url AS cover_photo,
+        lp.photo_url AS cover_photo, lp.media_context AS photo_context,
         ${favoriteSelect}
       FROM listings l
       LEFT JOIN categories c ON c.id = l.category_id
       LEFT JOIN LATERAL (
-        SELECT photo_url 
+        SELECT photo_url,media_context
         FROM listing_photos 
         WHERE listing_id = l.id 
         ORDER BY is_cover DESC, display_order ASC 
@@ -220,13 +220,15 @@ export class ListingRepository {
 
     // Lấy photos từ listing_photos (schema.sql)
     const photosSql = `
-      SELECT id, listing_id, photo_url, caption, display_order, is_cover 
+      SELECT id, listing_id, photo_url, caption, display_order, is_cover, media_context
       FROM listing_photos 
       WHERE listing_id = $1 
       ORDER BY is_cover DESC, display_order ASC
     `;
     const photosRes = await pool.query(photosSql, [id]);
     listing.photos = photosRes.rows;
+    listing.cover_photo = photosRes.rows[0]?.photo_url;
+    listing.photo_context = photosRes.rows[0]?.media_context;
 
     // Lấy amenities từ listing_amenities + amenities (schema.sql)
     const amenitiesSql = `

@@ -8,25 +8,24 @@ export const isIsoDate = (value: string): boolean => {
 };
 export const addIsoDays = (value: string, days: number): string => new Date(Date.parse(`${value}T00:00:00Z`) + days * 86400000).toISOString().slice(0, 10);
 export const validateTrip = (checkIn: string, checkOut: string, adults: number, children: number, capacity: number): void => {
-  if (!isIsoDate(checkIn) || !isIsoDate(checkOut) || checkIn < isoToday() || checkOut <= checkIn) throw new Error('Choose a check-in date from today and a later check-out date.');
-  if ((Date.parse(checkOut) - Date.parse(checkIn)) / 86400000 > 365) throw new Error('Your stay can be up to 365 nights.');
-  if (!Number.isSafeInteger(adults) || adults < 1 || !Number.isSafeInteger(children) || children < 0) throw new Error('Include at least one adult and a valid guest count.');
-  if (adults + children > capacity) throw new Error(`This place allows up to ${capacity} guests.`);
+  if (!isIsoDate(checkIn) || !isIsoDate(checkOut) || checkIn < isoToday() || checkOut <= checkIn) throw new Error('Chọn ngày nhận phòng từ hôm nay và ngày trả phòng sau đó.');
+  if ((Date.parse(checkOut) - Date.parse(checkIn)) / 86400000 > 365) throw new Error('Thời gian lưu trú tối đa là 365 đêm.');
+  if (!Number.isSafeInteger(adults) || adults < 1 || !Number.isSafeInteger(children) || children < 0) throw new Error('Cần ít nhất một người lớn và số khách hợp lệ.');
+  if (adults + children > capacity) throw new Error(`Chỗ ở này nhận tối đa ${capacity} khách.`);
 };
 export const formatTripDates = (checkIn: string, checkOut: string): string => {
   if (!isIsoDate(checkIn) || !isIsoDate(checkOut)) return '--';
   const start = new Date(`${checkIn}T00:00:00Z`), end = new Date(`${checkOut}T00:00:00Z`);
-  const month = (date: Date) => date.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' });
-  if (start.getUTCFullYear() !== end.getUTCFullYear()) return `${month(start)} ${start.getUTCDate()}, ${start.getUTCFullYear()} - ${month(end)} ${end.getUTCDate()}, ${end.getUTCFullYear()}`;
-  return start.getUTCMonth() === end.getUTCMonth() ? `${month(start)} ${start.getUTCDate()} - ${end.getUTCDate()}` : `${month(start)} ${start.getUTCDate()} - ${month(end)} ${end.getUTCDate()}`;
+  const dateLabel = (date: Date) => date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' });
+  return `${dateLabel(start)} – ${dateLabel(end)}`;
 };
-export const paymentSplit = (total: number | string, plan: PaymentPlan) => {
+export const paymentSplit = (total: number | string, plan: PaymentPlan, depositAmount = 30) => {
   const cents = Math.round(Number(total) * 100);
-  if (!Number.isSafeInteger(cents) || cents < 0) throw new Error('Invalid booking total.');
-  const due = plan === 'deposit' ? Math.min(3000, cents) : cents;
+  if (!Number.isSafeInteger(cents) || cents < 0) throw new Error('Tổng tiền đặt phòng không hợp lệ.');
+  const due = plan === 'deposit' ? Math.min(Math.round(depositAmount * 100), cents) : cents;
   return { dueNow: due / 100, remaining: (cents - due) / 100 };
 };
 export const bookingPaymentDue = (booking: Booking, plan: PaymentPlan): number => {
   const remaining = booking.balance_due ?? Math.max(0, Number(booking.total_price) - Number(booking.amount_paid || 0));
-  return paymentSplit(remaining, plan).dueNow;
+  return paymentSplit(remaining, plan, booking.policy_snapshot?.depositAmount ?? 30).dueNow;
 };

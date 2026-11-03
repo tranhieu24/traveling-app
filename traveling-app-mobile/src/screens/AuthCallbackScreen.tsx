@@ -6,7 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
 import { getCapturedAuthCallback, safeAuthError } from '../config/auth';
-import type { RootStackParamList } from '../types';
+import type { RootStackParamList, User } from '../types';
 
 export function AuthCallbackScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -17,6 +17,7 @@ export function AuthCallbackScreen() {
   const completeRef = useRef(completeSocialSignIn);
   completeRef.current = completeSocialSignIn;
   const navigated = useRef(false);
+  const completion = useRef<Promise<User> | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -25,15 +26,16 @@ export function AuthCallbackScreen() {
         if (!urlRef.current)
           urlRef.current =
             Platform.OS === 'web'
-              ? window.location.href
+              ? getCapturedAuthCallback() || window.location.href
               : getCapturedAuthCallback() || (await Linking.getInitialURL());
         if (!urlRef.current) throw new Error('Missing callback.');
         // Strip credentials from browser history before any profile/API request.
         if (Platform.OS === 'web') window.history.replaceState({}, '', window.location.pathname);
-        await completeRef.current(urlRef.current);
+        if (!completion.current) completion.current = completeRef.current(urlRef.current);
+        const profile = await completion.current;
         if (alive && !navigated.current) {
           navigated.current = true;
-          navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
+          navigation.reset({ index: 0, routes: [{ name: profile.role === 'admin' ? 'AdminPortal' : 'MainTabs' }] });
         }
       } catch (e) {
         if (alive) setError(safeAuthError(e).message);
@@ -50,10 +52,10 @@ export function AuthCallbackScreen() {
       <View style={styles.card}>
         {!error && <ActivityIndicator color="#00B8CE" size="large" />}
         <Text accessibilityRole="header" style={styles.title}>
-          {error ? 'Unable to finish sign-in' : 'Finishing sign-in...'}
+          {error ? 'Chưa hoàn tất đăng nhập' : 'Đang hoàn tất đăng nhập...'}
         </Text>
         <Text accessibilityRole={error ? 'alert' : undefined} style={styles.message}>
-          {error || 'Verifying your account. Please wait.'}
+          {error || 'Đang xác minh tài khoản. Vui lòng chờ.'}
         </Text>
         {!!error && (
           <>
@@ -61,18 +63,19 @@ export function AuthCallbackScreen() {
               accessibilityRole="button"
               style={styles.primary}
               onPress={() => {
+                completion.current = null;
                 setError('');
                 setAttempt((n) => n + 1);
               }}
             >
-              <Text style={styles.white}>Try again</Text>
+              <Text style={styles.white}>Thử lại</Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
               style={styles.secondary}
               onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Login' }] })}
             >
-              <Text>Back to log in</Text>
+              <Text>Quay lại đăng nhập</Text>
             </Pressable>
           </>
         )}

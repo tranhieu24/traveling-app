@@ -126,7 +126,7 @@ export const PaymentBookingCard = ({
             ) : (
               <Download size={16} color="#71808D" />
             )}
-            <Text style={s.receiptLabel}>{downloading ? 'Preparing...' : 'PDF receipt'}</Text>
+            <Text style={s.receiptLabel}>{downloading ? "Đang chuẩn bị..." : 'PDF receipt'}</Text>
           </Pressable>
         )}
       </View>
@@ -183,7 +183,7 @@ export const PaymentBookingCard = ({
                     <Text style={s.date}>Deposit payment</Text>
                   )}
                   {payment.requested_plan === 'balance' && (
-                    <Text style={s.date}>Remaining balance</Text>
+                    <Text style={s.date}>Số tiền còn lại</Text>
                   )}
                 </View>
               );
@@ -259,7 +259,7 @@ export const RefundCard = ({
         onPress={onOpen}
         style={s.refundBooking}
       >
-        <Text style={s.link}>View booking</Text>
+        <Text style={s.link}>Xem đặt phòng</Text>
         <ChevronRight size={17} color="#00A0B5" />
       </Pressable>
     </View>

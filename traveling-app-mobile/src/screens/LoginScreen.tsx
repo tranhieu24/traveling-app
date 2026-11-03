@@ -96,16 +96,16 @@ export const LoginScreen: React.FC = () => {
               <ArrowLeft size={23} color="#292C30" />
             </Pressable>
             <Text accessibilityRole="header" style={styles.title}>
-              Log in
+              Đăng nhập
             </Text>
           </View>
 
           <View style={styles.form}>
-            <Text style={styles.welcome}>Welcome back!</Text>
-            <Text style={styles.subtitle}>Log in to continue your next adventure.</Text>
+            <Text style={styles.welcome}>Chào mừng bạn trở lại!</Text>
+            <Text style={styles.subtitle}>Đăng nhập để tiếp tục lên kế hoạch cho chuyến đi.</Text>
 
             <View style={styles.field}>
-              <Text style={styles.label}>Email address</Text>
+              <Text style={styles.label}>Địa chỉ email</Text>
               <View
                 style={[
                   styles.inputContainer,
@@ -124,7 +124,7 @@ export const LoginScreen: React.FC = () => {
                   }}
                   onFocus={() => setFocusedField('email')}
                   onBlur={() => setFocusedField(null)}
-                  placeholder="Enter your email address"
+                  placeholder="Nhập địa chỉ email"
                   placeholderTextColor="#BFC2C8"
                   keyboardType="email-address"
                   autoCapitalize="none"
@@ -146,7 +146,7 @@ export const LoginScreen: React.FC = () => {
             </View>
 
             <View style={styles.field}>
-              <Text style={styles.label}>Password</Text>
+              <Text style={styles.label}>Mật khẩu</Text>
               <View
                 style={[
                   styles.inputContainer,
@@ -165,7 +165,7 @@ export const LoginScreen: React.FC = () => {
                   }}
                   onFocus={() => setFocusedField('password')}
                   onBlur={() => setFocusedField(null)}
-                  placeholder="Enter your password"
+                  placeholder="Nhập mật khẩu"
                   placeholderTextColor="#BFC2C8"
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
@@ -199,6 +199,7 @@ export const LoginScreen: React.FC = () => {
               )}
             </View>
 
+            <Pressable accessibilityRole="button" disabled={busy} onPress={()=>navigation.navigate('ForgotPassword')} style={{minHeight:44,justifyContent:'center',alignItems:'flex-end'}}><Text style={{color:'#008A9A'}}>Quên mật khẩu?</Text></Pressable>
             {!!errors.form && (
               <View style={styles.errorBanner}>
                 <Text accessibilityRole="alert" style={styles.formError}>
@@ -211,14 +212,14 @@ export const LoginScreen: React.FC = () => {
 
               cssInterop={false}
               accessibilityRole="button"
-              accessibilityLabel={isSubmitting ? 'Logging in' : 'Log in'}
+              accessibilityLabel={isSubmitting ? 'Logging in' : "Đăng nhập"}
               accessibilityState={{ disabled: busy, busy }}
               disabled={busy}
               onPress={handleLogin}
               style={({ pressed }) => [styles.loginButton, (pressed || busy) && styles.pressed]}
             >
               {isSubmitting && <ActivityIndicator size="small" color="#FFFFFF" />}
-              <Text style={styles.loginText}>{isSubmitting ? 'Logging in...' : 'Log in'}</Text>
+              <Text style={styles.loginText}>{isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}</Text>
             </Pressable>
 
             <View style={styles.separator}>
@@ -230,14 +231,14 @@ export const LoginScreen: React.FC = () => {
           </View>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account?</Text>
+            <Text style={styles.footerText}>Chưa có tài khoản?</Text>
             <Pressable
               accessibilityRole="link"
               hitSlop={8}
               disabled={busy}
               onPress={() => navigation.navigate('CreateAccount')}
             >
-              <Text style={styles.signupLink}>Sign up</Text>
+              <Text style={styles.signupLink}>Đăng ký</Text>
             </Pressable>
           </View>
           <Pressable

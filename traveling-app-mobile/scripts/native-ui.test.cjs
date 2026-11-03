@@ -146,17 +146,17 @@ test('iOS create-account country, email and disabled phone buttons retain their 
   const country = buttons.find((v) => v.label?.startsWith('Country code:'));
   assert.equal(country.style.flexDirection, 'row');
   assert.ok(country.style.width >= 80);
-  const email = buttons.find((v) => v.text === 'Continue with email');
+  const email = buttons.find((v) => v.text === 'Tiếp tục với email');
   assert.equal(email.style.borderWidth, 1);
   assert.equal(email.style.flexDirection, 'row');
-  const phone = buttons.find((v) => v.text === 'Phone sign-up - Coming soon');
+  const phone = buttons.find((v) => v.text === 'Đăng ký qua điện thoại - Sắp ra mắt');
   assert.equal(phone.disabled, true);
   assert.equal(phone.style.backgroundColor, '#00B8CE');
   assert.equal(phone.style.opacity, 0.5);
 });
 test('iOS login retains a visible primary button and back-button touch target', () => {
   const buttons = render(Login);
-  const login = buttons.find((v) => v.label === 'Log in');
+  const login = buttons.find((v) => v.label === 'Đăng nhập');
   assert.equal(login.style.backgroundColor, '#00B8CE');
   assert.ok(login.style.minHeight >= 48);
   const back = buttons.find((v) => v.label === 'Go back');

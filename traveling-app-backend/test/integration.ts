@@ -63,7 +63,7 @@ async function main() {
     await owner.query("UPDATE users SET account_status='blocked' WHERE id=$1",[ids.blocked]);
     server=(await import('../src/app')).createApp().listen(0,'127.0.0.1');
     await new Promise<void>(r=>server.on('listening',r));
-    const base='http://127.0.0.1:'+server.address().port+'/api/v1';
+    let base='http://127.0.0.1:'+server.address().port+'/api/v1';
     async function api(method:string,endpoint:string,who?:string,body?:any,extra:any={}) {
       const response=await fetch(base+endpoint,{method,headers:{...(who?{Authorization:'Bearer '+(tokens[who]||who)}:{}),...(body!==undefined?{'Content-Type':'application/json'}:{}),...extra},body:body===undefined?undefined:JSON.stringify(body)});
       const binary=/application\/pdf|spreadsheetml/.test(response.headers.get('content-type')||'');
@@ -309,10 +309,141 @@ async function main() {
         const b=await create(mainListing,160,'guest',{taxAmount:0,totalPrice:1});assert.equal(Number(b.tax_amount),23);assert.equal(Number(b.total_price),253);
       }finally{ENV.TAX_RATE=0;}
     });
+    await check('Checkout snapshots, consent, stale quote and concurrent retry identity',async()=>{
+      const l=await listing('Checkout snapshot');
+      const quoted=(await api('POST','/bookings/quote','guest',stay(l,120))).body.data;
+      assert.equal(quoted.policy.version,'stay-v1');
+      const request={...stay(l,120),requestId:randomUUID(),expectedTotalCents:23000,checkout:{contact:{fullName:'Test Contact',email:'contact@example.test',phone:'+84 912345678'},policyVersion:'stay-v1',accepted:true},specialRequests:'Arrive after 18:00'};
+      assert.equal((await api('POST','/bookings','guest',{...request,checkout:{...request.checkout,accepted:false}})).status,400);
+      assert.equal((await api('POST','/bookings','guest',{...request,expectedTotalCents:1})).body.error.code,'PRICE_CHANGED');
+      assert.equal((await api('POST','/bookings','guest',{...request,checkout:{...request.checkout,policyVersion:'old'}})).body.error.code,'POLICY_CHANGED');
+      const results=await Promise.all([api('POST','/bookings','guest',request),api('POST','/bookings','guest',request)]);
+      assert.deepEqual(results.map(r=>r.status),[201,201]);
+      const b=results[0].body.data.booking;
+      assert.equal(results[1].body.data.booking.id,b.id);
+      assert.equal(b.contact_snapshot.email,'contact@example.test');
+      assert.equal(b.policy_snapshot.version,'stay-v1');assert.ok(b.policy_accepted_at);
+      assert.ok(Date.parse(results[0].body.serverTime));
+      assert.equal((await api('POST','/bookings','guest',{...request,guests:3})).body.error.code,'BOOKING_REQUEST_CONFLICT');
+      assert.equal((await owner.query('SELECT count(*)::int n FROM bookings WHERE client_request_id=$1',[request.requestId])).rows[0].n,1);
+      const old=await create(await listing('Legacy compatible checkout'),130);
+      assert.equal(old.policy_accepted_at,null);assert.equal(old.contact_snapshot.email,'guest@example.test');
+    });
+    await check('Review summary aggregates separately and never fabricates criterion scores',async()=>{
+      const page=await api('GET','/listings/'+mainListing+'/reviews?limit=1');
+      const summary=await api('GET','/listings/'+mainListing+'/review-summary');
+      assert.equal(summary.status,200);
+      assert.equal(summary.body.data.total,page.body.pagination.total);
+      assert.equal(summary.body.data.counts.reduce((a:number,b:number)=>a+b,0),summary.body.data.total);
+      assert.ok(!('cleanliness_rating' in page.body.data[0]));
+      const empty=await api('GET','/listings/'+await listing('No reviews')+'/review-summary');
+      assert.deepEqual(empty.body.data,{total:0,average:0,counts:[0,0,0,0,0]});
+    });
+    await check('Payment public configuration never exposes secret credentials',async()=>{
+      const config=await api('GET','/payments/config');
+      assert.deepEqual(config.body.data,{mode:'mock',publishableKey:null});
+      assert.equal(config.headers.get('cache-control'),'no-store');
+    });
+    await check('Photo provenance remains consistent across listing, favorites, quote and booking',async()=>{
+      const l=await listing('Photo provenance');
+      const context={contextLevel:'illustrative',sourcePageUrl:'https://example.test/photo',creator:'Test fixture',licenseName:'Test fixture',licenseUrl:'https://example.test/license',attributionText:'Fixture only',altText:'Test destination'};
+      await owner.query('INSERT INTO listing_photos(listing_id,photo_url,caption,display_order,is_cover,media_context) VALUES($1,$2,$3,1,true,$4)',[l,'https://example.test/test-photo.jpg','Fixture only',context]);
+      const detail=(await api('GET','/listings/'+l)).body.data;
+      assert.deepEqual(detail.photo_context,context);assert.deepEqual(detail.photos[0].media_context,context);
+      const quote=(await api('POST','/bookings/quote','guest',stay(l,150))).body.data;assert.deepEqual(quote.photoContext,context);
+      await api('POST','/favorites/toggle','guest',{listingId:l});
+      const favorites=(await api('GET','/favorites','guest')).body.data;
+      assert.deepEqual(favorites.find((f:any)=>f.id===l).photo_context,context);
+      const b=await create(l,150);assert.deepEqual((await api('GET','/bookings/'+b.id,'guest')).body.data.photo_context,context);
+    });
+    await check('Media replacement protects custom photos and rejects random image catalogs',async()=>{
+      const {canReplaceMedia,catalogPhotoSchema}=await import('../src/domain/mediaCatalog');
+      assert.equal(canReplaceMedia([{photo_url:'https://my-storage.test/owner-photo.jpg'}],[]),false);
+      assert.equal(canReplaceMedia([{photo_url:'https://picsum.photos/seed/demo/1200/800'}],[]),true);
+      assert.equal(catalogPhotoSchema.safeParse({imageUrl:'https://picsum.photos/seed/random/1200/800'}).success,false);
+    });
+    await check('Media CLI dry-run, scoped apply, idempotency and guarded restore use real fixture database',async()=>{
+      const {spawnSync}=await import('child_process');
+      const l=await listing('CLI media fixture');
+      await owner.query("INSERT INTO listing_photos(listing_id,photo_url,caption,display_order,is_cover) VALUES($1,'https://picsum.photos/seed/fixture/1200/800','Legacy fixture',1,true)",[l]);
+      const original=(await owner.query('SELECT id FROM listing_photos WHERE listing_id=$1',[l])).rows[0].id;
+      const photo={targetType:'listing',targetId:l,targetTitle:'CLI media fixture',city:'Da Nang',country:'Vietnam',propertyType:'Apartment',sourcePageUrl:'https://example.test/source',imageUrl:'https://example.test/fixture-image.jpg',provider:'Fixture',creator:'Fixture',licenseName:'Fixture',licenseUrl:'https://example.test/license',attributionText:'Test fixture only',contextLevel:'illustrative',contextEvidence:'Disposable local fixture',usageStatus:'approved',approvedFor:'demo_destination_illustration',role:'destination',caption:'Fixture destination',altText:'Fixture destination',displayOrder:1,isCover:true,width:1280,height:850,checkedAt:new Date().toISOString()};
+      const kind=(await owner.query('SELECT property_type FROM listings WHERE id=$1',[l])).rows[0].property_type;photo.propertyType=kind;
+      const catalogPath=path.join(runDir,'media-fixture.json');await fs.writeFile(catalogPath,JSON.stringify({version:1,photos:[photo]}));
+      const cli=(args:string[])=>spawnSync(process.execPath,['--import','tsx','src/scripts/apply-media-catalog.ts','--target=local','--catalog='+catalogPath,...args],{encoding:'utf8',windowsHide:true});
+      const dry=cli([]);assert.equal(dry.status,0,dry.stderr);assert.equal((await owner.query('SELECT id FROM listing_photos WHERE listing_id=$1',[l])).rows[0].id,original);
+      const denied=cli(['--apply']);assert.equal(denied.status,1);assert.equal((await owner.query('SELECT id FROM listing_photos WHERE listing_id=$1',[l])).rows[0].id,original);
+      const applied=cli(['--apply','--allow-illustrative']);assert.equal(applied.status,0,applied.stderr);
+      const backup=applied.stdout.match(/Snapshot prepared: (.+)/)![1].trim();
+      const first=(await owner.query('SELECT id FROM listing_photos WHERE listing_id=$1',[l])).rows[0].id;
+      const repeated=cli(['--apply','--allow-illustrative']);assert.equal(repeated.status,0,repeated.stderr);assert.equal((await owner.query('SELECT id FROM listing_photos WHERE listing_id=$1',[l])).rows[0].id,first);
+      await owner.query("UPDATE listing_photos SET caption='Owner edit' WHERE listing_id=$1",[l]);
+      assert.equal(cli(['--restore='+backup,'--apply']).status,1);
+      await owner.query('UPDATE listing_photos SET caption=$2 WHERE listing_id=$1',[l,photo.caption]);
+      const restored=cli(['--restore='+backup,'--apply']);assert.equal(restored.status,0,restored.stderr);assert.equal((await owner.query('SELECT id FROM listing_photos WHERE listing_id=$1',[l])).rows[0].id,original);
+    });
+    // New feature group gets a fresh in-memory limiter; production remains 200/IP.
+    await new Promise<void>(r=>server.close(()=>r()));
+    server=(await import('../src/app')).createApp().listen(0,'127.0.0.1');
+    await new Promise<void>(r=>server.on('listening',r));
+    base='http://127.0.0.1:'+server.address().port+'/api/v1';
+    await check('Support isolates owners, serializes retries, paginates and audits admin replies',async()=>{
+      const b=await create(await listing('Support fixture'),125);
+      const payload={bookingId:b.id,subject:'Hướng dẫn nhận phòng',body:'Tôi cần hướng dẫn nhận phòng.',requestId:randomUUID()};
+      assert.equal((await api('POST','/support-tickets','other',payload)).status,404);
+      assert.equal((await api('POST','/support-tickets','guest',{...payload,guestId:ids.other})).status,400);
+      const pair=await Promise.all([api('POST','/support-tickets','guest',payload),api('POST','/support-tickets','guest',payload)]);
+      pair.forEach(r=>assert.equal(r.status,201,JSON.stringify(r.body)));assert.equal(pair[0].body.data.id,pair[1].body.data.id);
+      const id=pair[0].body.data.id;
+      assert.equal((await api('POST','/support-tickets','guest',{...payload,body:'Nội dung khác'})).status,409);
+      for(const who of ['other','host']){
+        assert.equal((await api('GET','/support-tickets/'+id,who)).status,404);
+        assert.equal((await api('POST','/support-tickets/'+id+'/messages',who,{body:'leak',requestId:randomUUID()})).status,404);
+      }
+      assert.equal((await api('GET','/support-tickets?bookingId='+b.id,'other')).body.pagination.total,0);
+      assert.equal((await api('GET','/admin/support-tickets','guest')).status,403);
+      const reply={body:'Hướng dẫn sẽ được cập nhật trong đơn.',requestId:randomUUID()};
+      const responses=await Promise.all([api('POST','/admin/support-tickets/'+id+'/messages','admin',reply),api('POST','/admin/support-tickets/'+id+'/messages','admin',reply)]);
+      responses.forEach(r=>assert.equal(r.status,201,JSON.stringify(r.body)));assert.equal(responses[0].body.data.id,responses[1].body.data.id);
+      const thread=await api('GET','/support-tickets/'+id+'?limit=1&page=2','guest');
+      assert.equal(thread.body.data.pagination.total,2);assert.equal(thread.body.data.messages[0].author_role,'admin');assert.equal(thread.body.data.ticket.status,'waiting_guest');
+      assert.equal(thread.headers.get('cache-control'),'private, no-store');
+      assert.equal((await api('PATCH','/admin/support-tickets/'+id+'/status','guest',{status:'resolved'})).status,403);
+      assert.equal((await api('PATCH','/admin/support-tickets/'+id+'/status','admin',{status:'resolved'})).status,200);
+      const answer={body:'Cảm ơn, tôi cần hỏi thêm.',requestId:randomUUID()};
+      assert.equal((await api('POST','/support-tickets/'+id+'/messages','guest',answer)).status,201);
+      assert.equal((await api('GET','/support-tickets/'+id,'guest')).body.data.ticket.status,'open');
+      assert.equal(Number((await owner.query("SELECT count(*) n FROM admin_audit_logs WHERE entity_id=$1 AND action='support.reply'",[id])).rows[0].n),1);
+    });
+    await check('Arrival instructions stay private, require confirmed booking and reject stale edits',async()=>{
+      const b=await create(await listing('Arrival fixture'),128);
+      const body={instructions:'Gặp quản trị tại quầy nhận phòng của cơ sở.',contact:'Liên hệ fixture',revision:0};
+      const url='/admin/bookings/'+b.id+'/arrival-guide';
+      assert.equal((await api('PUT',url,'admin',body)).status,409);
+      await pay(b);
+      assert.equal((await api('GET','/bookings/'+b.id+'/trip','guest')).body.data.guideStatus,'not_published');
+      assert.equal((await api('PUT',url,'guest',body)).status,403);
+      const published=await api('PUT',url,'admin',body);assert.equal(published.status,200,JSON.stringify(published.body));assert.equal(published.body.data.revision,1);
+      assert.equal((await api('PUT',url,'admin',body)).status,409);
+      assert.equal((await api('PUT',url,'admin',{...body,revision:1})).status,200);
+      for(const who of ['other','host'])assert.equal((await api('GET','/bookings/'+b.id+'/trip',who)).status,404);
+      assert.equal((await api('GET','/bookings/'+b.id+'/trip')).status,401);
+      const trip=await api('GET','/bookings/'+b.id+'/trip','guest');
+      assert.equal(trip.body.data.arrivalGuide.instructions,body.instructions);assert.ok(trip.body.data.events.some((e:any)=>e.kind==='payment_received'));
+      assert.equal(JSON.stringify((await api('GET','/listings/'+b.listing_id)).body).includes(body.instructions),false);
+      await api('PATCH','/bookings/'+b.id+'/cancel','guest',{reason:'Kế hoạch thay đổi'});
+      assert.equal((await api('GET','/bookings/'+b.id+'/trip','guest')).body.data.arrivalGuide,null);
+      assert.equal((await api('GET','/bookings/'+b.id+'/trip','admin')).body.data.arrivalGuide.revision,2);
+      for(const role of ['anon','authenticated'])for(const table of ['support_tickets','support_messages','booking_arrival_guides']){
+        await owner.query('BEGIN');try{await owner.query('SET LOCAL ROLE '+role);await assert.rejects(owner.query('SELECT * FROM '+table),(e:any)=>e.code==='42501');}finally{await owner.query('ROLLBACK');}
+      }
+      await assert.rejects(pool.query("UPDATE support_messages SET body='tamper'"),(e:any)=>e.code==='42501');
+    });
+
     await check('OpenAPI covers every actual route; Postman operation count and empty token templates',async()=>{
       const spec=JSON.parse(await fs.readFile('../docs/openapi.json','utf8'));
       const actual=new Set<string>(['GET /health','GET /api/v1/health','POST /api/v1/webhooks/mock','POST /api/v1/webhooks/stripe_test']);
-      for(const [file,prefix]of [['auth.routes','/auth'],['booking.routes',''],['discovery.routes',''],['interaction.routes',''],['admin.routes','/admin']]){
+      for(const [file,prefix]of [['auth.routes','/auth'],['booking.routes',''],['discovery.routes',''],['interaction.routes',''],['admin.routes','/admin'],['support.routes','']]){
         const router=(await import('../src/routes/'+file)).default;
         for(const layer of router.stack)if(layer.route)for(const [method,on]of Object.entries(layer.route.methods))if(on)actual.add(method.toUpperCase()+' /api/v1'+prefix+layer.route.path.replace(/:([A-Za-z]+)/g,'{$1}'));
       }

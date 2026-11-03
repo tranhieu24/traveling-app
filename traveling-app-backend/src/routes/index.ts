@@ -4,6 +4,7 @@ import discoveryRoutes from './discovery.routes';
 import interactionRoutes from './interaction.routes';
 import bookingRoutes from './booking.routes';
 import adminRoutes from './admin.routes';
+import supportRoutes from './support.routes';
 
 const apiRouter = Router();
 
@@ -13,5 +14,6 @@ apiRouter.use('/admin',adminRoutes);
 apiRouter.use('/', discoveryRoutes);
 apiRouter.use('/', interactionRoutes);
 apiRouter.use('/', bookingRoutes);
+apiRouter.use('/', supportRoutes);
 
 export default apiRouter;

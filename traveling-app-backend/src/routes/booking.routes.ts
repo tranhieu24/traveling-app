@@ -1,3 +1,4 @@
+import { ENV } from '../config/env';
 import { Router } from 'express';
 import { bookingController as b } from '../controllers/booking.controller';
 import { requireAuth,optionalAuth } from '../middlewares/auth.middleware';
@@ -6,6 +7,7 @@ import * as s from '../validators/schemas';
 import { paymentRepository as p } from '../repositories/payment.repository';
 import { sendSuccess } from '../types';
 const router=Router();
+router.get('/payments/config',(_req,res)=>{res.setHeader('Cache-Control','no-store');return sendSuccess(res,{mode:ENV.PAYMENT_MODE,publishableKey:ENV.PAYMENT_MODE==='stripe_test' && ENV.STRIPE_PUBLISHABLE_KEY.startsWith('pk_test_')?ENV.STRIPE_PUBLISHABLE_KEY:null});});
 router.post('/bookings/quote',optionalAuth,v(s.bookingQuoteSchema),b.quote);
 router.post('/bookings',requireAuth,v(s.createBookingSchema),b.create);
 router.get('/bookings',requireAuth,v(s.bookingListSchema,'query'),b.getMyBookings);

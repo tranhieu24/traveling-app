@@ -20,6 +20,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "id": "11111111-1111-4111-8111-111111111111",
     "email": "guest@example.test",
@@ -51,6 +52,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "id": "11111111-1111-4111-8111-111111111111",
     "email": "guest@example.test",
@@ -76,6 +78,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": [
     {
       "id": "11111111-1111-4111-8111-111111111111",
@@ -108,6 +111,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": [
     {
       "kind": "city",
@@ -135,6 +139,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": [
     {
       "id": "11111111-1111-4111-8111-111111111111",
@@ -185,6 +190,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": [
     {
       "id": "11111111-1111-4111-8111-111111111111",
@@ -229,6 +235,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "id": "11111111-1111-4111-8111-111111111111",
     "title": "Beach Apartment",
@@ -265,6 +272,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "listingId": "11111111-1111-4111-8111-111111111111",
     "listingTitle": "Beach Apartment",
@@ -276,6 +284,372 @@ Success HTTP 200.
 ```
 
 Endpoint error codes: `LISTING_NOT_FOUND,VALIDATION_ERROR`. HTTP responses: 200, 400, 401, 403, 404, 409, 429, 500.
+
+## GET /api/v1/support-tickets
+
+Danh sách yêu cầu hỗ trợ
+
+Permission: **authenticated**. Guest sees own tickets only; admin sees all. Private no-store.
+
+| Location | Parameter | Required | Schema/default |
+|---|---|---|---|
+| query | `page` | no | `{"type":"integer","minimum":1,"maximum":100000,"default":1}` |
+| query | `limit` | no | `{"type":"integer","minimum":1,"maximum":50,"default":12}` |
+| query | `bookingId` | no | `{"type":"string","format":"uuid"}` |
+| query | `status` | no | `{"type":"string","enum":["open","waiting_guest","resolved"]}` |
+
+Request body: none.
+
+Success HTTP 200.
+
+```json
+{
+  "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
+  "data": [
+    {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "booking_id": "11111111-1111-4111-8111-111111111111",
+      "subject": "Hướng dẫn nhận phòng",
+      "status": "open"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 12,
+    "total": 1,
+    "totalPages": 1
+  }
+}
+```
+
+Endpoint error codes: `Common errors above`. HTTP responses: 200, 400, 401, 403, 404, 409, 429, 500.
+
+## GET /api/v1/support-tickets/{id}
+
+Nội dung yêu cầu, tin nhắn theo trang
+
+Permission: **authenticated**. Only ticket owner or admin; messages ordered oldest first with stable ID tie-break.
+
+| Location | Parameter | Required | Schema/default |
+|---|---|---|---|
+| path | `id` | yes | `{"type":"string","format":"uuid"}` |
+| query | `page` | no | `{"type":"integer","minimum":1,"maximum":100000,"default":1}` |
+| query | `limit` | no | `{"type":"integer","minimum":1,"maximum":50,"default":12}` |
+
+Request body: none.
+
+Success HTTP 200.
+
+```json
+{
+  "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
+  "data": {}
+}
+```
+
+Endpoint error codes: `Common errors above`. HTTP responses: 200, 400, 401, 403, 404, 409, 429, 500.
+
+## POST /api/v1/support-tickets/{id}/messages
+
+Phản hồi hỗ trợ
+
+Permission: **authenticated**. Same requestId/payload returns prior message. Different payload returns 409. Guest reply reopens; admin reply sets waiting_guest.
+
+| Location | Parameter | Required | Schema/default |
+|---|---|---|---|
+| path | `id` | yes | `{"type":"string","format":"uuid"}` |
+
+Request schema: `SupportReply` in OpenAPI.
+
+```json
+{
+  "body": "Vui lòng kiểm tra hướng dẫn trong đơn.",
+  "requestId": "11111111-1111-4111-8111-111111111111"
+}
+```
+
+Success HTTP 201.
+
+```json
+{
+  "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
+  "data": {}
+}
+```
+
+Endpoint error codes: `Common errors above`. HTTP responses: 201, 400, 401, 403, 404, 409, 429, 500.
+
+## GET /api/v1/admin/support-tickets
+
+Danh sách yêu cầu hỗ trợ
+
+Permission: **admin**. Guest sees own tickets only; admin sees all. Private no-store. Requires public.users.role=admin and account_status=active (server checked).
+
+| Location | Parameter | Required | Schema/default |
+|---|---|---|---|
+| query | `page` | no | `{"type":"integer","minimum":1,"maximum":100000,"default":1}` |
+| query | `limit` | no | `{"type":"integer","minimum":1,"maximum":50,"default":12}` |
+| query | `bookingId` | no | `{"type":"string","format":"uuid"}` |
+| query | `status` | no | `{"type":"string","enum":["open","waiting_guest","resolved"]}` |
+
+Request body: none.
+
+Success HTTP 200.
+
+```json
+{
+  "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
+  "data": [
+    {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "booking_id": "11111111-1111-4111-8111-111111111111",
+      "subject": "Hướng dẫn nhận phòng",
+      "status": "open"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 12,
+    "total": 1,
+    "totalPages": 1
+  }
+}
+```
+
+Endpoint error codes: `Common errors above`. HTTP responses: 200, 400, 401, 403, 404, 409, 429, 500.
+
+## GET /api/v1/admin/support-tickets/{id}
+
+Nội dung yêu cầu, tin nhắn theo trang
+
+Permission: **admin**. Only ticket owner or admin; messages ordered oldest first with stable ID tie-break. Requires public.users.role=admin and account_status=active (server checked).
+
+| Location | Parameter | Required | Schema/default |
+|---|---|---|---|
+| path | `id` | yes | `{"type":"string","format":"uuid"}` |
+| query | `page` | no | `{"type":"integer","minimum":1,"maximum":100000,"default":1}` |
+| query | `limit` | no | `{"type":"integer","minimum":1,"maximum":50,"default":12}` |
+
+Request body: none.
+
+Success HTTP 200.
+
+```json
+{
+  "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
+  "data": {}
+}
+```
+
+Endpoint error codes: `Common errors above`. HTTP responses: 200, 400, 401, 403, 404, 409, 429, 500.
+
+## POST /api/v1/admin/support-tickets/{id}/messages
+
+Phản hồi hỗ trợ
+
+Permission: **admin**. Same requestId/payload returns prior message. Different payload returns 409. Guest reply reopens; admin reply sets waiting_guest. Requires public.users.role=admin and account_status=active (server checked).
+
+| Location | Parameter | Required | Schema/default |
+|---|---|---|---|
+| path | `id` | yes | `{"type":"string","format":"uuid"}` |
+
+Request schema: `SupportReply` in OpenAPI.
+
+```json
+{
+  "body": "Vui lòng kiểm tra hướng dẫn trong đơn.",
+  "requestId": "11111111-1111-4111-8111-111111111111"
+}
+```
+
+Success HTTP 201.
+
+```json
+{
+  "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
+  "data": {}
+}
+```
+
+Endpoint error codes: `Common errors above`. HTTP responses: 201, 400, 401, 403, 404, 409, 429, 500.
+
+## POST /api/v1/support-tickets
+
+Tạo yêu cầu cho đơn của chính mình
+
+Permission: **authenticated**. Tạo yêu cầu cho đơn của chính mình
+
+Request schema: `SupportCreate` in OpenAPI.
+
+```json
+{
+  "bookingId": "11111111-1111-4111-8111-111111111111",
+  "subject": "Hướng dẫn nhận phòng",
+  "body": "Tôi cần biết cách nhận phòng.",
+  "requestId": "11111111-1111-4111-8111-111111111111"
+}
+```
+
+Success HTTP 201.
+
+```json
+{
+  "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
+  "data": {}
+}
+```
+
+Endpoint error codes: `Common errors above`. HTTP responses: 201, 400, 401, 403, 404, 409, 429, 500.
+
+## PATCH /api/v1/admin/support-tickets/{id}/status
+
+Cập nhật trạng thái hỗ trợ
+
+Permission: **admin**. Cập nhật trạng thái hỗ trợ Requires public.users.role=admin and account_status=active (server checked).
+
+| Location | Parameter | Required | Schema/default |
+|---|---|---|---|
+| path | `id` | yes | `{"type":"string","format":"uuid"}` |
+
+Request schema: `SupportStatus` in OpenAPI.
+
+```json
+{
+  "status": "resolved"
+}
+```
+
+Success HTTP 200.
+
+```json
+{
+  "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
+  "data": {}
+}
+```
+
+Endpoint error codes: `Common errors above`. HTTP responses: 200, 400, 401, 403, 404, 409, 429, 500.
+
+## GET /api/v1/bookings/{id}/trip
+
+Tiến trình chuyến đi và hướng dẫn riêng tư
+
+Permission: **authenticated**. Only booking owner or admin. Arrival guide hidden from guests until confirmed, hidden again on cancellation/expiry. Payment/refund event amounts reflect ledger, no invented check-in details.
+
+| Location | Parameter | Required | Schema/default |
+|---|---|---|---|
+| path | `id` | yes | `{"type":"string","format":"uuid"}` |
+
+Request body: none.
+
+Success HTTP 200.
+
+```json
+{
+  "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
+  "data": {}
+}
+```
+
+Endpoint error codes: `Common errors above`. HTTP responses: 200, 400, 401, 403, 404, 409, 429, 500.
+
+## PUT /api/v1/admin/bookings/{id}/arrival-guide
+
+Cung cấp hướng dẫn nhận phòng
+
+Permission: **admin**. Confirmed bookings only. revision=0 for first publish; existing revision required for update. Conflict 409 on concurrent edit. Requires public.users.role=admin and account_status=active (server checked).
+
+| Location | Parameter | Required | Schema/default |
+|---|---|---|---|
+| path | `id` | yes | `{"type":"string","format":"uuid"}` |
+
+Request schema: `ArrivalGuideRequest` in OpenAPI.
+
+```json
+{
+  "instructions": "Hướng dẫn do cơ sở cung cấp và đã xác minh.",
+  "contact": "",
+  "revision": 0
+}
+```
+
+Success HTTP 200.
+
+```json
+{
+  "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
+  "data": {}
+}
+```
+
+Endpoint error codes: `Common errors above`. HTTP responses: 200, 400, 401, 403, 404, 409, 429, 500.
+
+## GET /api/v1/listings/{id}/review-summary
+
+Thống kê điểm tổng thể của toàn bộ đánh giá
+
+Permission: **public**. Database aggregates all reviews; page-by-page review retrieval does not change these counts. Auxiliary criterion scores are not collected and are not inferred.
+
+| Location | Parameter | Required | Schema/default |
+|---|---|---|---|
+| path | `id` | yes | `{"type":"string","format":"uuid"}` |
+
+Request body: none.
+
+Success HTTP 200.
+
+```json
+{
+  "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
+  "data": {
+    "total": 1,
+    "average": 5,
+    "counts": [
+      0,
+      0,
+      0,
+      0,
+      1
+    ]
+  }
+}
+```
+
+Endpoint error codes: `Common errors above`. HTTP responses: 200, 400, 404, 409, 429, 500.
+
+## GET /api/v1/payments/config
+
+Cấu hình công khai của cổng thanh toán test
+
+Permission: **public**. No-store. Stripe publishable key is returned only in stripe_test mode and only if pk_test_. SDK confirmation never replaces server webhook verification.
+
+Request body: none.
+
+Success HTTP 200.
+
+```json
+{
+  "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
+  "data": {
+    "mode": "mock",
+    "publishableKey": null
+  }
+}
+```
+
+Endpoint error codes: `Common errors above`. HTTP responses: 200, 400, 404, 409, 429, 500.
 
 ## GET /api/v1/listings/{id}/reviews
 
@@ -296,6 +670,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": [
     {
       "id": "11111111-1111-4111-8111-111111111111",
@@ -340,6 +715,7 @@ Success HTTP 201.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "id": "11111111-1111-4111-8111-111111111111",
     "listing_id": "11111111-1111-4111-8111-111111111111",
@@ -370,6 +746,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": [
     {
       "id": "11111111-1111-4111-8111-111111111111",
@@ -416,6 +793,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "listingId": "11111111-1111-4111-8111-111111111111",
     "isFavorite": true
@@ -447,6 +825,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "currency": "USD",
     "listingId": "11111111-1111-4111-8111-111111111111",
@@ -468,7 +847,16 @@ Success HTTP 200.
     "checkOutDate": "2099-01-12",
     "guests": 2,
     "maxGuests": 4,
-    "quoteIsReservation": false
+    "quoteIsReservation": false,
+    "policy": {
+      "version": "stay-v1",
+      "currency": "USD",
+      "depositAmount": 30,
+      "timezone": "UTC",
+      "cancellation": "Đơn đã xác nhận chỉ được hủy trước ngày nhận phòng theo UTC. Tiền đã trả được tạo yêu cầu hoàn; cần quản trị duyệt và nhà cung cấp xác nhận.",
+      "payment": "Đặt phòng chỉ được xác nhận sau khi server kiểm tra thanh toán. Nếu trả cọc, bạn cần thanh toán phần còn lại trước khi hoàn tất chuyến đi.",
+      "hold": "Chưa thanh toán trong thời hạn giữ lịch: đơn có thể hết hạn. Báo giá chưa giữ phòng."
+    }
   }
 }
 ```
@@ -498,6 +886,7 @@ Success HTTP 201.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "booking": {
       "id": "11111111-1111-4111-8111-111111111111",
@@ -542,6 +931,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": [
     {
       "id": "11111111-1111-4111-8111-111111111111",
@@ -589,6 +979,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "id": "11111111-1111-4111-8111-111111111111",
     "booking_code": "TRV-example",
@@ -647,6 +1038,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "booking": {
       "id": "11111111-1111-4111-8111-111111111111",
@@ -724,6 +1116,7 @@ Success HTTP 201.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "payment": {
       "id": "11111111-1111-4111-8111-111111111111",
@@ -766,6 +1159,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "paymentId": "11111111-1111-4111-8111-111111111111",
     "status": "succeeded"
@@ -798,6 +1192,7 @@ Success HTTP 201.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": [
     {
       "id": "11111111-1111-4111-8111-111111111111",
@@ -826,6 +1221,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "id": "11111111-1111-4111-8111-111111111111",
     "email": "guest@example.test",
@@ -851,6 +1247,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "signedOut": true
   }
@@ -879,6 +1276,7 @@ Success HTTP 201.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "url": "https://example.test/listing.png",
     "iconName": "media:example.png"
@@ -911,6 +1309,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": [
     {
       "id": "11111111-1111-4111-8111-111111111111",
@@ -955,6 +1354,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "id": "11111111-1111-4111-8111-111111111111",
     "title": "Beach Apartment",
@@ -1016,6 +1416,7 @@ Success HTTP 201.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "id": "11111111-1111-4111-8111-111111111111",
     "title": "Beach Apartment",
@@ -1058,6 +1459,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "id": "11111111-1111-4111-8111-111111111111",
     "title": "Beach Apartment",
@@ -1094,6 +1496,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "id": "11111111-1111-4111-8111-111111111111",
     "title": "Beach Apartment",
@@ -1137,6 +1540,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": [
     {
       "id": "11111111-1111-4111-8111-111111111111",
@@ -1174,6 +1578,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "id": "11111111-1111-4111-8111-111111111111",
     "name": "Beach",
@@ -1207,6 +1612,7 @@ Success HTTP 201.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "id": "11111111-1111-4111-8111-111111111111",
     "name": "Beach",
@@ -1242,6 +1648,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "id": "11111111-1111-4111-8111-111111111111",
     "name": "Beach",
@@ -1271,6 +1678,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "id": "11111111-1111-4111-8111-111111111111",
     "name": "Beach",
@@ -1306,6 +1714,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": [
     {
       "id": "11111111-1111-4111-8111-111111111111",
@@ -1347,6 +1756,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "id": "11111111-1111-4111-8111-111111111111",
     "code": "SUMMER",
@@ -1389,6 +1799,7 @@ Success HTTP 201.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "id": "11111111-1111-4111-8111-111111111111",
     "code": "SUMMER",
@@ -1428,6 +1839,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "id": "11111111-1111-4111-8111-111111111111",
     "code": "SUMMER",
@@ -1461,6 +1873,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "id": "11111111-1111-4111-8111-111111111111",
     "code": "SUMMER",
@@ -1500,6 +1913,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": [
     {
       "id": "11111111-1111-4111-8111-111111111111",
@@ -1543,6 +1957,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": [
     {
       "id": "11111111-1111-4111-8111-111111111111",
@@ -1596,6 +2011,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": [
     {
       "id": "11111111-1111-4111-8111-111111111111",
@@ -1640,6 +2056,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": [
     {
       "id": "11111111-1111-4111-8111-111111111111",
@@ -1684,6 +2101,7 @@ Success HTTP 200 (or 202 when auth_sync_pending=true).
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "id": "11111111-1111-4111-8111-111111111111",
     "email": "guest@example.test",
@@ -1720,6 +2138,7 @@ Success HTTP 200 (or 202 when auth_sync_pending=true).
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "id": "11111111-1111-4111-8111-111111111111",
     "email": "guest@example.test",
@@ -1750,6 +2169,7 @@ Success HTTP 200 (or 202 when auth_sync_pending=true).
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "id": "11111111-1111-4111-8111-111111111111",
     "email": "guest@example.test",
@@ -1780,6 +2200,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "id": "11111111-1111-4111-8111-111111111111",
     "booking_code": "TRV-example",
@@ -1832,6 +2253,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "id": "11111111-1111-4111-8111-111111111111",
     "booking_code": "TRV-example",
@@ -1871,6 +2293,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "id": "11111111-1111-4111-8111-111111111111",
     "booking_code": "TRV-example",
@@ -1916,6 +2339,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "booking": {
       "id": "11111111-1111-4111-8111-111111111111",
@@ -1963,6 +2387,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "expired": 1,
     "paymentsTimedOut": 1
@@ -1996,6 +2421,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "id": "11111111-1111-4111-8111-111111111111",
     "payment_id": "11111111-1111-4111-8111-111111111111",
@@ -2026,6 +2452,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "id": "11111111-1111-4111-8111-111111111111",
     "status": "processing",
@@ -2054,6 +2481,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "from": "2026-10-27",
     "to": "2026-10-27",
@@ -2127,6 +2555,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "duplicate": false
   }
@@ -2170,6 +2599,7 @@ Success HTTP 200.
 ```json
 {
   "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
   "data": {
     "ignored": true
   }

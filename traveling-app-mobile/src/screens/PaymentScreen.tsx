@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -11,31 +11,40 @@ import { useAuth } from '../context/AuthContext';
 import { apiClient } from '../services/apiClient';
 import { completeBookingPayment, paymentErrorMessage } from '../services/bookingPayment';
 import { formatPaymentMoney, getPaymentSummary } from '../utils/paymentSummary';
+import { BookingHold } from '../components/booking/BookingHold';
+import { StripeCheckout } from '../components/payments/StripeCheckout';
 import { bookingPaymentDue, formatTripDates } from '../utils/checkout';
 
 export const PaymentScreen: React.FC = () => {
-  const route = useRoute<RouteProp<RootStackParamList, 'Payment'>>();
+  const route = useRoute<RouteProp<RootStackParamList, "Payment">>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { bookingId } = route.params;
   const { user, isLoading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const [paying, setPaying] = useState(false);
   const [paymentError, setPaymentError] = useState('');
+  const [holdElapsed,setHoldElapsed]=useState(false);
   const pending = useRef(false);
   const { data: booking, isLoading, isError, error, refetch } = useQuery<Booking>({
     queryKey: ['booking_detail', bookingId, user?.id],
     enabled: !authLoading && !!user,
     queryFn: async () => {
       const response = await apiClient.get(`/bookings/${encodeURIComponent(bookingId)}`);
-      if (!response.data.success || response.data.data?.id !== bookingId) throw new Error('Could not load your payment details.');
+      if (!response.data.success || response.data.data?.id !== bookingId) throw new Error('Chưa tải được thông tin thanh toán.');
       return response.data.data;
     },
   });
+  const config = useQuery<{mode:string;publishableKey:string|null}>({queryKey:['payment_config'],queryFn:async()=> (await apiClient.get('/payments/config')).data.data});
+  const finishPayment = (updated:Booking) => {
+    queryClient.setQueryData(['booking_detail',bookingId,user?.id],updated);
+    void queryClient.invalidateQueries({queryKey:['my_bookings']});
+    navigation.replace('BookingSuccess',{bookingId,bookingCode:updated.booking_code});
+  };
   const requestedPlan = route.params.plan;
   const plan: PaymentPlan = requestedPlan && ['full', 'deposit', 'balance'].includes(requestedPlan) ? requestedPlan : booking?.payment_plan === 'deposit' ? 'deposit' : 'full';
   const summary = booking ? getPaymentSummary(booking) : null;
-  const alreadyPaid = !!booking && summary?.state === 'success' && (plan !== 'balance' || Number(booking.balance_due || 0) === 0);
-  const payable = !!booking && ['pending', 'confirmed'].includes(booking.booking_status) && !alreadyPaid && booking.payment_status !== 'refunded' && Number(booking.balance_due ?? booking.total_price) > 0;
+  const alreadyPaid = !!booking && summary?.state === 'success' && (plan === 'deposit' || Number(booking.balance_due || 0) === 0);
+  const payable = !holdElapsed && !!booking && ['pending', 'confirmed'].includes(booking.booking_status) && !alreadyPaid && booking.payment_status !== 'refunded' && Number(booking.balance_due ?? booking.total_price) > 0;
   const dueNow = booking ? bookingPaymentDue(booking, plan) : 0;
   const remaining = booking ? alreadyPaid ? Number(booking.balance_due || 0) : Math.max(0, Number(booking.balance_due ?? booking.total_price) - dueNow) : 0;
   const money = (value: number | string) => formatPaymentMoney(value, 'USD');
@@ -58,62 +67,67 @@ export const PaymentScreen: React.FC = () => {
     finally { pending.current = false; setPaying(false); }
   };
 
+  React.useEffect(()=>{if(Platform.OS==='web' && typeof window!=='undefined' && window.location?.search?.includes('payment_intent'))window.history.replaceState({},'',window.location.pathname);},[]);
   return (
     <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={styles.screen}>
       <View style={styles.header}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Back to reservation" disabled={paying} onPress={() => navigation.replace('BookingDetail', { bookingId })} style={styles.backButton}><ChevronLeft size={25} color="#90979F" /></Pressable>
-        <Text accessibilityRole="header" style={styles.headerTitle}>Payment</Text><View style={styles.backButton} />
+        <Pressable accessibilityRole="button" accessibilityLabel="Quay lại đơn đặt phòng" disabled={paying} onPress={() => navigation.replace('BookingDetail', { bookingId })} style={styles.backButton}><ChevronLeft size={25} color="#90979F" /></Pressable>
+        <Text accessibilityRole="header" style={styles.headerTitle}>Thanh toán</Text><View style={styles.backButton} />
       </View>
       <ScrollView contentContainerStyle={styles.content}>
-        {authLoading || !!user && isLoading ? <View style={styles.empty}><ActivityIndicator color="#00B8CE" /><Text style={styles.muted}>Loading payment details...</Text></View> : needsLogin ? (
-          <View style={styles.empty}><LockKeyhole size={36} color="#00A4BA" /><Text style={styles.emptyTitle}>Log in to continue</Text><Text style={styles.muted}>Your booking and payment details are private.</Text><Pressable accessibilityRole="button" accessibilityLabel="Log in to pay" onPress={() => navigation.navigate('Login')} style={styles.outlineButton}><Text style={styles.outlineLabel}>Log in</Text></Pressable></View>
+        {authLoading || !!user && isLoading ? <View style={styles.empty}><ActivityIndicator color="#00B8CE" /><Text style={styles.muted}>Đang tải thông tin thanh toán...</Text></View> : needsLogin ? (
+          <View style={styles.empty}><LockKeyhole size={36} color="#00A4BA" /><Text style={styles.emptyTitle}>Đăng nhập để tiếp tục</Text><Text style={styles.muted}>Thông tin đặt phòng và thanh toán của bạn được bảo vệ.</Text><Pressable accessibilityRole="button" accessibilityLabel="Đăng nhập để thanh toán" onPress={() => navigation.navigate('Login')} style={styles.outlineButton}><Text style={styles.outlineLabel}>Đăng nhập</Text></Pressable></View>
         ) : isError || !booking ? (
-          <View style={styles.empty}><AlertCircle size={36} color="#9CA3AF" /><Text style={styles.emptyTitle}>Unable to load payment</Text><Pressable accessibilityRole="button" accessibilityLabel="Retry checkout details" onPress={() => { void refetch(); }} style={styles.outlineButton}><Text style={styles.outlineLabel}>Try again</Text></Pressable></View>
+          <View style={styles.empty}><AlertCircle size={36} color="#9CA3AF" /><Text style={styles.emptyTitle}>Chưa tải được thanh toán</Text><Pressable accessibilityRole="button" accessibilityLabel="Tải lại thông tin thanh toán" onPress={() => { void refetch(); }} style={styles.outlineButton}><Text style={styles.outlineLabel}>Thử lại</Text></Pressable></View>
         ) : (
           <>
+            <BookingHold booking={booking} onElapsed={setHoldElapsed} onRefresh={()=>void refetch()} onRebook={()=>navigation.replace('ListingDetail',{listingId:booking.listing_id})}/>
             <View style={styles.amountHeader}>
-              <Text style={styles.eyebrow}>{alreadyPaid ? 'Payment complete' : plan === 'balance' ? 'Remaining balance' : 'Amount to pay'}</Text>
+              <Text style={styles.eyebrow}>{alreadyPaid ? "Đã ghi nhận thanh toán" : plan === 'balance' ? "Số tiền còn lại" : "Số tiền cần thanh toán"}</Text>
               <Text style={styles.amount}>{alreadyPaid ? money(booking.amount_paid || 0) : money(dueNow)}</Text>
-              <Text style={styles.planLabel}>{plan === 'deposit' ? 'Pay a part now' : plan === 'balance' ? 'Complete your payment' : 'Pay in full'}</Text>
+              <Text style={styles.planLabel}>{plan === 'deposit' ? "Trả cọc trước" : plan === 'balance' ? "Thanh toán phần còn lại" : "Thanh toán toàn bộ"}</Text>
             </View>
             <View style={styles.staySummary}>
               <Text style={styles.stayTitle}>{booking.listing_title}</Text>
-              <Text style={styles.muted}>{formatTripDates(booking.check_in_date.slice(0, 10), booking.check_out_date.slice(0, 10))} / {booking.number_of_guests} {booking.number_of_guests === 1 ? 'guest' : 'guests'}</Text>
-              <Text selectable style={styles.reference}>Booking ref: {booking.booking_code}</Text>
+              <Text style={styles.muted}>{formatTripDates(booking.check_in_date.slice(0, 10), booking.check_out_date.slice(0, 10))} / {booking.number_of_guests} khách</Text>
+              <Text selectable style={styles.reference}>Mã đặt phòng: {booking.booking_code}</Text>
             </View>
             {alreadyPaid ? (
-              <View style={styles.notice}><Check size={22} color="#15803D" /><Text style={styles.noticeText}>This payment is already complete. You can view the receipt below.</Text></View>
+              <View style={styles.notice}><Check size={22} color="#15803D" /><Text style={styles.noticeText}>Khoản thanh toán này đã hoàn tất. Bạn có thể xem chứng từ bên dưới.</Text></View>
             ) : !payable ? (
-              <View style={styles.notice}><AlertCircle size={22} color="#C78328" /><Text style={styles.noticeText}>This reservation cannot accept payment. Check its current status in booking details.</Text></View>
+              <View style={styles.notice}><AlertCircle size={22} color="#C78328" /><Text style={styles.noticeText}>Đơn hiện chưa thể nhận thanh toán. Hãy kiểm tra trạng thái trong chi tiết đặt phòng.</Text></View>
             ) : (
               <>
-                <Text style={styles.sectionTitle}>Payment method</Text>
-                <View style={styles.card} accessibilityRole="radio" aria-checked={true} accessibilityState={{ checked: true }} accessibilityLabel="Mock credit card ending in 4242">
-                  <View style={styles.cardTop}><CreditCard size={25} color="#008D9F" /><Text style={styles.cardBadge}>MOCK CARD</Text></View>
+                <Text style={styles.sectionTitle}>Phương thức thanh toán</Text>
+                {config.data?.mode==='mock' && <><View style={styles.card} accessibilityRole="radio" aria-checked={true} accessibilityState={{ checked: true }} accessibilityLabel="Thẻ mô phỏng kết thúc bằng 4242">
+                  <View style={styles.cardTop}><CreditCard size={25} color="#008D9F" /><Text style={styles.cardBadge}>THẺ MÔ PHỎNG</Text></View>
                   <Text style={styles.cardNumber}>{'4242   \u2022\u2022\u2022\u2022   \u2022\u2022\u2022\u2022   4242'}</Text>
-                  <View style={styles.cardBottom}><Text style={styles.cardCaption}>Credit card</Text><View style={styles.checkBadge}><Check size={13} color="#FFFFFF" /></View></View>
+                  <View style={styles.cardBottom}><Text style={styles.cardCaption}>Thẻ thanh toán</Text><View style={styles.checkBadge}><Check size={13} color="#FFFFFF" /></View></View>
                 </View>
-                <Text style={styles.mockNote}>Demo checkout. No real charge or bank OTP is required.</Text>
+                <Text style={styles.mockNote}>Thanh toán mô phỏng, không trừ tiền thật.</Text></>}
+                {config.isLoading && <Text style={styles.muted}>Đang kiểm tra cổng thanh toán...</Text>}
+                {(config.isError || config.data?.mode==='disabled') && <Text accessibilityRole="alert" style={styles.error}>Cổng thanh toán chưa sẵn sàng. Đơn chưa được thanh toán.</Text>}
+                {config.data?.mode==='stripe_test' && (config.data.publishableKey ? <StripeCheckout bookingId={bookingId} plan={plan} publishableKey={config.data.publishableKey} onComplete={finishPayment} onBusy={setPaying}/> : <Text style={styles.error}>Backend chưa cấu hình publishable key Stripe test.</Text>)}
               </>
             )}
             <View style={styles.breakdown}>
-              <Text style={styles.sectionTitle}>Payment summary</Text>
-              <View style={styles.priceRow}><Text style={styles.priceLabel}>Trip total (USD)</Text><Text style={styles.priceValue}>{money(booking.total_price)}</Text></View>
-              {Number(booking.amount_paid || 0) > 0 && <View style={styles.priceRow}><Text style={styles.priceLabel}>Already paid</Text><Text style={styles.priceValue}>{money(booking.amount_paid!)}</Text></View>}
-              {!alreadyPaid && <View style={styles.priceRow}><Text style={styles.priceLabel}>Due now</Text><Text style={styles.priceValue}>{money(dueNow)}</Text></View>}
-              <View style={styles.totalRow}><Text style={styles.priceLabel}>Remaining after payment</Text><Text style={styles.priceValue}>{money(remaining)}</Text></View>
+              <Text style={styles.sectionTitle}>Tóm tắt thanh toán</Text>
+              <View style={styles.priceRow}><Text style={styles.priceLabel}>Tổng chuyến đi (USD)</Text><Text style={styles.priceValue}>{money(booking.total_price)}</Text></View>
+              {Number(booking.amount_paid || 0) > 0 && <View style={styles.priceRow}><Text style={styles.priceLabel}>Đã thanh toán</Text><Text style={styles.priceValue}>{money(booking.amount_paid!)}</Text></View>}
+              {!alreadyPaid && <View style={styles.priceRow}><Text style={styles.priceLabel}>Cần trả ngay</Text><Text style={styles.priceValue}>{money(dueNow)}</Text></View>}
+              <View style={styles.totalRow}><Text style={styles.priceLabel}>Còn lại sau thanh toán</Text><Text style={styles.priceValue}>{money(remaining)}</Text></View>
             </View>
           </>
         )}
       </ScrollView>
       {!!booking && !needsLogin && <View style={styles.footer}>
         {!!paymentError && <Text accessibilityRole="alert" style={styles.error}>{paymentError}</Text>}
-        <Pressable
-          accessibilityRole="button" accessibilityLabel={alreadyPaid ? 'View payment receipt' : payable ? 'Pay now' : 'View reservation status'} disabled={paying}
+        {(!payable || config.data?.mode==='mock') && <Pressable
+          accessibilityRole="button" accessibilityLabel={alreadyPaid ? "Xem chứng từ thanh toán" : payable ? 'Thanh toán ngay' : 'Xem trạng thái đặt phòng'} disabled={paying}
           onPress={() => alreadyPaid ? navigation.replace('BookingSuccess', { bookingId, bookingCode: booking.booking_code }) : payable ? pay() : navigation.replace('BookingDetail', { bookingId })}
           style={[styles.payButton, paying && styles.disabled]}
-        >{paying && <ActivityIndicator size="small" color="#FFFFFF" />}<Text style={styles.payLabel}>{paying ? 'Processing payment...' : alreadyPaid ? 'View payment receipt' : payable ? `Pay ${money(dueNow)}` : 'View booking'}</Text></Pressable>
-        {payable && <View style={styles.secureRow}><LockKeyhole size={12} color="#9CA3AF" /><Text style={styles.secureText}>Mock payment - no real charge</Text></View>}
+        >{paying && <ActivityIndicator size="small" color="#FFFFFF" />}<Text style={styles.payLabel}>{paying ? "Đang xử lý thanh toán..." : alreadyPaid ? "Xem chứng từ thanh toán" : payable ? `Thanh toán ${money(dueNow)}` : "Xem đặt phòng"}</Text></Pressable>}
+        {payable && config.data?.mode==='mock' && <View style={styles.secureRow}><LockKeyhole size={12} color="#9CA3AF" /><Text style={styles.secureText}>Thanh toán mô phỏng - không trừ tiền thật</Text></View>}
       </View>}
     </SafeAreaView>
   );

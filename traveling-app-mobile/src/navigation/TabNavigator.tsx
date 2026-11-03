@@ -40,7 +40,7 @@ export const TabNavigator: React.FC = () => {
         name="SearchTab"
         component={HomeScreen}
         options={{
-          tabBarLabel: 'Search',
+          tabBarLabel: "Tìm kiếm",
           tabBarIcon: ({ color }) => <Search size={22} color={color} strokeWidth={1.8} />,
         }}
       />
@@ -48,7 +48,7 @@ export const TabNavigator: React.FC = () => {
         name="FavoritesTab"
         component={FavoritesScreen}
         options={{
-          tabBarLabel: 'Favorites',
+          tabBarLabel: "Yêu thích",
           tabBarIcon: ({ color }) => <Heart size={22} color={color} strokeWidth={1.8} />,
         }}
       />
@@ -56,7 +56,7 @@ export const TabNavigator: React.FC = () => {
         name="BookingsTab"
         component={BookingsScreen}
         options={{
-          tabBarLabel: 'Bookings',
+          tabBarLabel: "Đặt phòng",
           tabBarIcon: ({ color }) => <LayoutGrid size={21} color={color} strokeWidth={1.8} />,
         }}
       />
@@ -64,7 +64,7 @@ export const TabNavigator: React.FC = () => {
         name="InboxTab"
         component={InboxScreen}
         options={{
-          tabBarLabel: 'Inbox',
+          tabBarLabel: "Hộp thư",
           tabBarIcon: ({ color }) => <MessageSquare size={22} color={color} strokeWidth={1.8} />,
         }}
       />
@@ -72,7 +72,7 @@ export const TabNavigator: React.FC = () => {
         name="ProfileTab"
         component={ProfileScreen}
         options={{
-          tabBarLabel: 'Profile',
+          tabBarLabel: "Tài khoản",
           tabBarIcon: ({ color }) => <ContactRound size={22} color={color} strokeWidth={1.8} />,
         }}
       />

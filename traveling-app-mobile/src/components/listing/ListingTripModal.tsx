@@ -76,7 +76,7 @@ export const ListingTripModal = ({
         <View style={s.sheet} accessibilityViewIsModal>
           <View style={s.heading}>
             <Text accessibilityRole="header" style={s.title}>
-              Your trip
+              Chuyến đi của bạn
             </Text>
             <Pressable
               accessibilityRole="button"
@@ -110,13 +110,13 @@ export const ListingTripModal = ({
                 onError={setError}
               />
             </View>
-            <Text style={[s.label, { marginTop: 24 }]}>Guests</Text>
+            <Text style={[s.label, { marginTop: 24 }]}>Số khách</Text>
             <Text style={s.capacity}>
               Up to {maxGuests} {maxGuests === 1 ? 'guest' : 'guests'} for this stay.
             </Text>
             {(['adults', 'children'] as const).map((field) => (
               <View key={field} style={s.guest}>
-                <Text style={s.guestTitle}>{field === 'adults' ? 'Adults' : 'Children'}</Text>
+                <Text style={s.guestTitle}>{field === 'adults' ? "Người lớn" : "Trẻ em"}</Text>
                 <View pointerEvents={saving ? 'none' : 'auto'}>
                   <Counter
                     label={field}

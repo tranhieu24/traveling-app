@@ -21,6 +21,13 @@ export class ReviewRepository {
     };
   }
 
+  async getSummary(listingId: string) {
+    const result=await pool.query(`SELECT count(*)::int total, coalesce(avg(rating),0)::float average,
+      ARRAY[count(*) FILTER(WHERE rating=1),count(*) FILTER(WHERE rating=2),count(*) FILTER(WHERE rating=3),count(*) FILTER(WHERE rating=4),count(*) FILTER(WHERE rating=5)] counts
+      FROM reviews WHERE listing_id=$1`,[listingId]);
+    return {...result.rows[0],counts:result.rows[0].counts.map(Number)};
+  }
+
   async getByListingId(listingId: string, page = 1, limit = 10) {
     const offset = (page - 1) * limit;
 
@@ -35,12 +42,6 @@ export class ReviewRepository {
         r.rating, 
         r.comment,
         r.created_at,
-        r.rating AS cleanliness_rating,
-        r.rating AS accuracy_rating,
-        r.rating AS checkin_rating,
-        r.rating AS communication_rating,
-        r.rating AS location_rating,
-        r.rating AS value_rating,
         u.id AS user_id, 
         u.full_name AS user_name, 
         u.avatar_url AS user_avatar

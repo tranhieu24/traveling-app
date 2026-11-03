@@ -1,6 +1,6 @@
 import { getStateFromPath, type LinkingOptions } from '@react-navigation/native';
 import * as Linking from 'expo-linking';
-import { AUTH_SCHEME, AUTH_CALLBACK_PATH, captureAuthCallback, isAuthCallback } from '../config/auth';
+import { AUTH_SCHEME, AUTH_CALLBACK_PATH, captureAuthCallback, isAuthCallback, RECOVERY_CALLBACK_PATH, isRecoveryCallback, captureRecoveryCallback } from '../config/auth';
 import { isSocialAuthInProgress } from '../services/socialAuth';
 import type { RootStackParamList } from '../types';
 
@@ -8,6 +8,8 @@ export const linkingConfig: NonNullable<LinkingOptions<RootStackParamList>['conf
   screens: {
     Splash: '',
     AuthCallback: AUTH_CALLBACK_PATH,
+    ForgotPassword: 'forgot-password',
+    ResetPassword: RECOVERY_CALLBACK_PATH,
     CreateAccount: 'create-account',
     Login: 'login',
     AdminLogin: 'admin/login',
@@ -21,6 +23,8 @@ export const linkingConfig: NonNullable<LinkingOptions<RootStackParamList>['conf
     BookingSuccess: 'payments/:bookingId/success',
     Payment: 'bookings/:bookingId/pay',
     BookingDetail: 'bookings/:bookingId',
+    Support: 'support',
+    AdminSupport: 'admin/support',
     MainTabs: {
       path: 'browse',
       initialRouteName: 'SearchTab',
@@ -44,6 +48,7 @@ export const linking: LinkingOptions<RootStackParamList> = {
   async getInitialURL() {
     const url = await Linking.getInitialURL();
     if (url && isAuthCallback(url)) captureAuthCallback(url);
+    if (url && isRecoveryCallback(url)) captureRecoveryCallback(url);
     return url;
   },
   subscribe(listener) {
@@ -54,6 +59,7 @@ export const linking: LinkingOptions<RootStackParamList> = {
         if (isSocialAuthInProgress()) return;
         captureAuthCallback(url);
       }
+      if (isRecoveryCallback(url)) captureRecoveryCallback(url);
       listener(url);
     });
     return () => subscription.remove();
@@ -61,6 +67,6 @@ export const linking: LinkingOptions<RootStackParamList> = {
   getStateFromPath(path, options) {
     // Never put authorization codes or tokens into navigation state/logs.
     const cleanPath = path.replace(/^\//, '').split(/[?#]/)[0];
-    return getStateFromPath(cleanPath === AUTH_CALLBACK_PATH ? AUTH_CALLBACK_PATH : path, options);
+    return getStateFromPath([AUTH_CALLBACK_PATH,RECOVERY_CALLBACK_PATH].includes(cleanPath) ? cleanPath : path, options);
   },
 };

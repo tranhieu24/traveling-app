@@ -91,7 +91,7 @@ export const FilterSheetScreen: React.FC = () => {
         style={s.sheet}
       >
         <View style={s.header}>
-          <Text style={s.headerTitle}>Filters</Text>
+          <Text style={s.headerTitle}>Bộ lọc</Text>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Close filters"
@@ -107,7 +107,7 @@ export const FilterSheetScreen: React.FC = () => {
           contentContainerStyle={s.content}
         >
           <View style={s.section}>
-            <Text style={shared.heading}>Price range</Text>
+            <Text style={shared.heading}>Khoảng giá</Text>
             <Text style={[shared.muted, { fontSize: 12, marginTop: -8, marginBottom: 15 }]}>
               Nightly price in USD, before taxes and fees
             </Text>
@@ -144,7 +144,7 @@ export const FilterSheetScreen: React.FC = () => {
             </View>
           </View>
           <View style={s.section}>
-            <Text style={shared.heading}>Type of place</Text>
+            <Text style={shared.heading}>Loại chỗ ở</Text>
             {ROOM_TYPES.map((type) => (
               <Checkbox
                 key={type.value}
@@ -163,7 +163,7 @@ export const FilterSheetScreen: React.FC = () => {
             ))}
           </View>
           <View style={s.section}>
-            <Text style={shared.heading}>Rooms and beds</Text>
+            <Text style={shared.heading}>Phòng và giường</Text>
             {(['bedrooms', 'beds', 'bathrooms'] as const).map((key) => (
               <View key={key} style={s.countRow}>
                 <Text style={shared.text}>{key[0].toUpperCase() + key.slice(1)}</Text>
@@ -177,7 +177,7 @@ export const FilterSheetScreen: React.FC = () => {
             ))}
           </View>
           <View style={[s.section, { borderBottomWidth: 0 }]}>
-            <Text style={shared.heading}>Facilities</Text>
+            <Text style={shared.heading}>Tiện nghi</Text>
             <Text style={[shared.muted, { fontSize: 12 }]}>
               Stays must include every selected facility.
             </Text>
@@ -218,10 +218,10 @@ export const FilterSheetScreen: React.FC = () => {
               accessibilityLabel="Clear advanced filters"
               onPress={clear}
             >
-              <Text style={shared.clear}>Clear all</Text>
+              <Text style={shared.clear}>Xóa tất cả</Text>
             </Pressable>
             <Pressable accessibilityRole="button" onPress={apply} style={shared.action}>
-              <Text style={shared.actionText}>View Results</Text>
+              <Text style={shared.actionText}>Xem kết quả</Text>
             </Pressable>
           </View>
         </SafeAreaView>

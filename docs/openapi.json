@@ -19,6 +19,126 @@
       }
     },
     "schemas": {
+      "SupportCreate": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 3000
+          },
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "bookingId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "subject": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 150
+          }
+        },
+        "required": [
+          "body",
+          "requestId",
+          "bookingId",
+          "subject"
+        ],
+        "additionalProperties": false
+      },
+      "SupportReply": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 3000
+          },
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "body",
+          "requestId"
+        ],
+        "additionalProperties": false
+      },
+      "SupportStatus": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "waiting_guest",
+              "resolved"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "additionalProperties": false
+      },
+      "SupportList": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000,
+            "default": 1
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50,
+            "default": 12
+          },
+          "bookingId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "waiting_guest",
+              "resolved"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "ArrivalGuideRequest": {
+        "type": "object",
+        "properties": {
+          "instructions": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 5000
+          },
+          "contact": {
+            "type": "string",
+            "maxLength": 300,
+            "default": ""
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "instructions",
+          "revision"
+        ],
+        "additionalProperties": false
+      },
       "ListingFilter": {
         "type": "object",
         "properties": {
@@ -341,6 +461,59 @@
           "couponCode": {
             "type": "string",
             "pattern": "^[A-Z0-9_-]{1,40}$"
+          },
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expectedTotalCents": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "checkout": {
+            "type": "object",
+            "properties": {
+              "contact": {
+                "type": "object",
+                "properties": {
+                  "fullName": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 100
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 255
+                  },
+                  "phone": {
+                    "type": "string",
+                    "pattern": "^[+()0-9 .-]{7,30}$"
+                  }
+                },
+                "required": [
+                  "fullName",
+                  "email"
+                ],
+                "additionalProperties": false
+              },
+              "policyVersion": {
+                "type": "string",
+                "maxLength": 50
+              },
+              "accepted": {
+                "type": "boolean",
+                "enum": [
+                  true
+                ]
+              }
+            },
+            "required": [
+              "contact",
+              "policyVersion",
+              "accepted"
+            ],
+            "additionalProperties": false
           },
           "specialRequests": {
             "type": "string",
@@ -1371,6 +1544,21 @@
                 "enum": [
                   false
                 ]
+              },
+              "policy": {
+                "$ref": "#/components/schemas/CheckoutPolicy"
+              },
+              "serverTime": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "photoContext": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/MediaContext"
+                  }
+                ],
+                "nullable": true
               }
             }
           }
@@ -1538,6 +1726,14 @@
             "items": {
               "$ref": "#/components/schemas/Amenity"
             }
+          },
+          "photo_context": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaContext"
+              }
+            ],
+            "nullable": true
           }
         }
       },
@@ -1908,6 +2104,48 @@
             "items": {
               "$ref": "#/components/schemas/Refund"
             }
+          },
+          "contact_snapshot": {
+            "type": "object",
+            "properties": {
+              "fullName": {
+                "type": "string"
+              },
+              "email": {
+                "type": "string"
+              },
+              "phone": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false,
+            "nullable": true
+          },
+          "policy_snapshot": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CheckoutPolicy"
+              }
+            ],
+            "nullable": true
+          },
+          "policy_accepted_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "client_request_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "photo_context": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaContext"
+              }
+            ],
+            "nullable": true
           }
         }
       },
@@ -2233,6 +2471,109 @@
         "type": "object",
         "additionalProperties": true
       },
+      "CheckoutPolicy": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "depositAmount": {
+            "type": "number"
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "cancellation": {
+            "type": "string"
+          },
+          "payment": {
+            "type": "string"
+          },
+          "hold": {
+            "type": "string"
+          }
+        }
+      },
+      "MediaContext": {
+        "type": "object",
+        "properties": {
+          "contextLevel": {
+            "type": "string",
+            "enum": [
+              "verified_property",
+              "illustrative"
+            ]
+          },
+          "sourcePageUrl": {
+            "type": "string"
+          },
+          "creator": {
+            "type": "string"
+          },
+          "licenseName": {
+            "type": "string"
+          },
+          "licenseUrl": {
+            "type": "string"
+          },
+          "attributionText": {
+            "type": "string"
+          },
+          "altText": {
+            "type": "string"
+          }
+        }
+      },
+      "ReviewSummary": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer"
+          },
+          "average": {
+            "type": "number"
+          },
+          "counts": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "minItems": 5,
+            "maxItems": 5,
+            "description": "Counts for 1 through 5 stars, for the entire listing."
+          }
+        },
+        "required": [
+          "total",
+          "average",
+          "counts"
+        ]
+      },
+      "PaymentConfig": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "disabled",
+              "mock",
+              "stripe_test"
+            ]
+          },
+          "publishableKey": {
+            "type": "string",
+            "nullable": true,
+            "description": "Public Stripe test key only, never secret."
+          }
+        },
+        "required": [
+          "mode",
+          "publishableKey"
+        ]
+      },
       "Destination": {
         "type": "object",
         "properties": {
@@ -2383,6 +2724,184 @@
           "amount",
           "currency"
         ]
+      },
+      "SupportTicket": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "booking_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "guest_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "waiting_guest",
+              "resolved"
+            ]
+          },
+          "booking_code": {
+            "type": "string"
+          },
+          "listing_title": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
+          }
+        }
+      },
+      "SupportMessage": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ticket_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "author_role": {
+            "type": "string",
+            "enum": [
+              "guest",
+              "admin"
+            ]
+          },
+          "body": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          }
+        }
+      },
+      "SupportDetail": {
+        "type": "object",
+        "properties": {
+          "ticket": {
+            "$ref": "#/components/schemas/SupportTicket"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SupportMessage"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          }
+        }
+      },
+      "ArrivalGuide": {
+        "type": "object",
+        "properties": {
+          "instructions": {
+            "type": "string"
+          },
+          "contact": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "integer"
+          },
+          "updated_at": {
+            "type": "string"
+          }
+        }
+      },
+      "Trip": {
+        "type": "object",
+        "properties": {
+          "bookingId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "guideStatus": {
+            "type": "string"
+          },
+          "arrivalGuide": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ArrivalGuide"
+              }
+            ],
+            "nullable": true
+          },
+          "policy": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CheckoutPolicy"
+              }
+            ],
+            "nullable": true
+          },
+          "balanceDue": {
+            "oneOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^-?[0-9]+([.][0-9]{1,2})?$"
+              }
+            ],
+            "description": "USD decimal. PostgreSQL numeric columns may be strings; quote pricing uses numbers."
+          },
+          "balanceDeadlineDescription": {
+            "type": "string"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string"
+                },
+                "at": {
+                  "type": "string"
+                },
+                "amount": {
+                  "oneOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "string",
+                      "pattern": "^-?[0-9]+([.][0-9]{1,2})?$"
+                    }
+                  ],
+                  "description": "USD decimal. PostgreSQL numeric columns may be strings; quote pricing uses numbers."
+                },
+                "status": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
       }
     }
   },
@@ -2417,6 +2936,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/User"
                     }
@@ -2428,6 +2951,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "id": "11111111-1111-4111-8111-111111111111",
                     "email": "guest@example.test",
@@ -2596,6 +3120,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/User"
                     }
@@ -2607,6 +3135,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "id": "11111111-1111-4111-8111-111111111111",
                     "email": "guest@example.test",
@@ -2786,6 +3315,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "type": "array",
                       "items": {
@@ -2800,6 +3333,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": [
                     {
                       "id": "11111111-1111-4111-8111-111111111111",
@@ -2954,6 +3488,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "type": "array",
                       "items": {
@@ -2968,6 +3506,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": [
                     {
                       "kind": "city",
@@ -3100,6 +3639,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "type": "array",
                       "items": {
@@ -3114,6 +3657,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": [
                     {
                       "id": "11111111-1111-4111-8111-111111111111",
@@ -3514,6 +4058,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "type": "array",
                       "items": {
@@ -3531,6 +4079,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": [
                     {
                       "id": "11111111-1111-4111-8111-111111111111",
@@ -3728,6 +4277,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/Listing"
                     }
@@ -3739,6 +4292,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "id": "11111111-1111-4111-8111-111111111111",
                     "title": "Beach Apartment",
@@ -3927,6 +4481,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/ReviewEligibility"
                     }
@@ -3938,6 +4496,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "listingId": "11111111-1111-4111-8111-111111111111",
                     "listingTitle": "Beach Apartment",
@@ -4078,6 +4637,2429 @@
         }
       }
     },
+    "/api/v1/support-tickets": {
+      "get": {
+        "summary": "Danh sách yêu cầu hỗ trợ",
+        "operationId": "get__api_v1_support_tickets",
+        "tags": [
+          "support-tickets"
+        ],
+        "description": "Guest sees own tickets only; admin sees all. Private no-store.",
+        "x-permission": "authenticated",
+        "x-error-codes": "",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100000,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 12
+            }
+          },
+          {
+            "name": "bookingId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "open",
+                "waiting_guest",
+                "resolved"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Danh sách yêu cầu hỗ trợ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SupportTicket"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                },
+                "example": {
+                  "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
+                  "data": [
+                    {
+                      "id": "11111111-1111-4111-8111-111111111111",
+                      "booking_id": "11111111-1111-4111-8111-111111111111",
+                      "subject": "Hướng dẫn nhận phòng",
+                      "status": "open"
+                    }
+                  ],
+                  "pagination": {
+                    "page": 1,
+                    "limit": 12,
+                    "total": 1,
+                    "totalPages": 1
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input/signature",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid input/signature",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked Supabase access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "AUTH_REQUIRED",
+                    "message": "Missing, invalid, expired or revoked Supabase access token",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Account blocked or permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "Account blocked or permission denied",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource unavailable or not owned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Resource unavailable or not owned",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Business conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "INVALID_STATE_TRANSITION",
+                    "message": "Business conflict",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Rate limited",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Unexpected server error",
+                    "details": []
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Tạo yêu cầu cho đơn của chính mình",
+        "operationId": "post__api_v1_support_tickets",
+        "tags": [
+          "support-tickets"
+        ],
+        "description": "Tạo yêu cầu cho đơn của chính mình",
+        "x-permission": "authenticated",
+        "x-error-codes": "",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Tạo yêu cầu cho đơn của chính mình",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SupportTicket"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                },
+                "example": {
+                  "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
+                  "data": {}
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input/signature",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid input/signature",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked Supabase access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "AUTH_REQUIRED",
+                    "message": "Missing, invalid, expired or revoked Supabase access token",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Account blocked or permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "Account blocked or permission denied",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource unavailable or not owned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Resource unavailable or not owned",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Business conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "INVALID_STATE_TRANSITION",
+                    "message": "Business conflict",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Rate limited",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Unexpected server error",
+                    "details": []
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupportCreate"
+              },
+              "example": {
+                "bookingId": "11111111-1111-4111-8111-111111111111",
+                "subject": "Hướng dẫn nhận phòng",
+                "body": "Tôi cần biết cách nhận phòng.",
+                "requestId": "11111111-1111-4111-8111-111111111111"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/support-tickets/{id}": {
+      "get": {
+        "summary": "Nội dung yêu cầu, tin nhắn theo trang",
+        "operationId": "get__api_v1_support_tickets__id_",
+        "tags": [
+          "support-tickets"
+        ],
+        "description": "Only ticket owner or admin; messages ordered oldest first with stable ID tie-break.",
+        "x-permission": "authenticated",
+        "x-error-codes": "",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "11111111-1111-4111-8111-111111111111"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100000,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 12
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Nội dung yêu cầu, tin nhắn theo trang",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SupportDetail"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                },
+                "example": {
+                  "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
+                  "data": {}
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input/signature",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid input/signature",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked Supabase access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "AUTH_REQUIRED",
+                    "message": "Missing, invalid, expired or revoked Supabase access token",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Account blocked or permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "Account blocked or permission denied",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource unavailable or not owned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Resource unavailable or not owned",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Business conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "INVALID_STATE_TRANSITION",
+                    "message": "Business conflict",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Rate limited",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Unexpected server error",
+                    "details": []
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/support-tickets/{id}/messages": {
+      "post": {
+        "summary": "Phản hồi hỗ trợ",
+        "operationId": "post__api_v1_support_tickets__id__messages",
+        "tags": [
+          "support-tickets"
+        ],
+        "description": "Same requestId/payload returns prior message. Different payload returns 409. Guest reply reopens; admin reply sets waiting_guest.",
+        "x-permission": "authenticated",
+        "x-error-codes": "",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "11111111-1111-4111-8111-111111111111"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Phản hồi hỗ trợ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SupportMessage"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                },
+                "example": {
+                  "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
+                  "data": {}
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input/signature",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid input/signature",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked Supabase access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "AUTH_REQUIRED",
+                    "message": "Missing, invalid, expired or revoked Supabase access token",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Account blocked or permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "Account blocked or permission denied",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource unavailable or not owned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Resource unavailable or not owned",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Business conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "INVALID_STATE_TRANSITION",
+                    "message": "Business conflict",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Rate limited",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Unexpected server error",
+                    "details": []
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupportReply"
+              },
+              "example": {
+                "body": "Vui lòng kiểm tra hướng dẫn trong đơn.",
+                "requestId": "11111111-1111-4111-8111-111111111111"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/support-tickets": {
+      "get": {
+        "summary": "Danh sách yêu cầu hỗ trợ",
+        "operationId": "get__api_v1_admin_support_tickets",
+        "tags": [
+          "Admin"
+        ],
+        "description": "Guest sees own tickets only; admin sees all. Private no-store. Requires public.users.role=admin and account_status=active (server checked).",
+        "x-permission": "admin",
+        "x-error-codes": "",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100000,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 12
+            }
+          },
+          {
+            "name": "bookingId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "open",
+                "waiting_guest",
+                "resolved"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Danh sách yêu cầu hỗ trợ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SupportTicket"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                },
+                "example": {
+                  "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
+                  "data": [
+                    {
+                      "id": "11111111-1111-4111-8111-111111111111",
+                      "booking_id": "11111111-1111-4111-8111-111111111111",
+                      "subject": "Hướng dẫn nhận phòng",
+                      "status": "open"
+                    }
+                  ],
+                  "pagination": {
+                    "page": 1,
+                    "limit": 12,
+                    "total": 1,
+                    "totalPages": 1
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input/signature",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid input/signature",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked Supabase access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "AUTH_REQUIRED",
+                    "message": "Missing, invalid, expired or revoked Supabase access token",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Account blocked or permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "Account blocked or permission denied",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource unavailable or not owned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Resource unavailable or not owned",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Business conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "INVALID_STATE_TRANSITION",
+                    "message": "Business conflict",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Rate limited",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Unexpected server error",
+                    "details": []
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/support-tickets/{id}": {
+      "get": {
+        "summary": "Nội dung yêu cầu, tin nhắn theo trang",
+        "operationId": "get__api_v1_admin_support_tickets__id_",
+        "tags": [
+          "Admin"
+        ],
+        "description": "Only ticket owner or admin; messages ordered oldest first with stable ID tie-break. Requires public.users.role=admin and account_status=active (server checked).",
+        "x-permission": "admin",
+        "x-error-codes": "",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "11111111-1111-4111-8111-111111111111"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100000,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 12
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Nội dung yêu cầu, tin nhắn theo trang",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SupportDetail"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                },
+                "example": {
+                  "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
+                  "data": {}
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input/signature",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid input/signature",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked Supabase access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "AUTH_REQUIRED",
+                    "message": "Missing, invalid, expired or revoked Supabase access token",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Account blocked or permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "Account blocked or permission denied",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource unavailable or not owned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Resource unavailable or not owned",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Business conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "INVALID_STATE_TRANSITION",
+                    "message": "Business conflict",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Rate limited",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Unexpected server error",
+                    "details": []
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/support-tickets/{id}/messages": {
+      "post": {
+        "summary": "Phản hồi hỗ trợ",
+        "operationId": "post__api_v1_admin_support_tickets__id__messages",
+        "tags": [
+          "Admin"
+        ],
+        "description": "Same requestId/payload returns prior message. Different payload returns 409. Guest reply reopens; admin reply sets waiting_guest. Requires public.users.role=admin and account_status=active (server checked).",
+        "x-permission": "admin",
+        "x-error-codes": "",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "11111111-1111-4111-8111-111111111111"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Phản hồi hỗ trợ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SupportMessage"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                },
+                "example": {
+                  "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
+                  "data": {}
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input/signature",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid input/signature",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked Supabase access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "AUTH_REQUIRED",
+                    "message": "Missing, invalid, expired or revoked Supabase access token",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Account blocked or permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "Account blocked or permission denied",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource unavailable or not owned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Resource unavailable or not owned",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Business conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "INVALID_STATE_TRANSITION",
+                    "message": "Business conflict",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Rate limited",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Unexpected server error",
+                    "details": []
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupportReply"
+              },
+              "example": {
+                "body": "Vui lòng kiểm tra hướng dẫn trong đơn.",
+                "requestId": "11111111-1111-4111-8111-111111111111"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/support-tickets/{id}/status": {
+      "patch": {
+        "summary": "Cập nhật trạng thái hỗ trợ",
+        "operationId": "patch__api_v1_admin_support_tickets__id__status",
+        "tags": [
+          "Admin"
+        ],
+        "description": "Cập nhật trạng thái hỗ trợ Requires public.users.role=admin and account_status=active (server checked).",
+        "x-permission": "admin",
+        "x-error-codes": "",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "11111111-1111-4111-8111-111111111111"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cập nhật trạng thái hỗ trợ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SupportTicket"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                },
+                "example": {
+                  "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
+                  "data": {}
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input/signature",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid input/signature",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked Supabase access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "AUTH_REQUIRED",
+                    "message": "Missing, invalid, expired or revoked Supabase access token",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Account blocked or permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "Account blocked or permission denied",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource unavailable or not owned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Resource unavailable or not owned",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Business conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "INVALID_STATE_TRANSITION",
+                    "message": "Business conflict",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Rate limited",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Unexpected server error",
+                    "details": []
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupportStatus"
+              },
+              "example": {
+                "status": "resolved"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/bookings/{id}/trip": {
+      "get": {
+        "summary": "Tiến trình chuyến đi và hướng dẫn riêng tư",
+        "operationId": "get__api_v1_bookings__id__trip",
+        "tags": [
+          "bookings"
+        ],
+        "description": "Only booking owner or admin. Arrival guide hidden from guests until confirmed, hidden again on cancellation/expiry. Payment/refund event amounts reflect ledger, no invented check-in details.",
+        "x-permission": "authenticated",
+        "x-error-codes": "",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "11111111-1111-4111-8111-111111111111"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tiến trình chuyến đi và hướng dẫn riêng tư",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Trip"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                },
+                "example": {
+                  "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
+                  "data": {}
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input/signature",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid input/signature",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked Supabase access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "AUTH_REQUIRED",
+                    "message": "Missing, invalid, expired or revoked Supabase access token",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Account blocked or permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "Account blocked or permission denied",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource unavailable or not owned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Resource unavailable or not owned",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Business conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "INVALID_STATE_TRANSITION",
+                    "message": "Business conflict",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Rate limited",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Unexpected server error",
+                    "details": []
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/bookings/{id}/arrival-guide": {
+      "put": {
+        "summary": "Cung cấp hướng dẫn nhận phòng",
+        "operationId": "put__api_v1_admin_bookings__id__arrival_guide",
+        "tags": [
+          "Admin"
+        ],
+        "description": "Confirmed bookings only. revision=0 for first publish; existing revision required for update. Conflict 409 on concurrent edit. Requires public.users.role=admin and account_status=active (server checked).",
+        "x-permission": "admin",
+        "x-error-codes": "",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "11111111-1111-4111-8111-111111111111"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cung cấp hướng dẫn nhận phòng",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ArrivalGuide"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                },
+                "example": {
+                  "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
+                  "data": {}
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input/signature",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid input/signature",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked Supabase access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "AUTH_REQUIRED",
+                    "message": "Missing, invalid, expired or revoked Supabase access token",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Account blocked or permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "Account blocked or permission denied",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource unavailable or not owned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Resource unavailable or not owned",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Business conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "INVALID_STATE_TRANSITION",
+                    "message": "Business conflict",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Rate limited",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Unexpected server error",
+                    "details": []
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArrivalGuideRequest"
+              },
+              "example": {
+                "instructions": "Hướng dẫn do cơ sở cung cấp và đã xác minh.",
+                "contact": "",
+                "revision": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/listings/{id}/review-summary": {
+      "get": {
+        "summary": "Thống kê điểm tổng thể của toàn bộ đánh giá",
+        "operationId": "get__api_v1_listings__id__review_summary",
+        "tags": [
+          "listings"
+        ],
+        "description": "Database aggregates all reviews; page-by-page review retrieval does not change these counts. Auxiliary criterion scores are not collected and are not inferred.",
+        "x-permission": "public",
+        "x-error-codes": "",
+        "security": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "11111111-1111-4111-8111-111111111111"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thống kê điểm tổng thể của toàn bộ đánh giá",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ReviewSummary"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                },
+                "example": {
+                  "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
+                  "data": {
+                    "total": 1,
+                    "average": 5,
+                    "counts": [
+                      0,
+                      0,
+                      0,
+                      0,
+                      1
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input/signature",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid input/signature",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource unavailable or not owned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Resource unavailable or not owned",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Business conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "INVALID_STATE_TRANSITION",
+                    "message": "Business conflict",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Rate limited",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Unexpected server error",
+                    "details": []
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/payments/config": {
+      "get": {
+        "summary": "Cấu hình công khai của cổng thanh toán test",
+        "operationId": "get__api_v1_payments_config",
+        "tags": [
+          "payments"
+        ],
+        "description": "No-store. Stripe publishable key is returned only in stripe_test mode and only if pk_test_. SDK confirmation never replaces server webhook verification.",
+        "x-permission": "public",
+        "x-error-codes": "",
+        "security": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Cấu hình công khai của cổng thanh toán test",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PaymentConfig"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                },
+                "example": {
+                  "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
+                  "data": {
+                    "mode": "mock",
+                    "publishableKey": null
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input/signature",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid input/signature",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource unavailable or not owned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Resource unavailable or not owned",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Business conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "INVALID_STATE_TRANSITION",
+                    "message": "Business conflict",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Rate limited",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Unexpected server error",
+                    "details": []
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/listings/{id}/reviews": {
       "get": {
         "summary": "Danh sách đánh giá",
@@ -4137,6 +7119,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "type": "array",
                       "items": {
@@ -4154,6 +7140,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": [
                     {
                       "id": "11111111-1111-4111-8111-111111111111",
@@ -4305,6 +7292,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/Review"
                     }
@@ -4316,6 +7307,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "id": "11111111-1111-4111-8111-111111111111",
                     "listing_id": "11111111-1111-4111-8111-111111111111",
@@ -4523,6 +7515,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "type": "array",
                       "items": {
@@ -4540,6 +7536,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": [
                     {
                       "id": "11111111-1111-4111-8111-111111111111",
@@ -4725,6 +7722,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/Object"
                     }
@@ -4736,6 +7737,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "listingId": "11111111-1111-4111-8111-111111111111",
                     "isFavorite": true
@@ -4917,6 +7919,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/Quote"
                     }
@@ -4928,6 +7934,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "currency": "USD",
                     "listingId": "11111111-1111-4111-8111-111111111111",
@@ -4949,7 +7956,16 @@
                     "checkOutDate": "2099-01-12",
                     "guests": 2,
                     "maxGuests": 4,
-                    "quoteIsReservation": false
+                    "quoteIsReservation": false,
+                    "policy": {
+                      "version": "stay-v1",
+                      "currency": "USD",
+                      "depositAmount": 30,
+                      "timezone": "UTC",
+                      "cancellation": "Đơn đã xác nhận chỉ được hủy trước ngày nhận phòng theo UTC. Tiền đã trả được tạo yêu cầu hoàn; cần quản trị duyệt và nhà cung cấp xác nhận.",
+                      "payment": "Đặt phòng chỉ được xác nhận sau khi server kiểm tra thanh toán. Nếu trả cọc, bạn cần thanh toán phần còn lại trước khi hoàn tất chuyến đi.",
+                      "hold": "Chưa thanh toán trong thời hạn giữ lịch: đơn có thể hết hạn. Báo giá chưa giữ phòng."
+                    }
                   }
                 }
               }
@@ -5130,6 +8146,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/BookingCreated"
                     }
@@ -5141,6 +8161,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "booking": {
                       "id": "11111111-1111-4111-8111-111111111111",
@@ -5379,6 +8400,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "type": "array",
                       "items": {
@@ -5396,6 +8421,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": [
                     {
                       "id": "11111111-1111-4111-8111-111111111111",
@@ -5595,6 +8621,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/Booking"
                     }
@@ -5606,6 +8636,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "id": "11111111-1111-4111-8111-111111111111",
                     "booking_code": "TRV-example",
@@ -5810,6 +8841,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/Cancellation"
                     }
@@ -5821,6 +8856,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "booking": {
                       "id": "11111111-1111-4111-8111-111111111111",
@@ -6216,6 +9252,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/PaymentInitialized"
                     }
@@ -6227,6 +9267,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "payment": {
                       "id": "11111111-1111-4111-8111-111111111111",
@@ -6464,6 +9505,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/Object"
                     }
@@ -6475,6 +9520,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "paymentId": "11111111-1111-4111-8111-111111111111",
                     "status": "succeeded"
@@ -6666,6 +9712,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "type": "array",
                       "items": {
@@ -6680,6 +9730,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": [
                     {
                       "id": "11111111-1111-4111-8111-111111111111",
@@ -6866,6 +9917,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/User"
                     }
@@ -6877,6 +9932,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "id": "11111111-1111-4111-8111-111111111111",
                     "email": "guest@example.test",
@@ -7047,6 +10103,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/Object"
                     }
@@ -7058,6 +10118,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "signedOut": true
                   }
@@ -7242,6 +10303,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/AdminMedia"
                     }
@@ -7253,6 +10318,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "url": "https://example.test/listing.png",
                     "iconName": "media:example.png"
@@ -7542,6 +10608,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "type": "array",
                       "items": {
@@ -7559,6 +10629,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": [
                     {
                       "id": "11111111-1111-4111-8111-111111111111",
@@ -7742,6 +10813,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/Listing"
                     }
@@ -7753,6 +10828,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "id": "11111111-1111-4111-8111-111111111111",
                     "title": "Beach Apartment",
@@ -7977,6 +11053,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/Listing"
                     }
@@ -7988,6 +11068,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "id": "11111111-1111-4111-8111-111111111111",
                     "title": "Beach Apartment",
@@ -8174,6 +11255,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/Listing"
                     }
@@ -8185,6 +11270,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "id": "11111111-1111-4111-8111-111111111111",
                     "title": "Beach Apartment",
@@ -8384,6 +11470,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/Listing"
                     }
@@ -8395,6 +11485,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "id": "11111111-1111-4111-8111-111111111111",
                     "title": "Beach Apartment",
@@ -8645,6 +11736,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "type": "array",
                       "items": {
@@ -8662,6 +11757,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": [
                     {
                       "id": "11111111-1111-4111-8111-111111111111",
@@ -8838,6 +11934,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/Category"
                     }
@@ -8849,6 +11949,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "id": "11111111-1111-4111-8111-111111111111",
                     "name": "Beach",
@@ -9045,6 +12146,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/Category"
                     }
@@ -9056,6 +12161,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "id": "11111111-1111-4111-8111-111111111111",
                     "name": "Beach",
@@ -9235,6 +12341,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/Category"
                     }
@@ -9246,6 +12356,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "id": "11111111-1111-4111-8111-111111111111",
                     "name": "Beach",
@@ -9438,6 +12549,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/Category"
                     }
@@ -9449,6 +12564,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "id": "11111111-1111-4111-8111-111111111111",
                     "name": "Beach",
@@ -9691,6 +12807,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "type": "array",
                       "items": {
@@ -9708,6 +12828,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": [
                     {
                       "id": "11111111-1111-4111-8111-111111111111",
@@ -9888,6 +13009,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/Coupon"
                     }
@@ -9899,6 +13024,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "id": "11111111-1111-4111-8111-111111111111",
                     "code": "SUMMER",
@@ -10104,6 +13230,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/Coupon"
                     }
@@ -10115,6 +13245,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "id": "11111111-1111-4111-8111-111111111111",
                     "code": "SUMMER",
@@ -10298,6 +13429,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/Coupon"
                     }
@@ -10309,6 +13444,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "id": "11111111-1111-4111-8111-111111111111",
                     "code": "SUMMER",
@@ -10505,6 +13641,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/Coupon"
                     }
@@ -10516,6 +13656,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "id": "11111111-1111-4111-8111-111111111111",
                     "code": "SUMMER",
@@ -10762,6 +13903,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "type": "array",
                       "items": {
@@ -10779,6 +13924,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": [
                     {
                       "id": "11111111-1111-4111-8111-111111111111",
@@ -11029,6 +14175,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "type": "array",
                       "items": {
@@ -11046,6 +14196,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": [
                     {
                       "id": "11111111-1111-4111-8111-111111111111",
@@ -11306,6 +14457,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "type": "array",
                       "items": {
@@ -11323,6 +14478,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": [
                     {
                       "id": "11111111-1111-4111-8111-111111111111",
@@ -11574,6 +14730,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "type": "array",
                       "items": {
@@ -11591,6 +14751,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": [
                     {
                       "id": "11111111-1111-4111-8111-111111111111",
@@ -11780,6 +14941,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/User"
                     }
@@ -11791,6 +14956,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "id": "11111111-1111-4111-8111-111111111111",
                     "email": "guest@example.test",
@@ -11814,6 +14980,10 @@
                       "enum": [
                         true
                       ]
+                    },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
                     },
                     "data": {
                       "$ref": "#/components/schemas/User"
@@ -12018,6 +15188,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/User"
                     }
@@ -12029,6 +15203,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "id": "11111111-1111-4111-8111-111111111111",
                     "email": "guest@example.test",
@@ -12053,6 +15228,10 @@
                       "enum": [
                         true
                       ]
+                    },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
                     },
                     "data": {
                       "$ref": "#/components/schemas/User"
@@ -12257,6 +15436,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/User"
                     }
@@ -12268,6 +15451,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "id": "11111111-1111-4111-8111-111111111111",
                     "email": "guest@example.test",
@@ -12292,6 +15476,10 @@
                       "enum": [
                         true
                       ]
+                    },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
                     },
                     "data": {
                       "$ref": "#/components/schemas/User"
@@ -12482,6 +15670,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/Booking"
                     }
@@ -12493,6 +15685,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "id": "11111111-1111-4111-8111-111111111111",
                     "booking_code": "TRV-example",
@@ -12697,6 +15890,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/Booking"
                     }
@@ -12708,6 +15905,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "id": "11111111-1111-4111-8111-111111111111",
                     "booking_code": "TRV-example",
@@ -12899,6 +16097,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/Booking"
                     }
@@ -12910,6 +16112,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "id": "11111111-1111-4111-8111-111111111111",
                     "booking_code": "TRV-example",
@@ -13101,6 +16304,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/Cancellation"
                     }
@@ -13112,6 +16319,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "booking": {
                       "id": "11111111-1111-4111-8111-111111111111",
@@ -13317,6 +16525,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/Object"
                     }
@@ -13328,6 +16540,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "expired": 1,
                     "paymentsTimedOut": 1
@@ -13506,6 +16719,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/Refund"
                     }
@@ -13517,6 +16734,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "id": "11111111-1111-4111-8111-111111111111",
                     "payment_id": "11111111-1111-4111-8111-111111111111",
@@ -13713,6 +16931,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/Object"
                     }
@@ -13724,6 +16946,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "id": "11111111-1111-4111-8111-111111111111",
                     "status": "processing",
@@ -13945,6 +17168,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/Revenue"
                     }
@@ -13956,6 +17183,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "from": "2026-10-27",
                     "to": "2026-10-27",
@@ -14321,6 +17549,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/Object"
                     }
@@ -14332,6 +17564,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "duplicate": false
                   }
@@ -14485,6 +17718,10 @@
                         true
                       ]
                     },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
                     "data": {
                       "$ref": "#/components/schemas/Object"
                     }
@@ -14496,6 +17733,7 @@
                 },
                 "example": {
                   "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
                   "data": {
                     "ignored": true
                   }

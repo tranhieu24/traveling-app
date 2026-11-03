@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import {zodToJsonSchema} from 'zod-to-json-schema';
 import SwaggerParser from '@apidevtools/swagger-parser';
+import { CHECKOUT_POLICY } from '../domain/checkout';
 import * as s from '../validators/schemas';
 
 const out=path.resolve('../docs');
@@ -13,6 +14,7 @@ const money={oneOf:[number,{type:'string',pattern:'^-?[0-9]+([.][0-9]{1,2})?$'}]
 const decimal={oneOf:[number,text]};
 const schemas:any={};
 for(const [name,schema]of Object.entries({
+  SupportCreate:s.supportCreateSchema,SupportReply:s.supportReplySchema,SupportStatus:s.supportStatusSchema,SupportList:s.supportListSchema,ArrivalGuideRequest:s.arrivalGuideSchema,
   ListingFilter:s.listingFilterSchema,DestinationQuery:s.destinationQuerySchema,PaginationQuery:s.paginationSchema,BookingListQuery:s.bookingListSchema,AdminQuery:s.adminQuerySchema,
   QuoteRequest:s.bookingQuoteSchema,CreateBookingRequest:s.createBookingSchema,ReviewRequest:s.createReviewSchema,FavoriteRequest:s.toggleFavoriteSchema,
   ProfilePatch:s.updateProfileSchema,PaymentRequest:s.paymentSchema,SimulationRequest:s.simulateSchema,Reason:s.reasonSchema,CancelRequest:s.cancelSchema,
@@ -38,11 +40,26 @@ schemas.Coupon=object({id:uuid,code:text,discount_percent:money,max_discount:{..
 schemas.AuditLog=object({id:uuid,actor_id:uuid,action:text,entity_type:text,entity_id:uuid,before_data:{type:'object',nullable:true},after_data:{type:'object',nullable:true},created_at:{type:'string',format:'date-time'}});
 schemas.Revenue=object({from:text,to:text,timezone:{type:'string',enum:['UTC']},currency:{type:'string',enum:['USD']},scope:{type:'string',enum:['test_and_mock_only']},gross_payments:money,refunds:money,net_revenue:money,items:{type:'array',items:object({day:text,provider:text,is_simulated:boolean,gross_payments:money,refunds:money,net_revenue:money,successful_transactions:integer,successful_refunds:integer})}});
 schemas.Object={type:'object',additionalProperties:true};
+schemas.CheckoutPolicy=object({version:text,currency:text,depositAmount:number,cancellationCutoffDays:integer,timezone:text,cancellation:text,payment:text,hold:text});
+schemas.MediaContext=object({contextLevel:{type:'string',enum:['verified_property','illustrative']},sourcePageUrl:text,creator:text,licenseName:text,licenseUrl:text,attributionText:text,altText:text});
+schemas.Quote.allOf[1].properties.policy=ref('CheckoutPolicy');
+schemas.Quote.allOf[1].properties.serverTime={type:'string',format:'date-time'};
+schemas.Quote.allOf[1].properties.photoContext={allOf:[ref('MediaContext')],nullable:true};
+Object.assign(schemas.Booking.properties,{contact_snapshot:{...schemas.ProfilePatch,type:'object',properties:{fullName:text,email:text,phone:text},nullable:true},policy_snapshot:{allOf:[ref('CheckoutPolicy')],nullable:true},policy_accepted_at:{type:'string',format:'date-time',nullable:true},client_request_id:{...uuid,nullable:true},photo_context:{allOf:[ref('MediaContext')],nullable:true}});
+schemas.Listing.properties.photo_context={allOf:[ref('MediaContext')],nullable:true};
+
+schemas.ReviewSummary=object({total:integer,average:number,counts:{type:'array',items:integer,minItems:5,maxItems:5,description:'Counts for 1 through 5 stars, for the entire listing.'}},['total','average','counts']);
+schemas.PaymentConfig=object({mode:{type:'string',enum:['disabled','mock','stripe_test']},publishableKey:{type:'string',nullable:true,description:'Public Stripe test key only, never secret.'}},['mode','publishableKey']);
 schemas.Destination=object({kind:{type:'string',enum:['city','country']},city:{...text,nullable:true},country:text,region:{...text,nullable:true},matches:integer},['kind','city','country','region','matches']);
 schemas.ReviewEligibility=object({listingId:uuid,listingTitle:text,canReview:boolean,reason:{type:'string',enum:['eligible','already_reviewed','completed_stay_required']},existingReview:{allOf:[ref('Review')],nullable:true}},['listingId','listingTitle','canReview','reason','existingReview']);
 schemas.AdminMediaRequest=object({base64:{type:'string',minLength:1,maxLength:5592408,pattern:'^[A-Za-z0-9+/]+={0,2}$',description:'Canonical base64 image bytes, without a data URL prefix; decoded size at most 4 MiB.'},contentType:{type:'string',enum:['image/jpeg','image/png','image/webp']}},['base64','contentType']);
 schemas.AdminMedia=object({url:{type:'string',format:'uri'},iconName:text},['url','iconName']);
 schemas.MockEvent=object({id:{type:'string',minLength:1,maxLength:200},paymentId:uuid,type:{type:'string',enum:['succeeded','failed','timed_out']},amount:{type:'integer',minimum:0,description:'Integer cents; must exactly match the stored payment'},currency:{type:'string',enum:['USD']}},['id','paymentId','type','amount','currency']);
+schemas.SupportTicket=object({id:uuid,booking_id:uuid,guest_id:uuid,subject:text,status:{type:'string',enum:['open','waiting_guest','resolved']},booking_code:text,listing_title:text,created_at:text,updated_at:text});
+schemas.SupportMessage=object({id:uuid,ticket_id:uuid,author_role:{type:'string',enum:['guest','admin']},body:text,created_at:text});
+schemas.SupportDetail=object({ticket:ref('SupportTicket'),messages:{type:'array',items:ref('SupportMessage')},pagination:ref('Pagination')});
+schemas.ArrivalGuide=object({instructions:text,contact:text,revision:integer,updated_at:text});
+schemas.Trip=object({bookingId:uuid,status:text,timezone:text,guideStatus:text,arrivalGuide:{allOf:[ref('ArrivalGuide')],nullable:true},policy:{allOf:[ref('CheckoutPolicy')],nullable:true},balanceDue:money,balanceDeadlineDescription:text,events:{type:'array',items:object({kind:text,at:text,amount:money,status:text})}});
 const paths:any={};const rows:any[]=[];
 const errorLabels:any={400:'Invalid input/signature',401:'Missing, invalid, expired or revoked Supabase access token',403:'Account blocked or permission denied',404:'Resource unavailable or not owned',409:'Business conflict',413:'Body too large',429:'Rate limited',502:'Provider request unconfirmed; retry the same key/ID',503:'Dependency unavailable or payment mode disabled',500:'Unexpected server error'};
 function add(method:string,url:string,title:string,permission:string,dataName='Object',example:any={},opts:any={}) {
@@ -52,9 +69,9 @@ function add(method:string,url:string,title:string,permission:string,dataName='O
   if(opts.query)for(const [name,schema]of Object.entries(schemas[opts.query].properties||{}))params.push({name,in:'query',required:(schemas[opts.query].required||[]).includes(name),schema,description:name==='minPrice'||name==='maxPrice'?'Nightly USD, not whole-trip total':name==='checkIn'||name==='checkOut'?'Both dates required together; real dates, UTC, no past check-in, max 365 nights':undefined});
   if(opts.key)params.push({name:'Idempotency-Key',in:'header',required:true,schema:{type:'string',pattern:'^[A-Za-z0-9_-]{8,100}$'},example:'booking-payment-example-01'});
   if(opts.signature)params.push({name:opts.signature,in:'header',required:true,schema:text,description:'Computed from exact raw JSON bytes with timestamp; see FRONTEND_INTEGRATION.md and RUNBOOK.md'});
-  const wrapped=opts.plain?example:{success:true,data:example,...(opts.list?{pagination:{page:1,limit:12,total:1,totalPages:1}}:{})};
+  const wrapped=opts.plain?example:{success:true,serverTime:'2026-11-03T00:00:00Z',data:example,...(opts.list?{pagination:{page:1,limit:12,total:1,totalPages:1}}:{})};
   const dataSchema=(opts.list||opts.array)?{type:'array',items:ref(dataName)}:ref(dataName);
-  const successSchema=opts.plain?{type:'object'}:object({success:{type:'boolean',enum:[true]},data:dataSchema,...(opts.list?{pagination:ref('Pagination')}:{})},['success','data']);
+  const successSchema=opts.plain?{type:'object'}:object({success:{type:'boolean',enum:[true]},serverTime:{type:'string',format:'date-time'},data:dataSchema,...(opts.list?{pagination:ref('Pagination')}:{})},['success','data']);
   const responses:any={[status]:{description:opts.binary?'Authenticated file download':title,content:{[opts.binary||'application/json']:opts.binary?{schema:{type:'string',format:'binary'}}:{schema:successSchema,example:wrapped}}}};
   const errs=[400,404,409,429,500,...(permission==='public'?[]:[401,403]),...(opts.extraStatuses||[])];
   for(const code of [...new Set(errs)])responses[code]={description:errorLabels[code],content:{'application/json':{schema:ref('Error'),example:{success:false,error:{code:code===401?'AUTH_REQUIRED':code===403?'FORBIDDEN':code===400?'VALIDATION_ERROR':code===409?(opts.errors||'INVALID_STATE_TRANSITION').split(',')[0]:'NOT_FOUND',message:errorLabels[code],details:[]}}}}};
@@ -67,7 +84,7 @@ function add(method:string,url:string,title:string,permission:string,dataName='O
 }
 const user={id,email:'guest@example.test',full_name:'Traveler',role:'guest',account_status:'active'};
 const listing={id,title:'Beach Apartment',city:'Da Nang',country:'Vietnam',region:'Asia',room_type:'entire_place',price_per_night:'100.00',nightly_rate:100,max_guests:4,bedrooms:2,beds:3,bathrooms:1};
-const quote={currency:'USD',listingId:id,title:'Beach Apartment',city:'Da Nang',nightlyRate:100,totalNights:2,roomSubtotal:200,cleaningFee:20,serviceFee:10,discountAmount:0,taxRate:0,taxAmount:0,tripTotal:230,pricePerNight:100,basePriceTotal:200,totalPrice:230,checkInDate:'2099-01-10',checkOutDate:'2099-01-12',guests:2,maxGuests:4,quoteIsReservation:false};
+const quote={currency:'USD',listingId:id,title:'Beach Apartment',city:'Da Nang',nightlyRate:100,totalNights:2,roomSubtotal:200,cleaningFee:20,serviceFee:10,discountAmount:0,taxRate:0,taxAmount:0,tripTotal:230,pricePerNight:100,basePriceTotal:200,totalPrice:230,checkInDate:'2099-01-10',checkOutDate:'2099-01-12',guests:2,maxGuests:4,quoteIsReservation:false,policy:CHECKOUT_POLICY};
 const stay={listingId:id,checkInDate:'2099-01-10',checkOutDate:'2099-01-12',guests:2};
 const booking={id,booking_code:'TRV-example',guest_id:id,listing_id:id,check_in_date:'2099-01-10',check_out_date:'2099-01-12',total_nights:2,number_of_guests:2,price_per_night:'100.00',total_price:'230.00',booking_status:'pending',payment_plan:'deposit',amount_paid:'0.00',balance_due:'230.00',payment_status:'pending'};
 const payment={id,booking_id:id,user_id:id,amount:'30.00',currency:'USD',payment_status:'pending',provider:'mock',is_simulated:true};
@@ -83,6 +100,18 @@ add('get','/amenities','Danh sách tiện nghi','public','Amenity',[{id,name:'Wi
 add('get','/listings','Tìm kiếm chỗ ở và giá toàn chuyến khi có cặp ngày','optional','Listing',[listing],{list:true,query:'ListingFilter',errors:'VALIDATION_ERROR',description:'q matches title/city/country/address; all amenities are required. minPrice/maxPrice and price sorting use nightly USD. checkIn/checkOut must be supplied together. Optional Bearer token personalizes favorites; an invalid/blocked supplied token is rejected. pricing=null without dates; otherwise server pricing includes fees, configured tax, no coupon.'});
 add('get','/listings/{id}','Chi tiết chỗ ở đang hoạt động','optional','Listing',listing,{errors:'NOT_FOUND,VALIDATION_ERROR'});
 add('get','/listings/{id}/review-eligibility','Kiểm tra quyền viết đánh giá của khách hiện tại','authenticated','ReviewEligibility',{listingId:id,listingTitle:listing.title,canReview:false,reason:'completed_stay_required',existingReview:null},{errors:'LISTING_NOT_FOUND,VALIDATION_ERROR',description:'Requires a completed stay by the authenticated user at this listing and no existing review. Eligibility does not reserve the right to submit; POST reviews rechecks the rules.'});
+for(const admin of [false,true]) {
+  const base=admin?'/admin/support-tickets':'/support-tickets',permission=admin?'admin':'authenticated';
+  add('get',base,'Danh sách yêu cầu hỗ trợ',permission,'SupportTicket',[{id,booking_id:id,subject:'Hướng dẫn nhận phòng',status:'open'}],{query:'SupportList',list:true,description:'Guest sees own tickets only; admin sees all. Private no-store.'});
+  add('get',base+'/{id}','Nội dung yêu cầu, tin nhắn theo trang',permission,'SupportDetail',{}, {query:'PaginationQuery',description:'Only ticket owner or admin; messages ordered oldest first with stable ID tie-break.'});
+  add('post',base+'/{id}/messages','Phản hồi hỗ trợ',permission,'SupportMessage',{}, {request:'SupportReply',body:{body:'Vui lòng kiểm tra hướng dẫn trong đơn.',requestId:id},status:201,description:'Same requestId/payload returns prior message. Different payload returns 409. Guest reply reopens; admin reply sets waiting_guest.'});
+}
+add('post','/support-tickets','Tạo yêu cầu cho đơn của chính mình','authenticated','SupportTicket',{}, {request:'SupportCreate',body:{bookingId:id,subject:'Hướng dẫn nhận phòng',body:'Tôi cần biết cách nhận phòng.',requestId:id},status:201});
+add('patch','/admin/support-tickets/{id}/status','Cập nhật trạng thái hỗ trợ','admin','SupportTicket',{}, {request:'SupportStatus',body:{status:'resolved'}});
+add('get','/bookings/{id}/trip','Tiến trình chuyến đi và hướng dẫn riêng tư','authenticated','Trip',{}, {description:'Only booking owner or admin. Arrival guide hidden from guests until confirmed, hidden again on cancellation/expiry. Payment/refund event amounts reflect ledger, no invented check-in details.'});
+add('put','/admin/bookings/{id}/arrival-guide','Cung cấp hướng dẫn nhận phòng','admin','ArrivalGuide',{}, {request:'ArrivalGuideRequest',body:{instructions:'Hướng dẫn do cơ sở cung cấp và đã xác minh.',contact:'',revision:0},description:'Confirmed bookings only. revision=0 for first publish; existing revision required for update. Conflict 409 on concurrent edit.'});
+add('get','/listings/{id}/review-summary','Thống kê điểm tổng thể của toàn bộ đánh giá','public','ReviewSummary',{total:1,average:5,counts:[0,0,0,0,1]},{description:'Database aggregates all reviews; page-by-page review retrieval does not change these counts. Auxiliary criterion scores are not collected and are not inferred.'});
+add('get','/payments/config','Cấu hình công khai của cổng thanh toán test','public','PaymentConfig',{mode:'mock',publishableKey:null},{description:'No-store. Stripe publishable key is returned only in stripe_test mode and only if pk_test_. SDK confirmation never replaces server webhook verification.'});
 add('get','/listings/{id}/reviews','Danh sách đánh giá','public','Review',[{id,user_id:id,rating:5,comment:'A great stay',user_name:'Traveler'}],{query:'PaginationQuery',list:true});
 add('post','/listings/{id}/reviews','Gửi đánh giá sau booking completed','authenticated','Review',{id,listing_id:id,user_id:id,rating:5,comment:'A great stay'},{request:'ReviewRequest',body:{rating:5,comment:'A great stay'},status:201,errors:'REVIEW_NOT_ELIGIBLE,REVIEW_ALREADY_EXISTS',description:'One lifetime review per (authenticated user, listing). A completed booking at that same listing is required; userId from body is never trusted. Legacy auxiliary ratings are accepted but not stored as separate metrics.'});
 add('get','/favorites','Yêu thích của chính mình','authenticated','Listing',[listing],{query:'PaginationQuery',list:true});
