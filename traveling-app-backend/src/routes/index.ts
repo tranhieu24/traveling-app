@@ -5,11 +5,13 @@ import interactionRoutes from './interaction.routes';
 import bookingRoutes from './booking.routes';
 import adminRoutes from './admin.routes';
 import supportRoutes from './support.routes';
+import aiRoutes from './ai.routes';
 
 const apiRouter = Router();
 
 // Map các routes nghiệp vụ
 apiRouter.use('/auth', authRoutes);
+apiRouter.use('/ai',aiRoutes);
 apiRouter.use('/admin',adminRoutes);
 apiRouter.use('/', discoveryRoutes);
 apiRouter.use('/', interactionRoutes);

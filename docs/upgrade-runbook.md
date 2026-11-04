@@ -1,10 +1,10 @@
-# Chạy bản nâng cấp Giai đoạn 1
+# Chạy bản nâng cấp Giai đoạn 1–2
 
 Đọc cùng [RUNBOOK](RUNBOOK.md). Lượt triển khai source này không sửa Supabase, `.env`, dashboard OAuth hoặc URL ảnh live. Các lệnh dưới đây dành cho môi trường bạn chủ động chọn và có quyền cập nhật.
 
 ## Schema và rollout
 
-Backend mới cần migration **001–005**. Nếu đã áp 001–004, chỉ áp [005_checkout_context.sql](../database/migrations/005_checkout_context.sql) một lần, sau khi sao lưu và thử trên staging. Không chạy lại schema hoặc seed legacy.
+Backend mới cần migration **001–008**. Chỉ áp các migration chưa có trên môi trường đích, đúng thứ tự, sau khi sao lưu và thử staging. Migration 006 thêm hỗ trợ/hướng dẫn nhận phòng, 007 thêm guard policy snapshot và 008 thêm notification outbox. Không chạy lại schema hoặc seed legacy.
 
 Từ thư mục backend, khi biến môi trường shell trỏ đúng staging:
 
@@ -119,4 +119,14 @@ npx expo export --platform all --output-dir dist/upgrade-check
 node scripts/render-upgrade-preview.cjs
 ```
 
-Preview ở `traveling-app-mobile/dist/upgrade-preview/index.html`: HTML tĩnh từ component thật với fixture, khung rộng/360px. Không gọi API, nút không tương tác; không thay thế chạy app. AI và Giai đoạn 2 chưa thuộc bản demo này.
+Preview ở `traveling-app-mobile/dist/upgrade-preview/index.html`: HTML tĩnh từ component thật với fixture, khung rộng/360px. Không gọi API, nút không tương tác; không thay thế chạy app. AI chưa thuộc bản demo này.
+
+## Email giao dịch (NOTIFY-01)
+
+Mặc định `EMAIL_MODE=disabled`: event vẫn được ghi bền vững nhưng worker không claim và không ghi đã gửi. Để dùng provider/relay đã được phép, cấu hình `EMAIL_MODE=webhook`, URL HTTPS và secret theo `.env.example`. Chỉ HTTP 2xx có `messageId` hoặc `id` mới được ghi `sent`.
+
+```powershell
+npm run notifications:dispatch -- 25
+```
+
+Phải lên lịch lệnh trên ở môi trường chạy; việc có CLI chưa chứng minh cron đã hoạt động. Outbox retry exponential theo `EMAIL_MAX_ATTEMPTS`, không log secret. Theo dõi số lượng `pending/failed/sent`; không sửa trực tiếp thành `sent`.

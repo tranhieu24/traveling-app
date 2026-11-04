@@ -20,9 +20,9 @@ import { ChevronDown, Check, Mail, X } from 'lucide-react-native';
 import { RootStackParamList } from '../types';
 
 const COUNTRIES = [
-  { code: 'US', name: 'United States', flag: '🇺🇸', dialCode: '+1', minLength: 10, maxLength: 10 },
+  { code: 'US', name: 'Hoa Kỳ', flag: '🇺🇸', dialCode: '+1', minLength: 10, maxLength: 10 },
   { code: 'VN', name: 'Vietnam', flag: '🇻🇳', dialCode: '+84', minLength: 9, maxLength: 10 },
-  { code: 'GB', name: 'United Kingdom', flag: '🇬🇧', dialCode: '+44', minLength: 10, maxLength: 11 },
+  { code: 'GB', name: 'Vương quốc Anh', flag: '🇬🇧', dialCode: '+44', minLength: 10, maxLength: 11 },
   { code: 'AU', name: 'Australia', flag: '🇦🇺', dialCode: '+61', minLength: 9, maxLength: 10 },
   { code: 'SG', name: 'Singapore', flag: '🇸🇬', dialCode: '+65', minLength: 8, maxLength: 8 },
 ] as const;
@@ -63,7 +63,7 @@ export const CreateAccountScreen: React.FC = () => {
                 cssInterop={false}
                 accessibilityRole="button"
                 accessibilityLabel={`Country code: ${country.name}, ${country.dialCode}`}
-                accessibilityHint="Choose your country"
+                accessibilityHint="Chọn quốc gia của bạn"
                 onPress={() => {
                   Keyboard.dismiss();
                   setCountryPickerVisible(true);
@@ -122,14 +122,14 @@ export const CreateAccountScreen: React.FC = () => {
             </View>
 
             <View style={styles.legal}>
-              <Text style={styles.legalText}>By signing up, you agree to our</Text>
+              <Text style={styles.legalText}>Khi đăng ký, bạn đồng ý với</Text>
               <Text style={styles.legalText}>
-                <Text accessibilityRole="link" onPress={() => showLegalNotice('Terms of Service')} style={styles.legalLink}>
-                  Terms of Service
+                <Text accessibilityRole="link" onPress={() => showLegalNotice('Điều khoản dịch vụ')} style={styles.legalLink}>
+                  Điều khoản dịch vụ
                 </Text>
-                {' and '}
-                <Text accessibilityRole="link" onPress={() => showLegalNotice('Privacy Policy')} style={styles.legalLink}>
-                  Privacy Policy.
+                {' và '}
+                <Text accessibilityRole="link" onPress={() => showLegalNotice('Chính sách quyền riêng tư')} style={styles.legalLink}>
+                  Chính sách quyền riêng tư.
                 </Text>
               </Text>
             </View>
@@ -156,11 +156,11 @@ export const CreateAccountScreen: React.FC = () => {
         onRequestClose={() => setCountryPickerVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <Pressable style={StyleSheet.absoluteFill} accessibilityLabel="Close country picker" accessibilityRole="button" onPress={() => setCountryPickerVisible(false)} />
+          <Pressable style={StyleSheet.absoluteFill} accessibilityLabel="Đóng danh sách quốc gia" accessibilityRole="button" onPress={() => setCountryPickerVisible(false)} />
           <View style={styles.modalCard} accessibilityViewIsModal>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle} accessibilityRole="header">Select your country</Text>
-              <Pressable accessibilityRole="button" accessibilityLabel="Close" hitSlop={12} onPress={() => setCountryPickerVisible(false)}>
+              <Text style={styles.modalTitle} accessibilityRole="header">Chọn quốc gia</Text>
+              <Pressable accessibilityRole="button" accessibilityLabel="Đóng" hitSlop={12} onPress={() => setCountryPickerVisible(false)}>
                 <X size={22} color="#292C30" />
               </Pressable>
             </View>

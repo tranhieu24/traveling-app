@@ -1,4 +1,5 @@
 import { TripProgress } from '../components/booking/TripProgress';
+import { AiHelpPanel } from '../components/ai/AiPanels';
 import { MediaNotice } from '../components/common/MediaNotice';
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -86,7 +87,7 @@ export const BookingDetailScreen: React.FC = () => {
       setReceiptNotice(
         failure instanceof Error
           ? failure.message
-          : 'Could not download your receipt. Please try again.'
+          : 'Không thể tải biên lai. Vui lòng thử lại.'
       );
     } finally {
       receiptPending.current = false;
@@ -159,18 +160,18 @@ export const BookingDetailScreen: React.FC = () => {
           ) : (
             <>
               <Text className="text-base font-bold text-dark text-center mb-3">
-                {needsLogin ? 'Log in to view this reservation' : 'Unable to load reservation'}
+                {needsLogin ? 'Đăng nhập để xem đơn đặt chỗ' : 'Không thể tải đơn đặt chỗ'}
               </Text>
               <Text className="text-sm text-dark-muted text-center mb-4">
                 {needsLogin
-                  ? 'Reservation and payment details are private.'
+                  ? 'Chi tiết đặt chỗ và thanh toán được bảo mật.'
                   : "Vui lòng kiểm tra kết nối rồi thử lại."}
               </Text>
               <Button
                 title={needsLogin ? "Đăng nhập" : "Thử lại"}
                 accessibilityRole="button"
                 accessibilityLabel={
-                  needsLogin ? 'Log in to view reservation' : 'Retry reservation details'
+                  needsLogin ? 'Đăng nhập để xem đơn đặt chỗ' : 'Tải lại chi tiết đặt chỗ'
                 }
                 onPress={() => (needsLogin ? navigation.navigate('Login') : void refetch())}
                 variant="outline"
@@ -201,6 +202,7 @@ export const BookingDetailScreen: React.FC = () => {
       >
         <MediaNotice context={booking.photo_context}/>
         <BookingHold booking={booking} onRefresh={()=>void refetch()} onRebook={()=>navigation.navigate('ListingDetail',{listingId:booking.listing_id})}/>
+        {booking.guest_id===user?.id&&<AiHelpPanel bookingId={bookingId}/>}
         {booking.guest_id===user?.id&&<><TripProgress bookingId={bookingId}/><Button title="Yêu cầu hỗ trợ đơn này" onPress={()=>navigation.navigate('Support',{bookingId})}/></>}
         {booking.contact_snapshot && <View className="mb-4 p-4 bg-gray-50 rounded-xl"><Text className="font-bold text-dark mb-2">Thông tin liên hệ của đơn</Text><Text>{booking.contact_snapshot.fullName}</Text><Text>{booking.contact_snapshot.email}</Text>{!!booking.contact_snapshot.phone&&<Text>{booking.contact_snapshot.phone}</Text>}</View>}
         {isError && (
@@ -294,7 +296,7 @@ export const BookingDetailScreen: React.FC = () => {
 
         {/* Timeline Dates */}
         <View className="pb-5 mb-5 border-b border-gray-100">
-          <Text className="text-base font-bold text-dark mb-3">Reservation Dates</Text>
+          <Text className="text-base font-bold text-dark mb-3">Ngày lưu trú</Text>
           <View className="flex-row items-center justify-between bg-gray-50 p-4 rounded-xl">
             <View>
               <Text className="text-[10px] uppercase font-bold text-dark-muted">Check-in</Text>
@@ -320,19 +322,19 @@ export const BookingDetailScreen: React.FC = () => {
         <View className="pb-5 mb-5 border-b border-gray-100">
           <Text className="text-base font-bold text-dark mb-3">Tóm tắt thanh toán</Text>
           <View className="flex-row justify-between mb-1.5">
-            <Text className="text-xs text-dark">Base Price</Text>
+            <Text className="text-xs text-dark">Giá cơ bản</Text>
             <Text className="text-xs font-semibold text-dark">
               ${Number(booking.base_price_total || 0).toFixed(2)}
             </Text>
           </View>
           <View className="flex-row justify-between mb-1.5">
-            <Text className="text-xs text-dark">Cleaning Fee</Text>
+            <Text className="text-xs text-dark">Phí vệ sinh</Text>
             <Text className="text-xs font-semibold text-dark">
               ${Number(booking.cleaning_fee || 0).toFixed(2)}
             </Text>
           </View>
           <View className="flex-row justify-between mb-3">
-            <Text className="text-xs text-dark">Service Fee</Text>
+            <Text className="text-xs text-dark">Phí dịch vụ</Text>
             <Text className="text-xs font-semibold text-dark">
               ${Number(booking.service_fee || 0).toFixed(2)}
             </Text>
@@ -354,7 +356,7 @@ export const BookingDetailScreen: React.FC = () => {
             </View>
           )}
           <View className="flex-row justify-between pt-2 border-t border-gray-100">
-            <Text className="text-sm font-bold text-dark">Total Amount</Text>
+            <Text className="text-sm font-bold text-dark">Tổng tiền</Text>
             <Text className="text-sm font-bold text-primary">
               ${Number(booking.total_price || 0).toFixed(2)}
             </Text>
@@ -364,7 +366,7 @@ export const BookingDetailScreen: React.FC = () => {
         {Number(booking.amount_paid || 0) > 0 && (
           <View className="pb-5 mb-5 border-b border-gray-100">
             <View className="flex-row justify-between mb-2">
-              <Text className="text-xs text-dark">Amount paid</Text>
+              <Text className="text-xs text-dark">Đã thanh toán</Text>
               <Text className="text-xs font-semibold text-dark">
                 ${Number(booking.amount_paid).toFixed(2)}
               </Text>
@@ -379,7 +381,7 @@ export const BookingDetailScreen: React.FC = () => {
             )}
             {Number(booking.amount_refunded || 0) > 0 && (
               <View className="flex-row justify-between mt-2">
-                <Text className="text-xs text-dark">Amount refunded</Text>
+                <Text className="text-xs text-dark">Đã hoàn tiền</Text>
                 <Text className="text-xs font-semibold text-primary">
                   ${Number(booking.amount_refunded).toFixed(2)}
                 </Text>
@@ -394,7 +396,7 @@ export const BookingDetailScreen: React.FC = () => {
             <View className="flex-row items-center">
               <Phone size={18} color="#00BCD4" />
               <View className="ml-3">
-                <Text className="text-xs font-bold text-dark">Host Contact</Text>
+                <Text className="text-xs font-bold text-dark">Liên hệ chủ nhà</Text>
                 <Text className="text-xs text-dark-muted">{booking.host_phone}</Text>
               </View>
             </View>
@@ -450,7 +452,7 @@ export const BookingDetailScreen: React.FC = () => {
                     onPress={() => navigation.navigate('HelpCenter')}
                     className="mt-2 py-2"
                   >
-                    <Text className="text-xs text-primary font-semibold">Contact support</Text>
+                    <Text className="text-xs text-primary font-semibold">Liên hệ hỗ trợ</Text>
                   </Pressable>
                 </>
               )}

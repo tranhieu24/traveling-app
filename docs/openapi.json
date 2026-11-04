@@ -19,6 +19,43 @@
       }
     },
     "schemas": {
+      "AiSearchRequest": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 800
+          },
+          "timeZone": {
+            "type": "string",
+            "maxLength": 80,
+            "default": "Asia/Ho_Chi_Minh"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "AiHelpRequest": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 800
+          },
+          "bookingId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
       "SupportCreate": {
         "type": "object",
         "properties": {
@@ -894,6 +931,114 @@
                 "isCover": {
                   "type": "boolean",
                   "default": false
+                },
+                "mediaContext": {
+                  "type": "object",
+                  "properties": {
+                    "sourcePageUrl": {
+                      "type": "string",
+                      "format": "uri",
+                      "maxLength": 2000
+                    },
+                    "provider": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    },
+                    "creator": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    },
+                    "licenseName": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    },
+                    "licenseUrl": {
+                      "type": "string",
+                      "format": "uri",
+                      "maxLength": 2000
+                    },
+                    "attributionText": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 1000
+                    },
+                    "contextLevel": {
+                      "type": "string",
+                      "enum": [
+                        "verified_property"
+                      ]
+                    },
+                    "contextEvidence": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 2000
+                    },
+                    "usageStatus": {
+                      "type": "string",
+                      "enum": [
+                        "approved"
+                      ]
+                    },
+                    "approvedFor": {
+                      "type": "string",
+                      "enum": [
+                        "property_listing"
+                      ],
+                      "default": "property_listing"
+                    },
+                    "role": {
+                      "type": "string",
+                      "enum": [
+                        "cover",
+                        "bedroom",
+                        "bathroom",
+                        "common_area",
+                        "exterior",
+                        "view",
+                        "amenity",
+                        "other"
+                      ]
+                    },
+                    "altText": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 255
+                    },
+                    "width": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0,
+                      "maximum": 20000
+                    },
+                    "height": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0,
+                      "maximum": 20000
+                    },
+                    "checkedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "sourcePageUrl",
+                    "provider",
+                    "creator",
+                    "licenseName",
+                    "licenseUrl",
+                    "attributionText",
+                    "contextLevel",
+                    "contextEvidence",
+                    "usageStatus",
+                    "role",
+                    "altText",
+                    "checkedAt"
+                  ],
+                  "additionalProperties": false
                 }
               },
               "required": [
@@ -902,6 +1047,44 @@
               "additionalProperties": false
             },
             "maxItems": 30
+          },
+          "sourceAudit": {
+            "type": "object",
+            "properties": {
+              "sourcePageUrl": {
+                "type": "string",
+                "format": "uri",
+                "maxLength": 2000
+              },
+              "mediaUsageStatus": {
+                "type": "string",
+                "enum": [
+                  "approved",
+                  "needs_review",
+                  "blocked"
+                ]
+              },
+              "contextEvidence": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000
+              },
+              "reviewNotes": {
+                "type": "string",
+                "maxLength": 2000,
+                "nullable": true
+              },
+              "checkedAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "sourcePageUrl",
+              "mediaUsageStatus",
+              "contextEvidence"
+            ],
+            "additionalProperties": false
           }
         },
         "required": [
@@ -1067,6 +1250,114 @@
                 "isCover": {
                   "type": "boolean",
                   "default": false
+                },
+                "mediaContext": {
+                  "type": "object",
+                  "properties": {
+                    "sourcePageUrl": {
+                      "type": "string",
+                      "format": "uri",
+                      "maxLength": 2000
+                    },
+                    "provider": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    },
+                    "creator": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    },
+                    "licenseName": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    },
+                    "licenseUrl": {
+                      "type": "string",
+                      "format": "uri",
+                      "maxLength": 2000
+                    },
+                    "attributionText": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 1000
+                    },
+                    "contextLevel": {
+                      "type": "string",
+                      "enum": [
+                        "verified_property"
+                      ]
+                    },
+                    "contextEvidence": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 2000
+                    },
+                    "usageStatus": {
+                      "type": "string",
+                      "enum": [
+                        "approved"
+                      ]
+                    },
+                    "approvedFor": {
+                      "type": "string",
+                      "enum": [
+                        "property_listing"
+                      ],
+                      "default": "property_listing"
+                    },
+                    "role": {
+                      "type": "string",
+                      "enum": [
+                        "cover",
+                        "bedroom",
+                        "bathroom",
+                        "common_area",
+                        "exterior",
+                        "view",
+                        "amenity",
+                        "other"
+                      ]
+                    },
+                    "altText": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 255
+                    },
+                    "width": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0,
+                      "maximum": 20000
+                    },
+                    "height": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0,
+                      "maximum": 20000
+                    },
+                    "checkedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "sourcePageUrl",
+                    "provider",
+                    "creator",
+                    "licenseName",
+                    "licenseUrl",
+                    "attributionText",
+                    "contextLevel",
+                    "contextEvidence",
+                    "usageStatus",
+                    "role",
+                    "altText",
+                    "checkedAt"
+                  ],
+                  "additionalProperties": false
                 }
               },
               "required": [
@@ -1075,6 +1366,44 @@
               "additionalProperties": false
             },
             "maxItems": 30
+          },
+          "sourceAudit": {
+            "type": "object",
+            "properties": {
+              "sourcePageUrl": {
+                "type": "string",
+                "format": "uri",
+                "maxLength": 2000
+              },
+              "mediaUsageStatus": {
+                "type": "string",
+                "enum": [
+                  "approved",
+                  "needs_review",
+                  "blocked"
+                ]
+              },
+              "contextEvidence": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000
+              },
+              "reviewNotes": {
+                "type": "string",
+                "maxLength": 2000,
+                "nullable": true
+              },
+              "checkedAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "sourcePageUrl",
+              "mediaUsageStatus",
+              "contextEvidence"
+            ],
+            "additionalProperties": false
           }
         },
         "additionalProperties": false
@@ -2471,6 +2800,130 @@
         "type": "object",
         "additionalProperties": true
       },
+      "AiSource": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "article",
+              "booking"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "id",
+          "title"
+        ]
+      },
+      "AiHelp": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "ai",
+              "fallback",
+              "data"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "answer": {
+            "type": "string"
+          },
+          "sourceRefs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AiSource"
+            }
+          },
+          "fetchedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "mode",
+          "answer",
+          "sourceRefs",
+          "fetchedAt"
+        ]
+      },
+      "AiSearch": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "ai",
+              "fallback"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "ready": {
+            "type": "boolean"
+          },
+          "filters": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": true
+          },
+          "intent": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Listing"
+            }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "fetchedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "mode",
+          "message",
+          "ready",
+          "filters",
+          "questions",
+          "notes",
+          "items",
+          "total",
+          "fetchedAt"
+        ]
+      },
       "CheckoutPolicy": {
         "type": "object",
         "properties": {
@@ -2482,6 +2935,9 @@
           },
           "depositAmount": {
             "type": "number"
+          },
+          "cancellationCutoffDays": {
+            "type": "integer"
           },
           "timezone": {
             "type": "string"
@@ -7961,6 +8417,7 @@
                       "version": "stay-v1",
                       "currency": "USD",
                       "depositAmount": 30,
+                      "cancellationCutoffDays": 0,
                       "timezone": "UTC",
                       "cancellation": "Đơn đã xác nhận chỉ được hủy trước ngày nhận phòng theo UTC. Tiền đã trả được tạo yêu cầu hoàn; cần quản trị duyệt và nhà cung cấp xác nhận.",
                       "payment": "Đặt phòng chỉ được xác nhận sau khi server kiểm tra thanh toán. Nếu trả cọc, bạn cần thanh toán phần còn lại trước khi hoàn tất chuyến đi.",
@@ -17853,6 +18310,411 @@
                     }
                   }
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/search": {
+      "post": {
+        "summary": "Hiểu nhu cầu tìm phòng và truy vấn danh mục thật",
+        "operationId": "post__api_v1_ai_search",
+        "tags": [
+          "ai"
+        ],
+        "description": "Read-only. Optional auth validates supplied tokens. Six requests/minute per identity, ten/IP. Daily durable budgets before provider calls. USD/night only; missing or unsupported conditions return questions and no listings. Disabled, quota or provider errors return explicit fallback. Returned listing/price data comes from repository, not model.",
+        "x-permission": "optional",
+        "x-error-codes": "AI_RATE_LIMIT,VALIDATION_ERROR",
+        "security": [
+          {},
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Hiểu nhu cầu tìm phòng và truy vấn danh mục thật",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/AiSearch"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                },
+                "example": {
+                  "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
+                  "data": {
+                    "mode": "fallback",
+                    "reason": "disabled",
+                    "ready": false,
+                    "message": "AI chưa được bật.",
+                    "filters": null,
+                    "questions": [],
+                    "notes": [],
+                    "items": [],
+                    "total": 0,
+                    "fetchedAt": "2026-11-04T00:00:00Z"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input/signature",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid input/signature",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked Supabase access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "AUTH_REQUIRED",
+                    "message": "Missing, invalid, expired or revoked Supabase access token",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Account blocked or permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "Account blocked or permission denied",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource unavailable or not owned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Resource unavailable or not owned",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Business conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "AI_RATE_LIMIT",
+                    "message": "Business conflict",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Rate limited",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Unexpected server error",
+                    "details": []
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiSearchRequest"
+              },
+              "example": {
+                "message": "Homestay Đà Lạt, 2 khách, cuối tuần này, dưới 100 USD mỗi đêm",
+                "timeZone": "Asia/Ho_Chi_Minh"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/help": {
+      "post": {
+        "summary": "Tìm bài trợ giúp hoặc đọc số liệu đơn của chính mình",
+        "operationId": "post__api_v1_ai_help",
+        "tags": [
+          "ai"
+        ],
+        "description": "Without bookingId: model selects allowlisted FAQ IDs; server renders approved article text. With bookingId: requires authenticated owner (even admin cannot read another guest here); server renders booking/payment/refund values without calling model. No write actions and no arbitrary URLs. Account-blocked tokens rejected. Cache-Control: private, no-store.",
+        "x-permission": "optional",
+        "x-error-codes": "AI_RATE_LIMIT,AUTH_REQUIRED,BOOKING_NOT_FOUND",
+        "security": [
+          {},
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Tìm bài trợ giúp hoặc đọc số liệu đơn của chính mình",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/AiHelp"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                },
+                "example": {
+                  "success": true,
+                  "serverTime": "2026-11-03T00:00:00Z",
+                  "data": {
+                    "mode": "fallback",
+                    "answer": "Xem bài trợ giúp hoặc gửi yêu cầu hỗ trợ.",
+                    "sourceRefs": [],
+                    "fetchedAt": "2026-11-04T00:00:00Z"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input/signature",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid input/signature",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked Supabase access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "AUTH_REQUIRED",
+                    "message": "Missing, invalid, expired or revoked Supabase access token",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Account blocked or permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "Account blocked or permission denied",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource unavailable or not owned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Resource unavailable or not owned",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Business conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "AI_RATE_LIMIT",
+                    "message": "Business conflict",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Rate limited",
+                    "details": []
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Unexpected server error",
+                    "details": []
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiHelpRequest"
+              },
+              "example": {
+                "message": "Hủy đặt chỗ có chắc chắn hoàn tiền không?"
               }
             }
           }

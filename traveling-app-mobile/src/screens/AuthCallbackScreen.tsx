@@ -28,7 +28,7 @@ export function AuthCallbackScreen() {
             Platform.OS === 'web'
               ? getCapturedAuthCallback() || window.location.href
               : getCapturedAuthCallback() || (await Linking.getInitialURL());
-        if (!urlRef.current) throw new Error('Missing callback.');
+        if (!urlRef.current) throw new Error('Thiếu liên kết xác thực trả về.');
         // Strip credentials from browser history before any profile/API request.
         if (Platform.OS === 'web') window.history.replaceState({}, '', window.location.pathname);
         if (!completion.current) completion.current = completeRef.current(urlRef.current);

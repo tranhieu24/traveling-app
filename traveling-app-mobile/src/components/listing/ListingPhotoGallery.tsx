@@ -55,7 +55,7 @@ export const ListingHero = ({
             <Pressable
               key={url}
               accessibilityRole="button"
-              accessibilityLabel={`Open room photo ${index + 1}`}
+              accessibilityLabel={`Mở ảnh chỗ ở ${index + 1}`}
               onPress={onPhotos}
               style={{ width, height: '100%' }}
             >
@@ -70,7 +70,7 @@ export const ListingHero = ({
       {photos.length > 0 && (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Show all ${photos.length} photos`}
+          accessibilityLabel={`Hiển thị tất cả ${photos.length} ảnh`}
           onPress={onPhotos}
           style={s.photoCount}
         >
@@ -110,13 +110,13 @@ export const ListingPhotoGallery = ({
         <View style={s.galleryHeader}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Close photos"
+            accessibilityLabel="Đóng thư viện ảnh"
             onPress={onClose}
             style={s.iconButton}
           >
             <X color="white" size={24} />
           </Pressable>
-          <Text style={s.galleryTitle}>Photos</Text>
+          <Text style={s.galleryTitle}>Hình ảnh</Text>
           <View style={s.iconButton} />
         </View>
         <View
@@ -140,7 +140,7 @@ export const ListingPhotoGallery = ({
             {photos.map((url, index) => (
               <View
                 key={url}
-                accessibilityLabel={`Room photo ${index + 1} of ${photos.length}`}
+                accessibilityLabel={`Ảnh chỗ ở ${index + 1} trên ${photos.length}`}
                 style={{ width, height: '100%' }}
               >
                 <ListingImage url={url} contain />
@@ -151,7 +151,7 @@ export const ListingPhotoGallery = ({
         <View style={s.galleryFooter}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Previous room photo"
+            accessibilityLabel="Ảnh chỗ ở trước"
             disabled={active <= 0}
             onPress={() => move(-1)}
             style={[s.iconButton, active <= 0 && { opacity: 0.3 }]}
@@ -163,7 +163,7 @@ export const ListingPhotoGallery = ({
           </Text>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Next room photo"
+            accessibilityLabel="Ảnh chỗ ở tiếp theo"
             disabled={active >= photos.length - 1}
             onPress={() => move(1)}
             style={[s.iconButton, active >= photos.length - 1 && { opacity: 0.3 }]}

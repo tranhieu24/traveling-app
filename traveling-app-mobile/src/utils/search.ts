@@ -15,6 +15,7 @@ export interface SearchCriteria {
   children: number;
 }
 export interface AdvancedFilters {
+  propertyType?: string | null;
   minPrice: number | null;
   maxPrice: number | null;
   bedrooms: number | null;
@@ -23,8 +24,9 @@ export interface AdvancedFilters {
   roomTypes: RoomType[];
   selectedAmenities: string[];
 }
-export const ANYWHERE: SearchDestination = { kind: 'anywhere', label: 'Anywhere', value: '' };
+export const ANYWHERE: SearchDestination = { kind: 'anywhere', label: 'Mọi nơi', value: '' };
 export const EMPTY_ADVANCED: AdvancedFilters = {
+  propertyType: null,
   minPrice: null,
   maxPrice: null,
   bedrooms: null,
@@ -36,23 +38,23 @@ export const EMPTY_ADVANCED: AdvancedFilters = {
 export const ROOM_TYPES: { value: RoomType; title: string; description: string }[] = [
   {
     value: 'entire_place',
-    title: 'Entire place',
-    description: 'Entire apartments, condos, houses',
+    title: 'Toàn bộ chỗ ở',
+    description: 'Căn hộ, chung cư hoặc nhà nguyên căn',
   },
   {
     value: 'private_room',
-    title: 'Private room',
-    description: 'Typically come with a private bathroom unless otherwise stated',
+    title: 'Phòng riêng',
+    description: 'Thường có phòng tắm riêng trừ khi được ghi chú khác',
   },
   {
     value: 'dormitory',
-    title: 'Dormitories',
-    description: 'Large rooms with multiple beds that are shared with others',
+    title: 'Phòng tập thể',
+    description: 'Phòng lớn có nhiều giường và dùng chung với khách khác',
   },
 ];
 export const validateSearchDates = (checkIn: string | null, checkOut: string | null): void => {
   if (!checkIn && !checkOut) return;
-  if (!checkIn || !checkOut) throw new Error('Choose both a check-in and a check-out date.');
+  if (!checkIn || !checkOut) throw new Error('Hãy chọn cả ngày nhận và trả phòng.');
   validateTrip(checkIn, checkOut, 1, 0, 1000);
 };
 export const validateSearch = (criteria: SearchCriteria): void => {
@@ -61,7 +63,7 @@ export const validateSearch = (criteria: SearchCriteria): void => {
     !criteria.destination.label ||
     (criteria.destination.kind !== 'anywhere' && !criteria.destination.value.trim())
   )
-    throw new Error('Choose a destination from the suggestions.');
+    throw new Error('Hãy chọn một điểm đến trong danh sách gợi ý.');
   validateSearchDates(criteria.checkInDate, criteria.checkOutDate);
   if (
     !Number.isSafeInteger(criteria.adults) ||
@@ -69,27 +71,27 @@ export const validateSearch = (criteria: SearchCriteria): void => {
     !Number.isSafeInteger(criteria.children) ||
     criteria.children < 0
   )
-    throw new Error('Include at least one adult before searching.');
-  if (criteria.adults + criteria.children > 1000) throw new Error('Search for up to 1000 guests.');
+    throw new Error('Cần có ít nhất một người lớn trước khi tìm kiếm.');
+  if (criteria.adults + criteria.children > 1000) throw new Error('Chỉ tìm kiếm tối đa 1000 khách.');
 };
 export const validateAdvanced = (filters: AdvancedFilters): void => {
   for (const value of [filters.minPrice, filters.maxPrice])
     if (value !== null && (!Number.isFinite(value) || value < 0))
-      throw new Error('Enter a valid non-negative price.');
+      throw new Error('Nhập mức giá hợp lệ và không âm.');
   if (filters.minPrice !== null && filters.maxPrice !== null && filters.minPrice > filters.maxPrice)
-    throw new Error('Maximum price must be at least the minimum price.');
+    throw new Error('Giá tối đa phải lớn hơn hoặc bằng giá tối thiểu.');
   for (const value of [filters.bedrooms, filters.beds, filters.bathrooms])
     if (value !== null && (!Number.isSafeInteger(value) || value < 0 || value > 1000))
-      throw new Error('Room counts must be whole numbers from 0 to 1000.');
+      throw new Error('Số lượng phòng phải là số nguyên từ 0 đến 1000.');
   if (filters.roomTypes.some((value) => !ROOM_TYPES.some((type) => type.value === value)))
-    throw new Error('Choose a valid type of place.');
+    throw new Error('Hãy chọn loại chỗ ở hợp lệ.');
 };
 export const searchDateLabel = (checkIn: string | null, checkOut: string | null): string => {
-  if (!checkIn || !checkOut) return 'Anytime';
+  if (!checkIn || !checkOut) return 'Bất kỳ lúc nào';
   const start = new Date(`${checkIn}T00:00:00Z`),
     end = new Date(`${checkOut}T00:00:00Z`);
   const month = (date: Date) =>
-    date.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' });
+    date.toLocaleDateString('vi-VN', { month: 'short', timeZone: 'UTC' });
   if (start.getUTCFullYear() !== end.getUTCFullYear())
     return `${start.getUTCDate()} ${month(start)} ${start.getUTCFullYear()} - ${end.getUTCDate()} ${month(end)} ${end.getUTCFullYear()}`;
   if (start.getUTCMonth() === end.getUTCMonth())
@@ -103,6 +105,7 @@ export const buildListingParams = (
   validateAdvanced(state);
   const params: Record<string, string | number | boolean> = {};
   if (state.selectedCategory) params.categoryId = state.selectedCategory;
+  if (state.propertyType) params.propertyType = state.propertyType;
   const destination = state.destination;
   if (destination.kind === 'region') params.region = destination.value;
   else if (destination.kind === 'country') params.country = destination.value;

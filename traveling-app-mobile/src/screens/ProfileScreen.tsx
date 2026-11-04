@@ -44,7 +44,7 @@ export const ProfileScreen: React.FC = () => {
 
   const handleSaveProfile = async () => {
     if (!fullName.trim()) {
-      Alert.alert('Required', 'Name cannot be empty.');
+      Alert.alert('Bắt buộc', 'Họ và tên không được để trống.');
       return;
     }
     setIsSaving(true);
@@ -55,10 +55,10 @@ export const ProfileScreen: React.FC = () => {
       if (res.data.success) {
         await refreshProfile();
         setIsEditing(false);
-        Alert.alert('Success', 'Profile updated successfully.');
+        Alert.alert('Thành công', 'Đã cập nhật hồ sơ.');
       }
     } catch (err: any) {
-      Alert.alert('Error', err.response?.data?.error?.message || 'Could not update profile.');
+      Alert.alert('Lỗi', err.response?.data?.error?.message || 'Không thể cập nhật hồ sơ.');
     } finally {
       setIsSaving(false);
     }
@@ -80,7 +80,7 @@ export const ProfileScreen: React.FC = () => {
       setLogoutVisible(false);
       navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
     } catch {
-      setLogoutError('Could not log out. Please try again.');
+      setLogoutError('Không thể đăng xuất. Vui lòng thử lại.');
     } finally {
       logoutPending.current = false;
       setIsLoggingOut(false);
@@ -113,10 +113,10 @@ export const ProfileScreen: React.FC = () => {
 
             <View className="flex-1">
               <Text className="text-xl font-bold text-gray-900">
-                {user ? user.full_name : 'Welcome to Traveling'}
+                {user ? user.full_name : 'Chào mừng đến với Traveling'}
               </Text>
               <Text className="text-sm text-gray-500 mt-0.5">
-                {user ? user.email : 'Log in to manage your account and bookings'}
+                {user ? user.email : 'Đăng nhập để quản lý tài khoản và đơn đặt chỗ'}
               </Text>
               {user && (
                 <View className="mt-2 bg-cyan-50 px-2.5 py-0.5 rounded-full self-start">
@@ -142,13 +142,13 @@ export const ProfileScreen: React.FC = () => {
           {user && isEditing && (
             <View className="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
               <Text className="text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wide">
-                Full Name
+                Họ và tên
               </Text>
               <TextInput
                 value={fullName}
                 onChangeText={setFullName}
                 className="border border-gray-300 rounded-lg p-3 bg-white text-sm text-gray-900 mb-3"
-                placeholder="Enter your name"
+                placeholder="Nhập họ và tên"
               />
               <TouchableOpacity
                 onPress={handleSaveProfile}
@@ -157,7 +157,7 @@ export const ProfileScreen: React.FC = () => {
                 className="bg-[#00BCD4] py-2.5 px-4 rounded-lg items-center"
               >
                 <Text className="text-white font-semibold text-sm">
-                  {isSaving ? 'Saving...' : "Lưu thay đổi"}
+                  {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -166,9 +166,9 @@ export const ProfileScreen: React.FC = () => {
 
         {/* Menu Items Block */}
         <View className="px-5 py-3">
-          {user?.role === 'admin' && <TouchableOpacity accessibilityRole="button" accessibilityLabel="Admin Portal" onPress={() => navigation.navigate('AdminPortal')} className="flex-row items-center py-4 border-b border-gray-100">
+          {user?.role === 'admin' && <TouchableOpacity accessibilityRole="button" accessibilityLabel="Cổng quản trị" onPress={() => navigation.navigate('AdminPortal')} className="flex-row items-center py-4 border-b border-gray-100">
             <View className="w-10 h-10 rounded-full bg-cyan-50 items-center justify-center mr-3"><ShieldCheck size={20} color="#00BCD4" /></View>
-            <Text className="flex-1 text-sm font-medium text-gray-800">Admin Portal</Text><ChevronRight size={18} color="#9CA3AF" />
+            <Text className="flex-1 text-sm font-medium text-gray-800">Cổng quản trị</Text><ChevronRight size={18} color="#9CA3AF" />
           </TouchableOpacity>}
           {/* 1. Personal Information */}
           <TouchableOpacity
@@ -191,7 +191,7 @@ export const ProfileScreen: React.FC = () => {
           {/* 2. Payments & Payouts */}
           <TouchableOpacity
             accessibilityRole="button"
-            accessibilityLabel="Payments & Payouts"
+            accessibilityLabel="Thanh toán và nhận tiền"
             onPress={() => navigation.navigate(user ? 'PaymentsPayouts' : 'Login')}
             className="flex-row items-center py-4 border-b border-gray-100"
             activeOpacity={0.7}
@@ -200,7 +200,7 @@ export const ProfileScreen: React.FC = () => {
               <CreditCard size={20} color="#00BCD4" />
             </View>
             <Text className="text-sm font-semibold text-gray-800 flex-1">
-              Payments & Payouts
+              Thanh toán và nhận tiền
             </Text>
             <ChevronRight size={18} color="#9CA3AF" />
           </TouchableOpacity>
@@ -208,7 +208,7 @@ export const ProfileScreen: React.FC = () => {
           {/* 3. Settings & Notifications */}
           <TouchableOpacity
             accessibilityRole="button"
-            accessibilityLabel="Settings & Notifications"
+            accessibilityLabel="Cài đặt và thông báo"
             onPress={() => navigation.navigate("Settings")}
             className="flex-row items-center py-4 border-b border-gray-100"
             activeOpacity={0.7}
@@ -217,7 +217,7 @@ export const ProfileScreen: React.FC = () => {
               <Settings size={20} color="#00BCD4" />
             </View>
             <Text className="text-sm font-semibold text-gray-800 flex-1">
-              Settings & Notifications
+              Cài đặt và thông báo
             </Text>
             <ChevronRight size={18} color="#9CA3AF" />
           </TouchableOpacity>
@@ -225,7 +225,7 @@ export const ProfileScreen: React.FC = () => {
           {/* 4. Help Center */}
           <TouchableOpacity
             accessibilityRole="button"
-            accessibilityLabel="Help Center"
+            accessibilityLabel="Trung tâm trợ giúp"
             onPress={() => navigation.navigate('HelpCenter')}
             className="flex-row items-center py-4 border-b border-gray-100"
             activeOpacity={0.7}
@@ -244,14 +244,14 @@ export const ProfileScreen: React.FC = () => {
             <TouchableOpacity
               onPress={handleLogout}
               accessibilityRole="button"
-              accessibilityLabel="Log Out"
+              accessibilityLabel="Đăng xuất"
               disabled={isLoggingOut}
               activeOpacity={0.8}
               className="border border-gray-300 rounded-xl py-3 items-center mt-6 flex-row justify-center"
             >
               <LogOut size={18} color="#EF4444" className="mr-2" />
               <Text className="text-sm font-semibold text-red-500 ml-2">
-                Log Out
+                Đăng xuất
               </Text>
             </TouchableOpacity>
           ) : (
@@ -262,7 +262,7 @@ export const ProfileScreen: React.FC = () => {
             >
               <LogIn size={18} color="#FFFFFF" className="mr-2" />
               <Text className="text-sm font-semibold text-white ml-2">
-                Log In / Sign Up
+                Đăng nhập / Đăng ký
               </Text>
             </TouchableOpacity>
           )}
@@ -282,22 +282,22 @@ export const ProfileScreen: React.FC = () => {
             <View style={logoutStyles.actions}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Cancel log out"
+                accessibilityLabel="Hủy đăng xuất"
                 disabled={isLoggingOut}
                 onPress={() => setLogoutVisible(false)}
                 style={logoutStyles.cancelButton}
               >
-                <Text style={logoutStyles.cancelLabel}>Cancel</Text>
+                <Text style={logoutStyles.cancelLabel}>Hủy</Text>
               </Pressable>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Confirm log out"
+                accessibilityLabel="Xác nhận đăng xuất"
                 disabled={isLoggingOut}
                 onPress={confirmLogout}
                 style={[logoutStyles.confirmButton, isLoggingOut && logoutStyles.busy]}
               >
                 {isLoggingOut && <ActivityIndicator size="small" color="#FFFFFF" />}
-                <Text style={logoutStyles.confirmLabel}>{isLoggingOut ? 'Logging out...' : 'Log Out'}</Text>
+                <Text style={logoutStyles.confirmLabel}>{isLoggingOut ? 'Đang đăng xuất...' : 'Đăng xuất'}</Text>
               </Pressable>
             </View>
           </View>

@@ -7,6 +7,7 @@ import { assertTransition, cents, priceStay, today, validateStay } from '../doma
 import { transaction } from '../services/transaction';
 import { applyCoupon } from './coupon.repository';
 import { PoolClient } from 'pg';
+import { enqueueNotification } from './notification.repository';
 
 export async function audit(c: PoolClient, actor: string, action: string, entity: string, id: string, before: any, after: any) {
   await c.query('INSERT INTO admin_audit_logs(actor_id,action,entity_type,entity_id,before_data,after_data) VALUES($1,$2,$3,$4,$5,$6)',
@@ -90,6 +91,7 @@ export class BookingRepository {
         await c.query('UPDATE coupons SET used_count=used_count+1 WHERE id=$1',[coupon.couponId]);
         await c.query('INSERT INTO coupon_redemptions(booking_id,coupon_id,user_id) VALUES($1,$2,$3)',[b.id,coupon.couponId,data.guestId]);
       }
+      await enqueueNotification(c,{eventKey:`booking:${b.id}:created`,eventType:'booking_created',userId:data.guestId,bookingId:b.id,payload:{bookingCode:b.booking_code,checkInDate:b.check_in_date,checkOutDate:b.check_out_date,totalPrice:b.total_price,currency:'USD',paymentDueAt:b.payment_due_at}});
       return {booking:{...b,nightly_rate:p.nightlyRate,trip_total:p.tripTotal,amount_paid:0,balance_due:p.tripTotal,payment_status:'pending'},payment:null};
     }); } catch(e: any) {
       if (e.code==='23P01') throw new AppError('Dates already booked',409,'DATES_ALREADY_BOOKED');
@@ -115,6 +117,8 @@ export class BookingRepository {
       const result = (await c.query("UPDATE bookings SET booking_status='cancelled',cancelled_at=now(),cancellation_reason=$2 WHERE id=$1 RETURNING *",[id,reason])).rows[0];
       await c.query("UPDATE payments SET payment_status='timed_out',updated_at=now() WHERE booking_id=$1 AND payment_status='pending'",[id]);
       const refunds = await requestRefunds(c,id,reason);
+      await enqueueNotification(c,{eventKey:`booking:${id}:cancelled`,eventType:'booking_cancelled',userId:b.guest_id,bookingId:id,payload:{bookingCode:b.booking_code,reason}});
+      for(const refund of refunds) await enqueueNotification(c,{eventKey:`refund:${refund.id}:requested`,eventType:'refund_requested',userId:b.guest_id,bookingId:id,payload:{bookingCode:b.booking_code,amount:refund.amount,currency:'USD'}});
       if (admin) await audit(c,userId,'booking.cancel','booking',id,b,result);
       return {booking:result,refunds,message:'Cancellation recorded. Refunds require approval and provider confirmation.'};
     });

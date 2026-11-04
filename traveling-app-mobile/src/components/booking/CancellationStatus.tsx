@@ -21,17 +21,17 @@ export const CancellationStatus = ({
     <View style={s.notice}>
       <CheckCircle2 color="#45916D" size={22} />
       <View style={{ flex: 1 }}>
-        <Text style={s.title}>Reservation cancelled</Text>
+        <Text style={s.title}>Đã hủy đặt chỗ</Text>
         <Text style={s.copy}>
           {paidCents(booking) > 0
-            ? 'Refund requests require admin approval and payment service confirmation.'
-            : 'No paid amount is currently recorded for this reservation.'}
+            ? 'Yêu cầu hoàn tiền cần quản trị viên phê duyệt và dịch vụ thanh toán xác nhận.'
+            : 'Hiện chưa ghi nhận khoản thanh toán cho đơn này.'}
         </Text>
       </View>
     </View>
     {!!booking.cancellation_reason && (
       <View style={s.reason}>
-        <Text style={s.label}>Cancellation reason</Text>
+        <Text style={s.label}>Lý do hủy</Text>
         <Text style={s.reasonValue}>{booking.cancellation_reason}</Text>
         {!!booking.cancelled_at && <Text style={s.date}>{accountDate(booking.cancelled_at)}</Text>}
       </View>
@@ -46,38 +46,38 @@ export const CancellationStatus = ({
           </View>
           <Text style={s.copy}>{status.description}</Text>
           {!!refund.decision_reason && (
-            <Text style={s.reasonValue}>Admin response: {refund.decision_reason}</Text>
+            <Text style={s.reasonValue}>Phản hồi của quản trị viên: {refund.decision_reason}</Text>
           )}
         </View>
       );
     })}
     {paidCents(booking) > 0 && !booking.refunds?.length && (
       <Text style={s.copy}>
-        No refund request is listed yet. Check Payments & Payouts or contact support for a review.
+        Chưa có yêu cầu hoàn tiền. Hãy kiểm tra mục Thanh toán và nhận tiền hoặc liên hệ hỗ trợ.
       </Text>
     )}
     {refreshFailed && (
       <View style={s.refresh}>
         <Text accessibilityRole="alert" style={s.copy}>
-          Your cancellation was recorded, but the latest payment details could not be refreshed.
+          Yêu cầu hủy đã được ghi nhận nhưng chưa thể cập nhật thông tin thanh toán mới nhất.
         </Text>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Refresh cancellation details"
+          accessibilityLabel="Cập nhật chi tiết hủy"
           onPress={onRefresh}
         >
-          <Text style={s.link}>Refresh details</Text>
+          <Text style={s.link}>Cập nhật chi tiết</Text>
         </Pressable>
       </View>
     )}
     {paidCents(booking) > 0 && (
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Track refund status"
+        accessibilityLabel="Theo dõi trạng thái hoàn tiền"
         onPress={onTrack}
         style={s.track}
       >
-        <Text style={s.link}>Track refund status</Text>
+        <Text style={s.link}>Theo dõi trạng thái hoàn tiền</Text>
         <ChevronRight size={17} color="#00A5B9" />
       </Pressable>
     )}

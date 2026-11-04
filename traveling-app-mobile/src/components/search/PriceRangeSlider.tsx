@@ -57,13 +57,13 @@ export const PriceRangeSlider = ({
       <View
         {...left.panHandlers}
         accessible
-        accessibilityLabel="Minimum price handle; use minimum price input for keyboard entry"
+        accessibilityLabel="Mức giá tối thiểu; dùng ô giá tối thiểu để nhập bằng bàn phím"
         style={[s.thumb, { left: percent(low) }]}
       />
       <View
         {...right.panHandlers}
         accessible
-        accessibilityLabel="Maximum price handle; use maximum price input for keyboard entry"
+        accessibilityLabel="Mức giá tối đa; dùng ô giá tối đa để nhập bằng bàn phím"
         style={[s.thumb, { left: percent(high) }]}
       />
     </View>

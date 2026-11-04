@@ -5,7 +5,7 @@ import type { Review } from '../../types';
 import { reviewDate } from '../../utils/listingDetail';
 
 export const ReviewStars = ({ rating, size = 12 }: { rating: number; size?: number }) => (
-  <View accessibilityLabel={`${rating} out of 5 stars`} style={s.stars}>
+  <View accessibilityLabel={`${rating} trên 5 sao`} style={s.stars}>
     {[1, 2, 3, 4, 5].map((star) => (
       <Star
         key={star}
@@ -30,7 +30,7 @@ export const ReviewCard = ({
   return (
     <Pressable
       accessibilityRole={onPress ? 'button' : undefined}
-      accessibilityLabel={onPress ? `Read review by ${review.user_name || "Khách"}` : undefined}
+      accessibilityLabel={onPress ? `Đọc đánh giá của ${review.user_name || 'Khách'}` : undefined}
       onPress={onPress}
       style={[s.card, compact && s.compact]}
     >

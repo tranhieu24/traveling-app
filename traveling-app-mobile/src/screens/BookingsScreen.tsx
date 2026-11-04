@@ -44,7 +44,7 @@ export const BookingsScreen: React.FC = () => {
       if (!user) return [];
       const params = selectedStatus !== 'all' ? { status: selectedStatus } : {};
       const res = await apiClient.get('/bookings', { params });
-      if (!res.data.success || !Array.isArray(res.data.data)) throw new Error('Could not load bookings.');
+      if (!res.data.success || !Array.isArray(res.data.data)) throw new Error('Không thể tải đơn đặt chỗ.');
       return res.data.data;
     },
     enabled: !authLoading && !!user,
@@ -64,9 +64,9 @@ export const BookingsScreen: React.FC = () => {
   };
 
   const emptyCopy: Record<string, { title: string; description: string }> = {
-    all: { title: 'No trips booked... yet!', description: 'Time to dust off your bags and start planning your next adventure.' },
-    confirmed: { title: 'No confirmed bookings yet', description: 'Your confirmed reservations will appear here.' },
-    pending: { title: 'No pending bookings', description: 'You do not have any reservations waiting for confirmation.' },
+    all: { title: 'Bạn chưa đặt chuyến đi nào!', description: 'Hãy bắt đầu lên kế hoạch cho hành trình tiếp theo.' },
+    confirmed: { title: 'Chưa có đơn đã xác nhận', description: 'Các đơn được xác nhận sẽ xuất hiện tại đây.' },
+    pending: { title: 'Không có đơn đang chờ', description: 'Bạn không có đơn nào đang chờ xác nhận.' },
     cancelled: { title: "Chưa có đơn đã hủy", description: "Các đơn bạn hủy sẽ xuất hiện tại đây." },
   };
   const currentEmpty = emptyCopy[selectedStatus] || emptyCopy.all;
@@ -79,12 +79,12 @@ export const BookingsScreen: React.FC = () => {
       <Text className="text-sm text-gray-500 text-center max-w-xs leading-5">{currentEmpty.description}</Text>
       <TouchableOpacity
         accessibilityRole="button"
-        accessibilityLabel={selectedStatus === 'all' ? 'Start searching' : 'View all bookings'}
+        accessibilityLabel={selectedStatus === 'all' ? 'Bắt đầu tìm kiếm' : 'Xem tất cả đơn đặt chỗ'}
         onPress={() => selectedStatus === 'all' ? navigation.navigate('MainTabs', { screen: 'SearchTab' }) : setSelectedStatus('all')}
         activeOpacity={0.85}
         className="bg-[#00BCD4] py-3 px-8 rounded-xl shadow-sm mt-6"
       >
-        <Text className="text-white font-semibold text-base text-center">{selectedStatus === 'all' ? 'Start searching' : 'View all bookings'}</Text>
+        <Text className="text-white font-semibold text-base text-center">{selectedStatus === 'all' ? 'Bắt đầu tìm kiếm' : 'Xem tất cả đơn đặt chỗ'}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -95,7 +95,7 @@ export const BookingsScreen: React.FC = () => {
       style={{ flex: 1, backgroundColor: '#FFFFFF' }}
     >
       <View className="px-5 py-4 border-b border-gray-100 bg-white">
-        <Text className="text-2xl font-bold text-gray-900">Trips & Bookings</Text>
+        <Text className="text-2xl font-bold text-gray-900">Chuyến đi và đặt chỗ</Text>
       </View>
       {user && (
         <View className="flex-row px-4 py-2 border-b border-gray-100 bg-gray-50">
@@ -128,7 +128,7 @@ export const BookingsScreen: React.FC = () => {
           <EmptyState
             icon={<AlertCircle size={48} color="#00BCD4" />}
             title="Unable to load bookings"
-            description={sessionExpired ? 'Your session has expired. Please log in again.' : "Vui lòng kiểm tra kết nối rồi thử lại."}
+            description={sessionExpired ? 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.' : 'Vui lòng kiểm tra kết nối rồi thử lại.'}
             actionTitle={sessionExpired ? "Đăng nhập" : "Thử lại"}
             onAction={() => { if (sessionExpired) navigation.navigate('Login'); else void refetch(); }}
           />

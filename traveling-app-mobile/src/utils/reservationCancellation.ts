@@ -7,9 +7,9 @@ export const cancellationEligibility = (
   today = isoToday()
 ): { allowed: boolean; reason?: string } => {
   if (!userId || booking.guest_id !== userId)
-    return { allowed: false, reason: 'Only the guest who made this reservation can cancel it.' };
+    return { allowed: false, reason: 'Chỉ khách đã tạo đơn mới có thể hủy.' };
   if (!['pending', 'confirmed'].includes(booking.booking_status))
-    return { allowed: false, reason: 'This reservation can no longer be cancelled.' };
+    return { allowed: false, reason: 'Đơn đặt chỗ này không thể hủy nữa.' };
   if (booking.booking_status === 'confirmed') {
     const checkIn = booking.check_in_date.slice(0, 10);
     if (!isIsoDate(checkIn) || addIsoDays(checkIn,-(booking.policy_snapshot?.cancellationCutoffDays??0)) <= today)
@@ -25,6 +25,6 @@ export const cancellationEligibility = (
 export const validateCancellationReason = (value: string): string => {
   const reason = value.trim();
   if (reason.length < 3 || reason.length > 500)
-    throw new Error('Enter a cancellation reason between 3 and 500 characters.');
+    throw new Error('Nhập lý do hủy từ 3 đến 500 ký tự.');
   return reason;
 };

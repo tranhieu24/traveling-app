@@ -17,6 +17,11 @@ export const ENV = {
   PAYMENT_HOLD_MINUTES: Number(process.env.PAYMENT_HOLD_MINUTES || 15),
   BOOKING_DEPOSIT_USD: Number(process.env.BOOKING_DEPOSIT_USD || 30),
   CANCELLATION_CUTOFF_DAYS: Number(process.env.CANCELLATION_CUTOFF_DAYS || 0),
+  EMAIL_MODE: process.env.EMAIL_MODE || 'disabled',
+  EMAIL_WEBHOOK_URL: process.env.EMAIL_WEBHOOK_URL || '',
+  EMAIL_WEBHOOK_SECRET: process.env.EMAIL_WEBHOOK_SECRET || '',
+  EMAIL_TIMEOUT_MS: Number(process.env.EMAIL_TIMEOUT_MS || 10000),
+  EMAIL_MAX_ATTEMPTS: Number(process.env.EMAIL_MAX_ATTEMPTS || 5),
   TAX_RATE: Number(process.env.TAX_RATE || 0),
   DATABASE_SSL: process.env.DATABASE_SSL || 'no-verify',
 };
@@ -30,3 +35,7 @@ if (!['disable','verify','no-verify'].includes(ENV.DATABASE_SSL)) throw new Erro
 
 if (!Number.isFinite(ENV.BOOKING_DEPOSIT_USD)||ENV.BOOKING_DEPOSIT_USD<0.5||ENV.BOOKING_DEPOSIT_USD>10000||Math.abs(ENV.BOOKING_DEPOSIT_USD*100-Math.round(ENV.BOOKING_DEPOSIT_USD*100))>0.000001) throw new Error('Invalid BOOKING_DEPOSIT_USD');
 if (!Number.isInteger(ENV.CANCELLATION_CUTOFF_DAYS)||ENV.CANCELLATION_CUTOFF_DAYS<0||ENV.CANCELLATION_CUTOFF_DAYS>30) throw new Error('Invalid CANCELLATION_CUTOFF_DAYS');
+if (!['disabled','webhook'].includes(ENV.EMAIL_MODE)) throw new Error('Invalid EMAIL_MODE');
+if (ENV.EMAIL_MODE==='webhook' && (!/^https:\/\//.test(ENV.EMAIL_WEBHOOK_URL)||!ENV.EMAIL_WEBHOOK_SECRET)) throw new Error('HTTPS EMAIL_WEBHOOK_URL and EMAIL_WEBHOOK_SECRET required');
+if (!Number.isInteger(ENV.EMAIL_TIMEOUT_MS)||ENV.EMAIL_TIMEOUT_MS<1000||ENV.EMAIL_TIMEOUT_MS>30000) throw new Error('Invalid EMAIL_TIMEOUT_MS');
+if (!Number.isInteger(ENV.EMAIL_MAX_ATTEMPTS)||ENV.EMAIL_MAX_ATTEMPTS<1||ENV.EMAIL_MAX_ATTEMPTS>10) throw new Error('Invalid EMAIL_MAX_ATTEMPTS');

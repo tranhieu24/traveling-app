@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { AiHelpPanel } from '../components/ai/AiPanels';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ArrowLeft, ArrowUpRight, CalendarCheck, ChevronDown, ChevronRight, HelpCircle, Search, Settings, X } from 'lucide-react-native';
 import { RootStackParamList } from '../types';
@@ -10,11 +11,14 @@ import { findHelpArticles, HELP_CATEGORIES, HelpAction, HelpCategory } from '../
 
 export const HelpCenterScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const route=useRoute<RouteProp<RootStackParamList,'HelpCenter'>>();
   const { user } = useAuth();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<HelpCategory | 'all'>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const articles = findHelpArticles(query, category);
+  const openArticle=(id:string)=>{setQuery('');setCategory('all');setExpandedId(id);};
+  useEffect(()=>{if(route.params?.articleId)openArticle(route.params.articleId);},[route.params?.articleId]);
 
   const openAction = (action: HelpAction) => {
     if ((action === 'bookings' || action === 'favorites') && !user) {
@@ -34,43 +38,44 @@ export const HelpCenterScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.screen}>
       <View style={styles.header}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Back to profile" style={styles.backButton} onPress={() => navigation.canGoBack() ? navigation.goBack() : navigation.replace('MainTabs', { screen: 'ProfileTab' })}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Quay lại hồ sơ" style={styles.backButton} onPress={() => navigation.canGoBack() ? navigation.goBack() : navigation.replace('MainTabs', { screen: 'ProfileTab' })}>
           <ArrowLeft size={22} color="#292C30" />
         </Pressable>
         <Text accessibilityRole="header" style={styles.headerTitle}>Trợ giúp</Text>
         <View style={styles.backButton} />
       </View>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
+        <AiHelpPanel onArticle={openArticle}/>
         <View style={styles.hero}>
           <View style={styles.heroIcon}><HelpCircle size={28} color="#008C9E" /></View>
           <Text accessibilityRole="header" style={styles.heroTitle}>Bạn cần hỗ trợ điều gì?</Text>
-          <Text style={styles.heroDescription}>Find answers and get back to planning your next stay.</Text>
+          <Text style={styles.heroDescription}>Tìm câu trả lời để tiếp tục lên kế hoạch cho kỳ lưu trú tiếp theo.</Text>
           <View style={styles.searchField}>
             <Search size={20} color="#6B7280" />
             <TextInput
-              accessibilityLabel="Search help articles"
-              placeholder="Search bookings, payments, account..." placeholderTextColor="#9CA3AF"
+              accessibilityLabel="Tìm bài viết trợ giúp"
+              placeholder="Tìm về đặt chỗ, thanh toán, tài khoản..." placeholderTextColor="#9CA3AF"
               value={query} onChangeText={(value) => { setQuery(value); setExpandedId(null); }}
               autoCapitalize="none" autoCorrect={false} style={styles.searchInput}
             />
-            {!!query && <Pressable accessibilityRole="button" accessibilityLabel="Clear help search" onPress={() => setQuery('')} style={styles.clearButton}><X size={18} color="#6B7280" /></Pressable>}
+            {!!query && <Pressable accessibilityRole="button" accessibilityLabel="Xóa nội dung tìm kiếm trợ giúp" onPress={() => setQuery('')} style={styles.clearButton}><X size={18} color="#6B7280" /></Pressable>}
           </View>
         </View>
 
         <View style={styles.quickActions}>
           <Pressable accessibilityRole="button" accessibilityLabel="Help with my bookings" style={styles.quickCard} onPress={() => openAction('bookings')}>
             <CalendarCheck size={23} color="#00A3B8" />
-            <Text style={styles.quickTitle}>My bookings</Text>
-            <Text style={styles.quickDescription}>{user ? 'Check your reservation status' : 'Log in to view your reservations'}</Text>
+            <Text style={styles.quickTitle}>Đơn đặt chỗ của tôi</Text>
+            <Text style={styles.quickDescription}>{user ? 'Kiểm tra trạng thái đặt chỗ' : 'Đăng nhập để xem đơn đặt chỗ'}</Text>
           </Pressable>
-          <Pressable accessibilityRole="button" accessibilityLabel="Open account settings" style={styles.quickCard} onPress={() => openAction('settings')}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Mở cài đặt tài khoản" style={styles.quickCard} onPress={() => openAction('settings')}>
             <Settings size={23} color="#00A3B8" />
-            <Text style={styles.quickTitle}>Account settings</Text>
-            <Text style={styles.quickDescription}>Passwords and notification permissions</Text>
+            <Text style={styles.quickTitle}>Cài đặt tài khoản</Text>
+            <Text style={styles.quickDescription}>Mật khẩu và quyền thông báo</Text>
           </Pressable>
         </View>
 
-        <Text accessibilityRole="header" style={styles.sectionTitle}>Frequently asked questions</Text>
+        <Text accessibilityRole="header" style={styles.sectionTitle}>Câu hỏi thường gặp</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categories}>
           {HELP_CATEGORIES.map((item) => (
             <Pressable
@@ -113,14 +118,14 @@ export const HelpCenterScreen: React.FC = () => {
         ) : (
           <View style={styles.empty}>
             <Search size={30} color="#00A3B8" />
-            <Text style={styles.emptyTitle}>No help articles found</Text>
-            <Text style={styles.quickDescription}>Try another keyword or view all topics.</Text>
-            <Pressable accessibilityRole="button" accessibilityLabel="Reset help search" onPress={resetSearch} style={styles.resetButton}><Text style={styles.actionLabel}>View all topics</Text></Pressable>
+            <Text style={styles.emptyTitle}>Không tìm thấy bài viết trợ giúp</Text>
+            <Text style={styles.quickDescription}>Thử từ khóa khác hoặc xem tất cả chủ đề.</Text>
+            <Pressable accessibilityRole="button" accessibilityLabel="Đặt lại tìm kiếm trợ giúp" onPress={resetSearch} style={styles.resetButton}><Text style={styles.actionLabel}>Xem tất cả chủ đề</Text></Pressable>
           </View>
         )}
         <View style={styles.tip}>
           <HelpCircle size={20} color="#008C9E" />
-          <Text style={styles.tipText}>For a reservation issue, keep your booking code and the error message handy so you can describe the issue clearly.</Text>
+          <Text style={styles.tipText}>Khi gặp vấn đề với đơn đặt chỗ, hãy chuẩn bị mã đặt chỗ và thông báo lỗi để mô tả rõ sự cố.</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

@@ -94,6 +94,19 @@ async function main() {
       const r=(await owner.query('SELECT p.payment_status,p.provider,r.status,r.amount FROM payments p JOIN refunds r ON r.payment_id=p.id WHERE p.booking_id=$1',[legacy])).rows[0];
       assert.equal(r.payment_status,'succeeded');assert.equal(r.provider,'legacy_mock');assert.equal(r.status,'succeeded');assert.equal(Number(r.amount),100);
     });
+    await check('Audited listings require approved verified-property media to publish',async()=>{
+      const id='10000000-0000-0000-0000-000000000016';
+      assert.equal((await owner.query('SELECT is_active FROM listings WHERE id=$1',[id])).rows[0].is_active,false);
+      await assert.rejects(owner.query('UPDATE listings SET is_active=true WHERE id=$1',[id]),(error:any)=>error.constraint==='listing_media_publishable');
+      await owner.query("UPDATE listing_source_audits SET media_usage_status='approved' WHERE listing_id=$1",[id]);
+      const context={targetId:id,usageStatus:'approved',contextLevel:'verified_property',sourcePageUrl:'https://example.test/property',licenseName:'Owner permission fixture',licenseUrl:'https://example.test/license',attributionText:'Integration fixture'};
+      await owner.query('INSERT INTO listing_photos(listing_id,photo_url,caption,display_order,is_cover,media_context) VALUES($1,$2,$3,1,true,$4)',[id,'https://example.test/property-cover.jpg','Verified property fixture',context]);
+      await owner.query('UPDATE listings SET is_active=true WHERE id=$1',[id]);
+      assert.equal((await owner.query('SELECT is_active FROM listings WHERE id=$1',[id])).rows[0].is_active,true);
+      await assert.rejects(owner.query("UPDATE listing_source_audits SET media_usage_status='needs_review' WHERE listing_id=$1",[id]),(error:any)=>error.constraint==='listing_media_publishable');
+      await assert.rejects(owner.query('DELETE FROM listing_photos WHERE listing_id=$1',[id]),(error:any)=>error.constraint==='listing_media_publishable');
+      await owner.query('UPDATE listings SET is_active=false WHERE id=$1',[id]);
+    });
     await check('Auth missing/expired/invalid/blocked; non-admin cannot access admin',async()=>{
       for(const [who,status,code] of [[undefined,401,'AUTH_REQUIRED'],['expired',401,'TOKEN_EXPIRED'],['invalid',401,'INVALID_TOKEN'],['blocked',403,'ACCOUNT_BLOCKED']] as const) {
         const r=await api('GET','/auth/me',who);assert.equal(r.status,status);assert.equal(r.body.error.code,code);
@@ -326,6 +339,7 @@ async function main() {
       assert.ok(Date.parse(results[0].body.serverTime));
       assert.equal((await api('POST','/bookings','guest',{...request,guests:3})).body.error.code,'BOOKING_REQUEST_CONFLICT');
       assert.equal((await owner.query('SELECT count(*)::int n FROM bookings WHERE client_request_id=$1',[request.requestId])).rows[0].n,1);
+      assert.equal((await owner.query("SELECT count(*)::int n FROM notification_outbox WHERE event_key=$1",[`booking:${b.id}:created`])).rows[0].n,1);
       const old=await create(await listing('Legacy compatible checkout'),130);
       assert.equal(old.policy_accepted_at,null);assert.equal(old.contact_snapshot.email,'guest@example.test');
     });
@@ -343,6 +357,20 @@ async function main() {
       const config=await api('GET','/payments/config');
       assert.deepEqual(config.body.data,{mode:'mock',publishableKey:null});
       assert.equal(config.headers.get('cache-control'),'no-store');
+    });
+    await check('Notification outbox is durable, deduplicated and only marks provider-confirmed delivery',async()=>{
+      const {dispatchNotifications}=await import('../src/services/notification.service');
+      const id=randomUUID(),eventKey='booking:'+randomUUID()+':created';
+      await owner.query("INSERT INTO notification_outbox(id,event_key,event_type,user_id,recipient_email,payload) VALUES($1,$2,'booking_created',$3,'guest@example.test','{}')",[id,eventKey,ids.guest]);
+      assert.equal((await owner.query("INSERT INTO notification_outbox(event_key,event_type,user_id,recipient_email) VALUES($1,'booking_created',$2,'guest@example.test') ON CONFLICT DO NOTHING RETURNING id",[eventKey,ids.guest])).rowCount,0);
+      const previous=ENV.EMAIL_MODE;ENV.EMAIL_MODE='webhook';
+      try{
+        const failed=await dispatchNotifications(1,async()=>{throw new Error('fixture unavailable')});
+        assert.equal(failed.failed,1);assert.equal((await owner.query('SELECT status,provider_message_id FROM notification_outbox WHERE id=$1',[id])).rows[0].status,'failed');
+        await owner.query("UPDATE notification_outbox SET next_attempt_at=now() WHERE id=$1",[id]);
+        const sent=await dispatchNotifications(1,async row=>({messageId:'fixture_'+row.id}));
+        assert.equal(sent.sent,1);assert.equal((await owner.query('SELECT status,provider_message_id FROM notification_outbox WHERE id=$1',[id])).rows[0].status,'sent');
+      }finally{ENV.EMAIL_MODE=previous;}
     });
     await check('Photo provenance remains consistent across listing, favorites, quote and booking',async()=>{
       const l=await listing('Photo provenance');

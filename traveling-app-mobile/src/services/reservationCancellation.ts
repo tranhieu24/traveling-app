@@ -9,7 +9,7 @@ export const fetchReservation = async (
 ): Promise<Booking> => {
   const response = await apiClient.get(`/bookings/${encodeURIComponent(bookingId)}`, { signal });
   if (!response.data.success || response.data.data?.id !== bookingId)
-    throw new Error('Could not load reservation details. Please try again.');
+    throw new Error('Không thể tải chi tiết đặt chỗ. Vui lòng thử lại.');
   return response.data.data;
 };
 type CancelledReservation = Partial<Booking> & Pick<Booking, 'id' | 'booking_status'>;
@@ -37,7 +37,7 @@ export const cancelReservation = async (
       !Array.isArray(body.refunds)
     )
       throw new Error(
-        'Cancellation could not be confirmed. Refresh the reservation before trying again.'
+        'Chưa thể xác nhận hủy. Hãy cập nhật đơn đặt chỗ trước khi thử lại.'
       );
     result = body;
   } catch (error) {
@@ -68,9 +68,9 @@ export const cancellationErrorMessage = (error: unknown): string => {
   if (axios.isAxiosError(error))
     return (
       error.response?.data?.error?.message ||
-      'Could not confirm cancellation. Check your connection and try again.'
+      'Không thể xác nhận hủy. Hãy kiểm tra kết nối rồi thử lại.'
     );
   return error instanceof Error
     ? error.message
-    : 'Could not cancel this reservation. Please try again.';
+    : 'Không thể hủy đơn đặt chỗ. Vui lòng thử lại.';
 };

@@ -29,6 +29,8 @@ import { addIsoDays, isoToday } from '../utils/checkout';
 import { fetchDestinations } from '../services/search';
 import { DateRangeCalendar } from '../components/search/DateRangeCalendar';
 import { Counter, CYAN, searchStyles as shared } from '../components/search/SearchControls';
+import { AiSearchPanel } from '../components/ai/AiPanels';
+import { EMPTY_ADVANCED } from '../utils/search';
 
 const regions: { destination: SearchDestination; image?: number }[] = [
   { destination: ANYWHERE, image: require('../../assets/search/region-anywhere.png') },
@@ -40,7 +42,7 @@ const regions: { destination: SearchDestination; image?: number }[] = [
     destination: { kind: 'region', label: 'Asia', value: 'Asia' },
     image: require('../../assets/search/region-asia.png'),
   },
-  { destination: { kind: 'region', label: 'North America', value: 'North America' } },
+  { destination: { kind: 'region', label: 'Bắc Mỹ', value: 'North America' } },
 ];
 export const SearchSheetScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -98,7 +100,7 @@ export const SearchSheetScreen: React.FC = () => {
   const next = () => {
     try {
       if (!anytime && (!checkIn || !checkOut))
-        throw new Error('Choose both a check-in and a check-out date, or select Anytime.');
+        throw new Error('Hãy chọn cả ngày nhận và trả phòng, hoặc chọn Bất kỳ lúc nào.');
       validateSearchDates(checkIn, checkOut);
       setError('');
       setStep('who');
@@ -159,7 +161,7 @@ export const SearchSheetScreen: React.FC = () => {
         <View style={s.top}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Close search"
+            accessibilityLabel="Đóng tìm kiếm"
             onPress={close}
             style={s.close}
           >
@@ -171,16 +173,24 @@ export const SearchSheetScreen: React.FC = () => {
           contentContainerStyle={s.content}
           showsVerticalScrollIndicator={false}
         >
+          <AiSearchPanel onApply={filters=>{
+            const choice:SearchDestination={kind:'city',value:filters.city!,label:filters.city!,country:filters.country};
+            setDestination(choice);setQuery(choice.label);setCheckIn(filters.checkIn||null);setCheckOut(filters.checkOut||null);
+            setAnytime(!filters.checkIn);setAdults(filters.guests||1);setChildren(0);setStep('when');setError('');
+            state.setAdvancedFilters({...EMPTY_ADVANCED,maxPrice:filters.maxPrice??null,selectedAmenities:filters.amenityIds,propertyType:filters.propertyType||null});
+            state.setSelectedCategory(null);
+            state.setSearch({destination:choice,checkInDate:filters.checkIn||null,checkOutDate:filters.checkOut||null,adults:filters.guests||1,children:0});
+          }}/>
           {step !== 'where' ? (
-            summary('Location', destination?.label || 'Choose destination', 'where')
+            summary('Địa điểm', destination?.label || 'Chọn điểm đến', 'where')
           ) : (
             <View style={s.card}>
               <Text style={shared.title}>Bạn muốn đến đâu?</Text>
               <View style={s.inputRow}>
                 <Search size={21} color="#30343A" />
                 <TextInput
-                  accessibilityLabel="Search city or country"
-                  placeholder="Search city or country"
+                  accessibilityLabel="Tìm thành phố hoặc quốc gia"
+                  placeholder="Tìm thành phố hoặc quốc gia"
                   placeholderTextColor="#A6ADB6"
                   value={query}
                   onChangeText={(value) => {
@@ -200,14 +210,14 @@ export const SearchSheetScreen: React.FC = () => {
                     <ActivityIndicator color={CYAN} style={{ padding: 16 }} />
                   ) : suggestions.isError ? (
                     <Pressable accessibilityRole="button" onPress={() => suggestions.refetch()}>
-                      <Text style={shared.error}>Unable to load destinations. Tap to retry.</Text>
+                      <Text style={shared.error}>Không thể tải điểm đến. Chạm để thử lại.</Text>
                     </Pressable>
                   ) : suggestions.data?.length ? (
                     suggestions.data.map((choice) => (
                       <Pressable
                         key={`${choice.kind}:${choice.label}`}
                         accessibilityRole="button"
-                        accessibilityLabel={`Choose ${choice.label}`}
+                        accessibilityLabel={`Chọn ${choice.label}`}
                         onPress={() => choose(choice)}
                         style={s.suggestion}
                       >
@@ -217,7 +227,7 @@ export const SearchSheetScreen: React.FC = () => {
                     ))
                   ) : (
                     <Text style={shared.muted}>
-                      No destinations found. Try another city or country, or choose a region below.
+                      Không tìm thấy điểm đến. Hãy thử thành phố, quốc gia khác hoặc chọn khu vực bên dưới.
                     </Text>
                   )}
                 </View>
@@ -231,7 +241,7 @@ export const SearchSheetScreen: React.FC = () => {
                   <Pressable
                     key={choice.label}
                     accessibilityRole="button"
-                    accessibilityLabel={`Choose ${choice.label}`}
+                    accessibilityLabel={`Chọn ${choice.label}`}
                     accessibilityState={{ selected: destination?.label === choice.label }}
                     aria-selected={destination?.label === choice.label}
                     onPress={() => choose(choice)}
@@ -261,14 +271,14 @@ export const SearchSheetScreen: React.FC = () => {
           {step !== 'when' ? (
             summary(
               step === 'where' ? "Thời gian" : "Ngày lưu trú",
-              checkIn && checkOut ? searchDateLabel(checkIn, checkOut) : 'Add time',
+              checkIn && checkOut ? searchDateLabel(checkIn, checkOut) : 'Thêm thời gian',
               'when'
             )
           ) : (
             <View style={s.card}>
-              <Text style={shared.title}>When staying</Text>
+              <Text style={shared.title}>Thời gian lưu trú</Text>
               <View style={s.segment}>
-                {['Choose dates', "Linh hoạt ngày"].map((label, index) => (
+                {['Chọn ngày', 'Linh hoạt ngày'].map((label, index) => (
                   <Pressable
                     key={label}
                     accessibilityRole="button"
@@ -351,7 +361,7 @@ export const SearchSheetScreen: React.FC = () => {
           {step !== 'who' ? (
             summary(
               "Số khách",
-              adults + children ? `${adults + children} guests` : 'Add guests',
+              adults + children ? `${adults + children} khách` : 'Thêm khách',
               'who'
             )
           ) : (
@@ -377,7 +387,7 @@ export const SearchSheetScreen: React.FC = () => {
               </View>
               {adults === 0 && (
                 <Text style={[shared.muted, { fontSize: 12, marginTop: 8 }]}>
-                  Include at least one adult to search.
+                  Cần có ít nhất một người lớn để tìm kiếm.
                 </Text>
               )}
             </View>
@@ -392,14 +402,14 @@ export const SearchSheetScreen: React.FC = () => {
           <View style={[shared.footer, s.footer]}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Clear search choices"
+              accessibilityLabel="Xóa lựa chọn tìm kiếm"
               onPress={clear}
             >
               <Text style={shared.clear}>Xóa tất cả</Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Search accommodations"
+              accessibilityLabel="Tìm chỗ ở"
               disabled={disabled}
               accessibilityState={{ disabled }}
               onPress={search}

@@ -8,7 +8,7 @@ const key =
   process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
   process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
   Constants.expoConfig?.extra?.supabaseAnonKey;
-if (!url || !key) throw new Error('Missing public Supabase configuration.');
+if (!url || !key) throw new Error('Thiếu cấu hình Supabase công khai.');
 // Only a public publishable/anon key belongs in this client.
 if (String(key).startsWith('sb_secret_')) throw new Error('A public Supabase key is required.');
 

@@ -40,7 +40,7 @@ export function createSessionBridge(deps: Dependencies) {
     if (!session.user.email?.trim()) {
       return clear().then(() => {
         throw new FriendlyAuthError(
-          'This account did not provide an email address. Allow email access in Google/Facebook or continue with email.'
+          'Tài khoản không cung cấp địa chỉ email. Hãy cho phép Google/Facebook chia sẻ email hoặc tiếp tục bằng email.'
         );
       });
     }
@@ -65,13 +65,13 @@ export function createSessionBridge(deps: Dependencies) {
             );
         });
         if (mine !== revision)
-          throw new FriendlyAuthError('Your session changed. Please try again.');
+          throw new FriendlyAuthError('Phiên đăng nhập đã thay đổi. Vui lòng thử lại.');
         const verified = await deps.fetchProfile();
         if (mine !== revision)
-          throw new FriendlyAuthError('Your session changed. Please try again.');
+          throw new FriendlyAuthError('Phiên đăng nhập đã thay đổi. Vui lòng thử lại.');
         if (verified.id !== session.user.id || !verified.email)
           throw new FriendlyAuthError(
-            'Could not verify your account profile. Please contact support.'
+            'Không thể xác minh hồ sơ tài khoản. Vui lòng liên hệ hỗ trợ.'
           );
         if (previousProfile?.id !== verified.id) deps.clearCache();
         profile = verified;

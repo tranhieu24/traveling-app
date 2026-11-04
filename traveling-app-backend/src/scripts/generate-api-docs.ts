@@ -4,6 +4,7 @@ import {zodToJsonSchema} from 'zod-to-json-schema';
 import SwaggerParser from '@apidevtools/swagger-parser';
 import { CHECKOUT_POLICY } from '../domain/checkout';
 import * as s from '../validators/schemas';
+import { aiSearchRequest,aiHelpRequest } from '../domain/ai';
 
 const out=path.resolve('../docs');
 const id='11111111-1111-4111-8111-111111111111';
@@ -14,6 +15,7 @@ const money={oneOf:[number,{type:'string',pattern:'^-?[0-9]+([.][0-9]{1,2})?$'}]
 const decimal={oneOf:[number,text]};
 const schemas:any={};
 for(const [name,schema]of Object.entries({
+  AiSearchRequest:aiSearchRequest,AiHelpRequest:aiHelpRequest,
   SupportCreate:s.supportCreateSchema,SupportReply:s.supportReplySchema,SupportStatus:s.supportStatusSchema,SupportList:s.supportListSchema,ArrivalGuideRequest:s.arrivalGuideSchema,
   ListingFilter:s.listingFilterSchema,DestinationQuery:s.destinationQuerySchema,PaginationQuery:s.paginationSchema,BookingListQuery:s.bookingListSchema,AdminQuery:s.adminQuerySchema,
   QuoteRequest:s.bookingQuoteSchema,CreateBookingRequest:s.createBookingSchema,ReviewRequest:s.createReviewSchema,FavoriteRequest:s.toggleFavoriteSchema,
@@ -40,6 +42,9 @@ schemas.Coupon=object({id:uuid,code:text,discount_percent:money,max_discount:{..
 schemas.AuditLog=object({id:uuid,actor_id:uuid,action:text,entity_type:text,entity_id:uuid,before_data:{type:'object',nullable:true},after_data:{type:'object',nullable:true},created_at:{type:'string',format:'date-time'}});
 schemas.Revenue=object({from:text,to:text,timezone:{type:'string',enum:['UTC']},currency:{type:'string',enum:['USD']},scope:{type:'string',enum:['test_and_mock_only']},gross_payments:money,refunds:money,net_revenue:money,items:{type:'array',items:object({day:text,provider:text,is_simulated:boolean,gross_payments:money,refunds:money,net_revenue:money,successful_transactions:integer,successful_refunds:integer})}});
 schemas.Object={type:'object',additionalProperties:true};
+schemas.AiSource=object({type:{type:'string',enum:['article','booking']},id:text,title:text},['type','id','title']);
+schemas.AiHelp=object({mode:{type:'string',enum:['ai','fallback','data']},reason:text,answer:text,sourceRefs:{type:'array',items:ref('AiSource')},fetchedAt:{type:'string',format:'date-time'}},['mode','answer','sourceRefs','fetchedAt']);
+schemas.AiSearch=object({mode:{type:'string',enum:['ai','fallback']},reason:text,message:text,ready:boolean,filters:{type:'object',nullable:true,additionalProperties:true},intent:{type:'object',additionalProperties:true},questions:{type:'array',items:text},notes:{type:'array',items:text},items:{type:'array',items:ref('Listing')},total:integer,fetchedAt:{type:'string',format:'date-time'}},['mode','message','ready','filters','questions','notes','items','total','fetchedAt']);
 schemas.CheckoutPolicy=object({version:text,currency:text,depositAmount:number,cancellationCutoffDays:integer,timezone:text,cancellation:text,payment:text,hold:text});
 schemas.MediaContext=object({contextLevel:{type:'string',enum:['verified_property','illustrative']},sourcePageUrl:text,creator:text,licenseName:text,licenseUrl:text,attributionText:text,altText:text});
 schemas.Quote.allOf[1].properties.policy=ref('CheckoutPolicy');
@@ -160,6 +165,8 @@ add('get','/admin/reports/revenue','Doanh thu gộp, refund và doanh thu ròng 
 add('get','/admin/reports/revenue.xlsx','Xuất Excel doanh thu cùng công thức API JSON','admin','Object',{}, {query:'ReportQuery',binary:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
 add('post','/webhooks/mock','Webhook mô phỏng có HMAC timestamp','public','Object',{duplicate:false},{request:'MockEvent',body:{id:'event-example-01',paymentId:id,type:'succeeded',amount:3000,currency:'USD'},signature:'X-Webhook-Signature',errors:'INVALID_WEBHOOK_SIGNATURE,INVALID_WEBHOOK,PAYMENT_MISMATCH,WEBHOOK_EVENT_CONFLICT',description:'Only PAYMENT_MODE=mock, never production. Header t=unixSeconds,v1=hexHmacSHA256(timestamp + dot + rawJSON). ±300s tolerance. Transactional dedup by provider/event ID and payload hash. Duplicate returns {duplicate:true}.'});
 add('post','/webhooks/stripe_test','Webhook Stripe test xác minh raw body qua SDK','public','Object',{ignored:true},{request:'Object',body:{id:'evt_example',type:'payment_intent.succeeded',livemode:false,data:{object:{id:'pi_example',amount_received:3000,currency:'usd',metadata:{paymentId:id}}}},signature:'Stripe-Signature',errors:'INVALID_WEBHOOK_SIGNATURE,INVALID_WEBHOOK,PAYMENT_MISMATCH,REFUND_MISMATCH',description:'Only stripe_test mode; live events rejected. SDK signature verification, 300s tolerance. payment_intent.succeeded/payment_failed/canceled and refund.created/updated/failed supported. Transactional dedup by provider/event ID. Subscribe to snapshot events in configured test account and reconcile missed/failed events.'});
+add('post','/ai/search','Hiểu nhu cầu tìm phòng và truy vấn danh mục thật','optional','AiSearch',{mode:'fallback',reason:'disabled',ready:false,message:'AI chưa được bật.',filters:null,questions:[],notes:[],items:[],total:0,fetchedAt:'2026-11-04T00:00:00Z'},{request:'AiSearchRequest',body:{message:'Homestay Đà Lạt, 2 khách, cuối tuần này, dưới 100 USD mỗi đêm',timeZone:'Asia/Ho_Chi_Minh'},errors:'AI_RATE_LIMIT,VALIDATION_ERROR',description:'Read-only. Optional auth validates supplied tokens. Six requests/minute per identity, ten/IP. Daily durable budgets before provider calls. USD/night only; missing or unsupported conditions return questions and no listings. Disabled, quota or provider errors return explicit fallback. Returned listing/price data comes from repository, not model.'});
+add('post','/ai/help','Tìm bài trợ giúp hoặc đọc số liệu đơn của chính mình','optional','AiHelp',{mode:'fallback',answer:'Xem bài trợ giúp hoặc gửi yêu cầu hỗ trợ.',sourceRefs:[],fetchedAt:'2026-11-04T00:00:00Z'},{request:'AiHelpRequest',body:{message:'Hủy đặt chỗ có chắc chắn hoàn tiền không?'},errors:'AI_RATE_LIMIT,AUTH_REQUIRED,BOOKING_NOT_FOUND',description:'Without bookingId: model selects allowlisted FAQ IDs; server renders approved article text. With bookingId: requires authenticated owner (even admin cannot read another guest here); server renders booking/payment/refund values without calling model. No write actions and no arbitrary URLs. Account-blocked tokens rejected. Cache-Control: private, no-store.'});
 add('get','/health','Liveness API versioned','public','Object',{success:true,message:'Backend API server is operating normally',timestamp:'2026-10-27T00:00:00Z'},{plain:true});
 add('get','/health','Database readiness ngoài API prefix','public','Object',{status:'healthy',timestamp:'2026-10-27T00:00:00Z',database:'connected'},{root:true,plain:true,extraStatuses:[503]});
 

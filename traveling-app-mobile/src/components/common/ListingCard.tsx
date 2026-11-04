@@ -68,7 +68,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, onPress, onFa
       void queryClient.invalidateQueries({ queryKey: ['listing_detail', listing.id] });
     } catch {
       setIsFavorite(previousStatus);
-      Alert.alert('Could not update favorites', "Vui lòng kiểm tra kết nối rồi thử lại.");
+      Alert.alert('Không thể cập nhật mục yêu thích', 'Vui lòng kiểm tra kết nối rồi thử lại.');
     } finally {
       savingFavorite.current = false;
       setLoadingFav(false);
@@ -96,7 +96,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, onPress, onFa
             style={styles.gallery}
           >
             {photoUrls.map((url, index) => (
-              <Pressable key={url} accessibilityRole="button" accessibilityLabel={`View ${listing.title}, photo ${index + 1}`} onPress={onPress} style={[styles.photo, { width: imageWidth }]}>
+              <Pressable key={url} accessibilityRole="button" accessibilityLabel={`Xem ${listing.title}, ảnh ${index + 1}`} onPress={onPress} style={[styles.photo, { width: imageWidth }]}>
                 {failedPhotos.includes(url) ? <ImageOff size={30} color="#9AA1A9" /> : (
                   <Image
                     source={{ uri: url }}
@@ -110,7 +110,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, onPress, onFa
             ))}
           </ScrollView>
         ) : (
-          <Pressable accessibilityRole="button" accessibilityLabel={`View ${listing.title}`} onPress={onPress} style={styles.placeholder}>
+          <Pressable accessibilityRole="button" accessibilityLabel={`Xem ${listing.title}`} onPress={onPress} style={styles.placeholder}>
             <ImageOff size={30} color="#9AA1A9" />
           </Pressable>
         )}
@@ -119,7 +119,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, onPress, onFa
 
           cssInterop={false}
           accessibilityRole="button"
-          accessibilityLabel={isFavorite ? `Remove ${listing.title} from favorites` : `Save ${listing.title} to favorites`}
+          accessibilityLabel={isFavorite ? `Xóa ${listing.title} khỏi mục yêu thích` : `Lưu ${listing.title} vào mục yêu thích`}
           accessibilityState={{ selected: isFavorite, disabled: loadingFav, busy: loadingFav }}
           onPress={handleFavoritePress}
           disabled={loadingFav}
@@ -152,17 +152,17 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, onPress, onFa
         )}
       </View>
 
-      <Pressable accessibilityRole="button" accessibilityLabel={`View ${listing.title}`} onPress={onPress} style={styles.content}>
+      <Pressable accessibilityRole="button" accessibilityLabel={`Xem ${listing.title}`} onPress={onPress} style={styles.content}>
         <View style={styles.row}>
           <Text style={styles.title} numberOfLines={1}>{listing.title}</Text>
           <View style={styles.ratingRow}>
             <Star size={12} color="#EBC64D" fill="#EBC64D" strokeWidth={1} />
-            <Text style={styles.ratingText}>{Number.isFinite(rating) && rating > 0 ? rating.toFixed(1) : 'New'}</Text>
+            <Text style={styles.ratingText}>{Number.isFinite(rating) && rating > 0 ? rating.toFixed(1) : 'Mới'}</Text>
           </View>
         </View>
         <View style={styles.secondRow}>
-          {showBedroomCount ? <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 5 }}><Bed size={14} color="#93979F" /><Text style={styles.category}>{listing.bedrooms} {listing.bedrooms === 1 ? 'bedroom' : 'bedrooms'}</Text></View> : <Text style={styles.category} numberOfLines={1}>{listing.category_name || listing.property_type}</Text>}
-          <Text style={styles.price}><Text style={styles.priceAmount}>{Number.isFinite(price) ? formatPaymentMoney(price, listing.currency || 'USD') : '--'}</Text>{showTotalPrice ? ' total' : '/night'}</Text>
+          {showBedroomCount ? <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 5 }}><Bed size={14} color="#93979F" /><Text style={styles.category}>{listing.bedrooms} phòng ngủ</Text></View> : <Text style={styles.category} numberOfLines={1}>{listing.category_name || listing.property_type}</Text>}
+          <Text style={styles.price}><Text style={styles.priceAmount}>{Number.isFinite(price) ? formatPaymentMoney(price, listing.currency || 'USD') : '--'}</Text>{showTotalPrice ? ' tổng cộng' : '/đêm'}</Text>
         </View>
       </Pressable>
     </View>

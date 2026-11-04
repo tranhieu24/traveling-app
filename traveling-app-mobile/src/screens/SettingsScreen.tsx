@@ -13,9 +13,9 @@ import { RootStackParamList } from '../types';
 type PasswordField = 'current' | 'next' | 'confirm';
 type BrowserPermission = NotificationPermission | 'unsupported';
 const PASSWORD_FIELDS: { key: PasswordField; label: string }[] = [
-  { key: 'current', label: 'Current password' },
-  { key: 'next', label: 'New password' },
-  { key: 'confirm', label: 'Confirm new password' },
+  { key: 'current', label: 'Mật khẩu hiện tại' },
+  { key: 'next', label: 'Mật khẩu mới' },
+  { key: 'confirm', label: 'Xác nhận mật khẩu mới' },
 ];
 
 export const SettingsScreen: React.FC = () => {
@@ -43,10 +43,10 @@ export const SettingsScreen: React.FC = () => {
   const savePassword = async () => {
     if (submitting.current || isLoading) return;
     const nextErrors: typeof errors = {};
-    if (!passwords.current) nextErrors.current = 'Enter your current password.';
-    if (passwords.next.length < 6) nextErrors.next = 'Use at least 6 characters.';
-    else if (passwords.next === passwords.current) nextErrors.next = 'Choose a different password.';
-    if (passwords.confirm !== passwords.next || !passwords.confirm) nextErrors.confirm = 'Passwords do not match.';
+    if (!passwords.current) nextErrors.current = 'Nhập mật khẩu hiện tại.';
+    if (passwords.next.length < 6) nextErrors.next = 'Sử dụng ít nhất 6 ký tự.';
+    else if (passwords.next === passwords.current) nextErrors.next = 'Hãy chọn mật khẩu khác mật khẩu hiện tại.';
+    if (passwords.confirm !== passwords.next || !passwords.confirm) nextErrors.confirm = 'Mật khẩu xác nhận không khớp.';
     setErrors(nextErrors);
     setSuccess(false);
     if (Object.keys(nextErrors).length) return;
@@ -57,7 +57,7 @@ export const SettingsScreen: React.FC = () => {
       setPasswords({ current: '', next: '', confirm: '' });
       setSuccess(true);
     } catch (error: unknown) {
-      setErrors({ form: error instanceof Error ? error.message : 'Could not update your password. Please try again.' });
+      setErrors({ form: error instanceof Error ? error.message : 'Không thể cập nhật mật khẩu. Vui lòng thử lại.' });
     } finally {
       submitting.current = false;
       setSaving(false);
@@ -75,11 +75,11 @@ export const SettingsScreen: React.FC = () => {
       } else if ('Notification' in window) {
         const result = await window.Notification.requestPermission();
         setPermission(result);
-        if (result === 'granted') setNotificationMessage('Browser notifications enabled.');
-        else if (result === 'denied') setNotificationError('Notifications are blocked. You can allow them in your browser site settings.');
+        if (result === 'granted') setNotificationMessage('Đã bật thông báo trên trình duyệt.');
+        else if (result === 'denied') setNotificationError('Thông báo đang bị chặn. Bạn có thể cho phép trong phần cài đặt trang web của trình duyệt.');
       }
     } catch {
-      setNotificationError('Could not open notification settings. Please try again.');
+      setNotificationError('Không thể mở cài đặt thông báo. Vui lòng thử lại.');
     } finally {
       setNotificationBusy(false);
     }
@@ -90,40 +90,40 @@ export const SettingsScreen: React.FC = () => {
     setNotificationError('');
     try {
       if (Platform.OS !== 'web' || !('Notification' in window) || window.Notification.permission !== 'granted') return;
-      new window.Notification('Traveling', { body: 'Notifications are enabled for this browser.' });
-      setNotificationMessage('Test notification sent.');
+      new window.Notification('Traveling', { body: 'Thông báo đã được bật trên trình duyệt này.' });
+      setNotificationMessage('Đã gửi thông báo thử nghiệm.');
     } catch {
-      setNotificationError('This browser could not show a notification. Check your device notification settings.');
+      setNotificationError('Trình duyệt không thể hiển thị thông báo. Hãy kiểm tra cài đặt thông báo trên thiết bị.');
     }
   };
 
-  const permissionLabel = permission === 'granted' ? 'Enabled' : permission === 'denied' ? 'Blocked' : permission === 'default' ? 'Not enabled' : 'Unavailable';
+  const permissionLabel = permission === 'granted' ? 'Đã bật' : permission === 'denied' ? 'Bị chặn' : permission === 'default' ? 'Chưa bật' : 'Không hỗ trợ';
 
   return (
     <SafeAreaView style={styles.screen}>
       <View style={styles.header}>
         <Pressable
-          accessibilityRole="button" accessibilityLabel="Back to profile"
+          accessibilityRole="button" accessibilityLabel="Quay lại hồ sơ"
           onPress={() => navigation.canGoBack() ? navigation.goBack() : navigation.replace('MainTabs', { screen: 'ProfileTab' })}
           style={styles.backButton}
         >
           <ArrowLeft size={22} color="#292C30" />
         </Pressable>
-        <Text accessibilityRole="header" style={styles.headerTitle}>Settings & Notifications</Text>
+        <Text accessibilityRole="header" style={styles.headerTitle}>Cài đặt và thông báo</Text>
         <View style={styles.backButton} />
       </View>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.sectionHeading}>
           <View style={styles.iconBadge}><Lock size={21} color="#00B8CE" /></View>
           <View style={styles.flex}>
-            <Text style={styles.sectionTitle}>Account security</Text>
-            <Text style={styles.muted}>{user?.email || 'Log in to manage your password.'}</Text>
+            <Text style={styles.sectionTitle}>Bảo mật tài khoản</Text>
+            <Text style={styles.muted}>{user?.email || 'Đăng nhập để quản lý mật khẩu.'}</Text>
           </View>
         </View>
         <View style={styles.card}>
           {isLoading ? <ActivityIndicator color="#00B8CE" /> : user ? (
             <>
-              <Text style={styles.cardTitle}>Change password</Text>
+              <Text style={styles.cardTitle}>Đổi mật khẩu</Text>
               {PASSWORD_FIELDS.map(({ key, label }) => (
                 <View key={key} style={styles.field}>
                   <Text style={styles.label}>{label}</Text>
@@ -146,44 +146,44 @@ export const SettingsScreen: React.FC = () => {
                   {!!errors[key] && <Text accessibilityRole="alert" style={styles.error}>{errors[key]}</Text>}
                 </View>
               ))}
-              <Pressable accessibilityRole="button" accessibilityLabel={showPasswords ? 'Hide passwords' : 'Show passwords'} onPress={() => setShowPasswords(!showPasswords)} style={styles.visibilityButton}>
+              <Pressable accessibilityRole="button" accessibilityLabel={showPasswords ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} onPress={() => setShowPasswords(!showPasswords)} style={styles.visibilityButton}>
                 {showPasswords ? <EyeOff size={18} color="#6B7280" /> : <Eye size={18} color="#6B7280" />}
-                <Text style={styles.muted}>{showPasswords ? 'Hide passwords' : 'Show passwords'}</Text>
+                <Text style={styles.muted}>{showPasswords ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}</Text>
               </Pressable>
               {!!errors.form && <Text accessibilityRole="alert" style={styles.error}>{errors.form}</Text>}
-              {success && <View accessibilityLiveRegion="polite" style={styles.successRow}><CheckCircle2 size={18} color="#15803D" /><Text style={styles.success}>Password updated successfully.</Text></View>}
-              <Pressable accessibilityRole="button" accessibilityLabel="Update password" disabled={saving} onPress={savePassword} style={[styles.primaryButton, saving && styles.disabled]}>
+              {success && <View accessibilityLiveRegion="polite" style={styles.successRow}><CheckCircle2 size={18} color="#15803D" /><Text style={styles.success}>Đã cập nhật mật khẩu.</Text></View>}
+              <Pressable accessibilityRole="button" accessibilityLabel="Cập nhật mật khẩu" disabled={saving} onPress={savePassword} style={[styles.primaryButton, saving && styles.disabled]}>
                 {saving && <ActivityIndicator color="#FFFFFF" size="small" />}
-                <Text style={styles.primaryLabel}>{saving ? 'Updating...' : 'Update password'}</Text>
+                <Text style={styles.primaryLabel}>{saving ? 'Đang cập nhật...' : 'Cập nhật mật khẩu'}</Text>
               </Pressable>
             </>
           ) : (
             <>
-              <Text style={styles.cardTitle}>Keep your account secure</Text>
-              <Text style={styles.description}>Log in to change your account password.</Text>
-              <Pressable accessibilityRole="button" accessibilityLabel="Log in to manage settings" onPress={() => navigation.navigate('Login')} style={styles.primaryButton}><Text style={styles.primaryLabel}>Đăng nhập</Text></Pressable>
+              <Text style={styles.cardTitle}>Bảo vệ tài khoản của bạn</Text>
+              <Text style={styles.description}>Đăng nhập để đổi mật khẩu tài khoản.</Text>
+              <Pressable accessibilityRole="button" accessibilityLabel="Đăng nhập để quản lý cài đặt" onPress={() => navigation.navigate('Login')} style={styles.primaryButton}><Text style={styles.primaryLabel}>Đăng nhập</Text></Pressable>
             </>
           )}
         </View>
 
         <View style={styles.sectionHeading}>
           <View style={styles.iconBadge}><Bell size={21} color="#00B8CE" /></View>
-          <Text style={styles.sectionTitle}>Notifications</Text>
+          <Text style={styles.sectionTitle}>Thông báo</Text>
         </View>
         <View style={styles.card}>
           <View style={styles.statusRow}>
-            <Text style={styles.cardTitle}>{Platform.OS === 'web' ? 'Browser notifications' : 'Device notifications'}</Text>
+            <Text style={styles.cardTitle}>{Platform.OS === 'web' ? 'Thông báo trình duyệt' : 'Thông báo thiết bị'}</Text>
             {Platform.OS === 'web' && <Text style={styles.status}>{permissionLabel}</Text>}
           </View>
-          <Text style={styles.description}>{Platform.OS === 'web' ? 'Enable and test notifications in this browser. Automatic booking alerts are not enabled yet.' : 'Manage notification permissions in your device settings. Automatic booking alerts are not enabled yet.'}</Text>
-          {Platform.OS === 'web' && permission === 'unsupported' && <Text style={styles.muted}>Notifications are not supported in this browser.</Text>}
-          {Platform.OS === 'web' && permission === 'denied' && <Text style={styles.muted}>Allow notifications in your browser site settings, then return here.</Text>}
+          <Text style={styles.description}>{Platform.OS === 'web' ? 'Bật và thử thông báo trên trình duyệt. Cảnh báo đặt chỗ tự động chưa được kích hoạt.' : 'Quản lý quyền thông báo trong cài đặt thiết bị. Cảnh báo đặt chỗ tự động chưa được kích hoạt.'}</Text>
+          {Platform.OS === 'web' && permission === 'unsupported' && <Text style={styles.muted}>Trình duyệt này không hỗ trợ thông báo.</Text>}
+          {Platform.OS === 'web' && permission === 'denied' && <Text style={styles.muted}>Cho phép thông báo trong cài đặt trang web của trình duyệt rồi quay lại đây.</Text>}
           {(Platform.OS !== 'web' || permission === 'default') && (
-            <Pressable accessibilityRole="button" accessibilityLabel={Platform.OS === 'web' ? 'Enable browser notifications' : 'Open device settings'} disabled={notificationBusy} onPress={enableNotifications} style={styles.outlineButton}>
-              <Text style={styles.outlineLabel}>{notificationBusy ? 'Opening...' : Platform.OS === 'web' ? 'Enable browser notifications' : 'Open device settings'}</Text>
+            <Pressable accessibilityRole="button" accessibilityLabel={Platform.OS === 'web' ? 'Bật thông báo trình duyệt' : 'Mở cài đặt thiết bị'} disabled={notificationBusy} onPress={enableNotifications} style={styles.outlineButton}>
+              <Text style={styles.outlineLabel}>{notificationBusy ? 'Đang mở...' : Platform.OS === 'web' ? 'Bật thông báo trình duyệt' : 'Mở cài đặt thiết bị'}</Text>
             </Pressable>
           )}
-          {Platform.OS === 'web' && permission === 'granted' && <Pressable accessibilityRole="button" accessibilityLabel="Send test notification" onPress={testNotification} style={styles.outlineButton}><Text style={styles.outlineLabel}>Send test notification</Text></Pressable>}
+          {Platform.OS === 'web' && permission === 'granted' && <Pressable accessibilityRole="button" accessibilityLabel="Gửi thông báo thử nghiệm" onPress={testNotification} style={styles.outlineButton}><Text style={styles.outlineLabel}>Gửi thông báo thử nghiệm</Text></Pressable>}
           {!!notificationMessage && <Text accessibilityLiveRegion="polite" style={styles.success}>{notificationMessage}</Text>}
           {!!notificationError && <Text accessibilityRole="alert" style={styles.error}>{notificationError}</Text>}
         </View>

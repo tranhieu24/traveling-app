@@ -16,7 +16,7 @@ export const fetchListingPage = async (
     signal,
   });
   if (!response.data.success || !Array.isArray(response.data.data))
-    throw new Error('Could not load stays. Please try again.');
+    throw new Error('Không thể tải chỗ ở. Vui lòng thử lại.');
   return {
     listings: response.data.data,
     pagination: {
@@ -35,7 +35,7 @@ export const fetchDestinations = async (
     signal,
   });
   if (!response.data.success || !Array.isArray(response.data.data))
-    throw new Error('Could not load destinations.');
+    throw new Error('Không thể tải điểm đến.');
   return response.data.data.flatMap((row: { kind: string; city?: string; country?: string }) => {
     if (row.kind === 'city' && row.city && row.country)
       return [

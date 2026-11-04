@@ -14,7 +14,7 @@ export function createSecureChunks(store: Store) {
     const [id, count] = value.slice(PREFIX.length).split(':');
     const n = Number(count);
     if (!/^[a-z0-9]+$/.test(id) || !Number.isInteger(n) || n < 1 || n > 1000)
-      throw new Error('Saved sign-in storage is invalid.');
+      throw new Error('Dữ liệu đăng nhập đã lưu không hợp lệ.');
     return { id, n };
   };
   const keyFor = (key: string, id: string, i: number) => `${key}.chunk.${id}.${i}`;
@@ -33,7 +33,7 @@ export function createSecureChunks(store: Store) {
         Array.from({ length: m.n }, (_, i) => store.getItemAsync(keyFor(key, m.id, i)))
       );
       if (chunks.some((part) => part === null))
-        throw new Error('Saved sign-in is incomplete. Please log in again.');
+        throw new Error('Dữ liệu đăng nhập đã lưu không đầy đủ. Vui lòng đăng nhập lại.');
       return JSON.parse(chunks.join('')) as string;
     },
     async setItem(key: string, value: string) {

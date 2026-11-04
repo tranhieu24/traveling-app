@@ -50,6 +50,19 @@ export const updateProfileSchema = z.object({fullName:z.string().trim().min(2).m
 export const adminQuerySchema = paginationSchema.extend({q:z.string().trim().max(200).optional(),status:z.string().max(30).optional(),isActive:z.enum(['true','false']).optional(),categoryId:z.string().uuid().optional(),city:z.string().trim().min(1).max(100).optional()});
 export const categorySchema = z.object({name:z.string().trim().min(1).max(50),slug:z.string().regex(/^[a-z0-9-]{1,50}$/),iconName:z.string().min(1).max(50),description:z.string().max(1000).nullable().optional(),isActive:z.boolean().default(true)}).strict();
 export const categoryPatchSchema = categorySchema.partial().strict();
+const httpsUrl=z.string().url().max(2000).refine(value=>new URL(value).protocol==='https:','HTTPS URL required');
+export const approvedListingMediaContextSchema=z.object({
+  sourcePageUrl:httpsUrl,provider:z.string().trim().min(1).max(120),creator:z.string().trim().min(1).max(200),
+  licenseName:z.string().trim().min(1).max(200),licenseUrl:httpsUrl,attributionText:z.string().trim().min(1).max(1000),
+  contextLevel:z.literal('verified_property'),contextEvidence:z.string().trim().min(1).max(2000),usageStatus:z.literal('approved'),
+  approvedFor:z.literal('property_listing').default('property_listing'),role:z.enum(['cover','bedroom','bathroom','common_area','exterior','view','amenity','other']),
+  altText:z.string().trim().min(1).max(255),width:z.number().int().positive().max(20000).optional(),height:z.number().int().positive().max(20000).optional(),
+  checkedAt:z.string().datetime({offset:true}),
+}).strict();
+export const listingSourceAuditSchema=z.object({
+  sourcePageUrl:httpsUrl,mediaUsageStatus:z.enum(['approved','needs_review','blocked']),contextEvidence:z.string().trim().min(1).max(2000),
+  reviewNotes:z.string().trim().max(2000).nullable().optional(),checkedAt:z.string().datetime({offset:true}).optional(),
+}).strict();
 export const listingSchema = z.object({
   hostId:z.string().uuid(),categoryId:z.string().uuid(),title:z.string().trim().min(1).max(255),description:z.string().max(10000).nullable().optional(),
   propertyType:z.string().min(1).max(50),roomType:z.enum(['entire_place','private_room','dormitory']),address:z.string().max(255).nullable().optional(),
@@ -58,7 +71,9 @@ export const listingSchema = z.object({
   pricePerNight:nonnegative.positive(),cleaningFee:nonnegative.default(0),serviceFee:nonnegative.default(0),maxGuests:z.number().int().min(1).max(1000),
   bedrooms:z.number().int().min(0).max(1000),beds:z.number().int().min(0).max(1000),bathrooms:z.number().int().min(0).max(1000),
   checkInTime:z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).default('14:00'),checkOutTime:z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).default('12:00'),isActive:z.boolean().default(true),
-  amenityIds:z.array(z.string().uuid()).max(50).optional(), photos:z.array(z.object({photoUrl:z.string().url().max(2000),caption:z.string().max(255).optional(),isCover:z.boolean().default(false)})).max(30).refine(v=>v.filter(p=>p.isCover).length<=1,'Only one cover photo').optional(),
+  amenityIds:z.array(z.string().uuid()).max(50).optional(),
+  photos:z.array(z.object({photoUrl:httpsUrl,caption:z.string().max(255).optional(),isCover:z.boolean().default(false),mediaContext:approvedListingMediaContextSchema.optional()}).strict()).max(30).refine(v=>v.filter(p=>p.isCover).length<=1,'Only one cover photo').optional(),
+  sourceAudit:listingSourceAuditSchema.optional(),
 }).strict();
 export const listingPatchSchema = listingSchema.partial().strict();
 export const customerSchema = updateProfileSchema.extend({email:z.string().email().max(255).optional()}).strict();

@@ -14,28 +14,45 @@ export const listingPhotos = (listing: Listing): string[] => [
   ),
 ];
 
+export const formatAmenityName = (name: string): string => {
+  const map: Record<string, string> = {
+    Wifi: 'Wifi',
+    Kitchen: 'Nhà bếp',
+    Pool: 'Hồ bơi',
+    Gym: 'Phòng gym',
+    Garden: 'Sân vườn',
+    'Outdoor space': 'Khuôn viên ngoài trời',
+    'Air conditioning': 'Điều hòa',
+    Washer: 'Máy giặt',
+    Dryer: 'Máy sấy quần áo',
+    Iron: 'Bàn là',
+    Bathtub: 'Bồn tắm',
+    'Hair dryer': 'Máy sấy tóc',
+  };
+  return map[name] || name;
+};
+
 export const groupAmenities = (amenities: Amenity[]) => {
   const groups = new Map<string, Amenity[]>();
   for (const amenity of amenities) {
     const raw = amenity.category?.trim() || 'Facilities';
     const label = /clean|laundry/i.test(raw)
-      ? 'Cleaning & laundry'
+      ? 'Vệ sinh & giặt ủi'
       : /bath/i.test(raw)
-        ? 'Bathroom'
-        : /facilit/i.test(raw)
-          ? 'Facilities'
-          : raw;
+        ? 'Phòng tắm'
+        : 'Tiện ích chung';
     groups.set(label, [...(groups.get(label) || []), amenity]);
   }
-  const order = ['Facilities', 'Cleaning & laundry', 'Bathroom'];
+  const order = ['Tiện ích chung', 'Vệ sinh & giặt ủi', 'Phòng tắm'];
   return [...groups].sort(
     ([a], [b]) =>
       (order.includes(a) ? order.indexOf(a) : 99) - (order.includes(b) ? order.indexOf(b) : 99)
   );
 };
+
 export const previewAmenities = (amenities: Amenity[]): Amenity[] => {
   const facilities =
-    groupAmenities(amenities).find(([label]) => label === 'Facilities')?.[1] || amenities;
+    groupAmenities(amenities).find(([label]) => label === 'Tiện ích chung' || label === 'Facilities')?.[1] || amenities;
   const rank = (item: Amenity) =>
     /wifi|internet/i.test(item.name)
       ? 0
@@ -48,14 +65,17 @@ export const previewAmenities = (amenities: Amenity[]): Amenity[] => {
             : 4;
   return [...facilities].sort((a, b) => rank(a) - rank(b)).slice(0, 4);
 };
+
 export const listingTime = (time?: string | null): string =>
   typeof time === 'string' && /^([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/.test(time)
     ? time.slice(0, 5)
-    : 'To be confirmed';
+    : 'Chờ xác nhận';
+
 export const listingAddress = (listing: Listing): string =>
   [listing.address, listing.city, listing.country]
     .filter((part) => typeof part === 'string' && !!part.trim())
     .join(', ');
+
 // Google Maps URLs: https://developers.google.com/maps/documentation/urls/get-started
 export const listingMapUrl = (listing: Listing): string | null => {
   const coordinate = (value: number | string | null | undefined) =>
@@ -72,6 +92,7 @@ export const listingMapUrl = (listing: Listing): string | null => {
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`
     : null;
 };
+
 export const reviewStats = (reviews: Review[]) => {
   const counts = [0, 0, 0, 0, 0];
   let sum = 0,
@@ -86,13 +107,14 @@ export const reviewStats = (reviews: Review[]) => {
   }
   return { counts, total, average: total ? sum / total : 0 };
 };
+
 export const reviewDate = (value: string): string => {
   const date = Date.parse(value);
   if (!Number.isFinite(date)) return '--';
   const days = Math.floor((Date.now() - date) / 86400000);
   return days === 0
-    ? 'Today'
+    ? 'Hôm nay'
     : days > 0 && days < 30
-      ? `${days} ${days === 1 ? 'day' : 'days'} ago`
-      : new Date(date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      ? `${days} ngày trước`
+      : new Date(date).toLocaleDateString('vi-VN', { month: 'short', year: 'numeric' });
 };

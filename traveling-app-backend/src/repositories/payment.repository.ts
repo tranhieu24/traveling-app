@@ -9,6 +9,7 @@ import { assertTransition,cents,money } from '../domain/booking';
 import { transaction } from '../services/transaction';
 import { ensurePaymentsEnabled, initiateGateway, requireMock, stripe, verifyMock } from '../services/gateway.service';
 import { audit, requestRefunds } from './booking.repository';
+import { enqueueNotification } from './notification.repository';
 
 export class PaymentRepository {
   async initiate(bookingId:string,userId:string,plan:string,key:string) {
@@ -66,13 +67,15 @@ export class PaymentRepository {
     }
     const paid=(await c.query("SELECT coalesce(sum(amount),0) paid FROM payments WHERE booking_id=$1 AND payment_status='succeeded'",[b.id])).rows[0];
     if(['cancelled','expired'].includes(b.booking_status)) {
-      await requestRefunds(c,b.id,'Verified payment arrived after cancellation or expiry');
+      const refunds=await requestRefunds(c,b.id,'Verified payment arrived after cancellation or expiry');
+      for(const refund of refunds) await enqueueNotification(c,{eventKey:`refund:${refund.id}:requested`,eventType:'refund_requested',userId:b.guest_id,bookingId:b.id,payload:{bookingCode:b.booking_code,amount:refund.amount,currency:'USD'}});
     } else if(cents(paid.paid)>cents(b.total_price)) {
       await c.query("INSERT INTO refunds(payment_id,booking_id,amount,reason) VALUES($1,$2,$3,'Excess late payment; requires approval') ON CONFLICT(payment_id) DO NOTHING",[p.id,b.id,p.amount]);
     } else {
       const required=b.payment_plan==='deposit'?Math.min(bookingDepositCents(b),cents(b.total_price)):cents(b.total_price);
       if(b.booking_status==='pending' && cents(paid.paid)>=required) await c.query("UPDATE bookings SET booking_status='confirmed',payment_due_at=NULL WHERE id=$1",[b.id]);
     }
+    await enqueueNotification(c,{eventKey:`payment:${p.id}:received`,eventType:'payment_received',userId:b.guest_id,bookingId:b.id,payload:{bookingCode:b.booking_code,amount:p.amount,currency:p.currency}});
     return {paymentId:p.id,status:target};
   }
 
@@ -86,6 +89,7 @@ export class PaymentRepository {
     if(!['processing','failed'].includes(r.status)) throw new AppError('Refund not approved/dispatched',409,'INVALID_STATE_TRANSITION');
     if(target!=='succeeded' && target!=='failed') return {ignored:true};
     await c.query("UPDATE refunds SET status=$2,provider_refund_id=$3,succeeded_at=CASE WHEN $2::text='succeeded' THEN now() ELSE NULL END,updated_at=now() WHERE id=$1",[refundId,target,providerRefundId]);
+    if(target==='succeeded') await enqueueNotification(c,{eventKey:`refund:${refundId}:succeeded`,eventType:'refund_succeeded',userId:(await c.query('SELECT guest_id FROM bookings WHERE id=$1',[ref.booking_id])).rows[0].guest_id,bookingId:ref.booking_id,payload:{amount:r.amount,currency:r.currency}});
     return {refundId,status:target};
   }
 

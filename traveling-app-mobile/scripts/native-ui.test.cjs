@@ -126,7 +126,7 @@ function render(Component, down = false) {
   return nativeStyles.slice();
 }
 test('iOS Google and Facebook retain their border, size and horizontal layout through NativeWind', () => {
-  for (const label of ['Continue with Google', 'Continue with Facebook']) {
+  for (const label of ['Tiếp tục với Google', 'Tiếp tục với Facebook']) {
     const button = render(SocialButtons).find((v) => v.label === label);
     assert.ok(button);
     assert.equal(button.style.flexDirection, 'row');
@@ -136,7 +136,7 @@ test('iOS Google and Facebook retain their border, size and horizontal layout th
   }
 });
 test('iOS pressed feedback retains social button layout and provider border', () => {
-  const button = render(SocialButtons, true).find((v) => v.label === 'Continue with Google');
+  const button = render(SocialButtons, true).find((v) => v.label === 'Tiếp tục với Google');
   assert.equal(button.style.opacity, 0.65);
   assert.equal(button.style.borderColor, '#D94B55');
   assert.equal(button.style.flexDirection, 'row');

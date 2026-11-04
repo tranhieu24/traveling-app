@@ -56,7 +56,7 @@ export const ListingTripModal = ({
       setError(
         failure instanceof Error
           ? failure.message
-          : 'Could not check these dates. Please try again.'
+          : 'Không thể kiểm tra các ngày này. Vui lòng thử lại.'
       );
     } finally {
       pending.current = false;
@@ -80,7 +80,7 @@ export const ListingTripModal = ({
             </Text>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Close room trip selection"
+              accessibilityLabel="Đóng lựa chọn chuyến đi"
               disabled={saving}
               onPress={onClose}
               style={s.close}
@@ -89,11 +89,11 @@ export const ListingTripModal = ({
             </Pressable>
           </View>
           <ScrollView contentContainerStyle={s.body}>
-            <Text style={s.label}>Choose your dates</Text>
+            <Text style={s.label}>Chọn ngày lưu trú</Text>
             <Text style={s.dates}>
               {draft.checkInDate && draft.checkOutDate
                 ? searchDateLabel(draft.checkInDate, draft.checkOutDate)
-                : 'Select check-in and check-out'}
+                : 'Chọn ngày nhận và trả phòng'}
             </Text>
             <View pointerEvents={saving ? 'none' : 'auto'}>
               <DateRangeCalendar
@@ -112,14 +112,14 @@ export const ListingTripModal = ({
             </View>
             <Text style={[s.label, { marginTop: 24 }]}>Số khách</Text>
             <Text style={s.capacity}>
-              Up to {maxGuests} {maxGuests === 1 ? 'guest' : 'guests'} for this stay.
+              Tối đa {maxGuests} khách cho kỳ lưu trú này.
             </Text>
             {(['adults', 'children'] as const).map((field) => (
               <View key={field} style={s.guest}>
                 <Text style={s.guestTitle}>{field === 'adults' ? "Người lớn" : "Trẻ em"}</Text>
                 <View pointerEvents={saving ? 'none' : 'auto'}>
                   <Counter
-                    label={field}
+                    label={field === 'adults' ? 'người lớn' : 'trẻ em'}
                     value={draft[field]}
                     minimum={field === 'adults' ? 1 : 0}
                     maximum={Math.max(
@@ -141,14 +141,14 @@ export const ListingTripModal = ({
             <View style={s.footer}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Check room availability"
+                accessibilityLabel="Kiểm tra chỗ trống"
                 disabled={saving}
                 onPress={() => void save()}
                 style={[s.apply, saving && { opacity: 0.6 }]}
               >
                 {saving && <ActivityIndicator color="white" size="small" />}
                 <Text style={s.applyText}>
-                  {saving ? 'Checking availability...' : 'Check availability'}
+                  {saving ? 'Đang kiểm tra chỗ trống...' : 'Kiểm tra chỗ trống'}
                 </Text>
               </Pressable>
             </View>

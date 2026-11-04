@@ -42,7 +42,7 @@ export function SocialSignInButtons({ disabled = false }: { disabled?: boolean }
         setMessage('Bạn đã hủy đăng nhập. Có thể thử lại hoặc dùng email.');
     } catch (e) {
       setFailed(true);
-      setMessage(e instanceof Error ? e.message : 'Unable to sign in. Please try again.');
+      setMessage(e instanceof Error ? e.message : 'Không thể đăng nhập. Vui lòng thử lại.');
     } finally {
       pending.current = false;
       setProvider(null);
@@ -52,7 +52,7 @@ export function SocialSignInButtons({ disabled = false }: { disabled?: boolean }
     <View style={styles.group}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Apple sign-in coming soon"
+        accessibilityLabel="Đăng nhập bằng Apple sắp ra mắt"
         accessibilityState={{ disabled: true }}
         disabled
         style={[styles.button, { borderColor: '#BFC1C5', opacity: 0.55 }]}
@@ -66,7 +66,7 @@ export function SocialSignInButtons({ disabled = false }: { disabled?: boolean }
           key={item.id}
           accessibilityRole="button"
           accessibilityLabel={
-            provider === item.id ? `Connecting to ${item.name}` : `Continue with ${item.name}`
+            provider === item.id ? `Đang kết nối ${item.name}` : `Tiếp tục với ${item.name}`
           }
           accessibilityState={{ disabled: busy, busy: provider === item.id }}
           disabled={busy}
@@ -83,7 +83,7 @@ export function SocialSignInButtons({ disabled = false }: { disabled?: boolean }
             <FontAwesome name={item.icon} size={21} color={item.color} />
           )}
           <Text style={[styles.text, { color: item.color }]}>
-            {provider === item.id ? `?ang k?t n?i ${item.name}...` : `Tiếp tục v?i ${item.name}`}
+            {provider === item.id ? `Đang kết nối ${item.name}...` : `Tiếp tục với ${item.name}`}
           </Text>
         </Pressable>
       ))}

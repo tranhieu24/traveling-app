@@ -1,6 +1,7 @@
 import { createApp } from './app';
 import { ENV } from './config/env';
 import { pool } from './config/database';
+import { aiAvailable } from './config/ai';
 
 const app = createApp();
 
@@ -14,8 +15,11 @@ const startServer = async () => {
     await pool.query('SELECT id FROM public.support_tickets LIMIT 0');
     await pool.query('SELECT body FROM public.support_messages LIMIT 0');
     await pool.query('SELECT revision FROM public.booking_arrival_guides LIMIT 0');
+    await pool.query('SELECT status,attempts FROM public.notification_outbox LIMIT 0');
+    if(aiAvailable()) await pool.query('SELECT requests,reserved_tokens FROM public.ai_usage_daily LIMIT 0');
     const schema = await pool.query("SELECT to_regprocedure('public.enforce_refund_state()') AS guard");
-    if (!schema.rows[0].guard) throw new Error('Review and apply backend migrations 001-006 before starting');
+    const mediaSchema = await pool.query("SELECT to_regprocedure('public.is_listing_media_publishable(uuid)') AS guard");
+    if (!schema.rows[0].guard || !mediaSchema.rows[0].guard) throw new Error('Review and apply backend migrations 001-011 before starting');
     // Kiểm tra kết nối Database
     const dbTest = await pool.query('SELECT NOW()');
     console.log(`[Database Connected]: PostgreSQL ready at ${dbTest.rows[0].now}`);

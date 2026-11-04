@@ -19,7 +19,7 @@ import {
   Wind,
 } from 'lucide-react-native';
 import type { Amenity, Listing } from '../../types';
-import { groupAmenities, listingAddress, listingTime } from '../../utils/listingDetail';
+import { formatAmenityName, groupAmenities, listingAddress, listingTime } from '../../utils/listingDetail';
 import { ListingImage } from './ListingPhotoGallery';
 
 export type ListingPanel = 'facilities' | 'policies' | 'description' | null;
@@ -47,9 +47,9 @@ export const ListingStats = ({ listing }: { listing: Listing }) => (
       `${listing.max_guests} ${listing.max_guests === 1 ? "Khách" : "Số khách"}`,
       listing.bedrooms === 0
         ? 'Studio'
-        : `${listing.bedrooms} ${listing.bedrooms === 1 ? 'bedroom' : 'bedrooms'}`,
-      `${listing.beds} ${listing.beds === 1 ? 'bed' : 'beds'}`,
-      `${listing.bathrooms} ${listing.bathrooms === 1 ? 'bath' : 'baths'}`,
+        : `${listing.bedrooms} phòng ngủ`,
+      `${listing.beds} giường`,
+      `${listing.bathrooms} phòng tắm`,
     ].map((text) => (
       <Text key={text} style={s.stat}>
         {text}
@@ -59,14 +59,14 @@ export const ListingStats = ({ listing }: { listing: Listing }) => (
 );
 export const HouseRules = ({ listing }: { listing: Listing }) => (
   <View style={s.rules}>
-    <Text style={s.ruleTitle}>House rules</Text>
+    <Text style={s.ruleTitle}>Nội quy chỗ ở</Text>
     <View style={s.ruleRow}>
       <Clock3 size={15} color="#8C939D" />
-      <Text style={s.ruleText}>Earliest check-in time: {listingTime(listing.check_in_time)}</Text>
+      <Text style={s.ruleText}>Giờ nhận phòng sớm nhất: {listingTime(listing.check_in_time)}</Text>
     </View>
     <View style={s.ruleRow}>
       <Clock3 size={15} color="#8C939D" />
-      <Text style={s.ruleText}>Latest check-out time: {listingTime(listing.check_out_time)}</Text>
+      <Text style={s.ruleText}>Giờ trả phòng muộn nhất: {listingTime(listing.check_out_time)}</Text>
     </View>
   </View>
 );
@@ -75,9 +75,9 @@ export const CheckinPolicy = ({ listing }: { listing: Listing }) => {
     checkOut = listingTime(listing.check_out_time);
   return (
     <Text style={s.policy}>
-      {checkIn === 'To be confirmed' || checkOut === 'To be confirmed'
-        ? 'Please confirm check-in and check-out arrangements with your host before you travel.'
-        : `Check-in from ${checkIn} and check-out by ${checkOut}. Please confirm arrival arrangements with your host before you travel.`}
+      {checkIn === 'Chờ xác nhận' || checkOut === 'Chờ xác nhận'
+        ? 'Vui lòng xác nhận lịch nhận và trả phòng với chủ nhà trước chuyến đi.'
+        : `Nhận phòng từ ${checkIn} và trả phòng trước ${checkOut}. Vui lòng xác nhận lịch đến với chủ nhà trước chuyến đi.`}
     </Text>
   );
 };
@@ -101,7 +101,7 @@ export const ListingDetailPanels = ({
         <View style={s.header}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Back to room details"
+            accessibilityLabel="Quay lại chi tiết chỗ ở"
             onPress={onClose}
             style={s.back}
           >
@@ -109,7 +109,7 @@ export const ListingDetailPanels = ({
           </Pressable>
           <Text accessibilityRole="header" style={s.headerTitle}>
             {panel === 'facilities'
-              ? 'Facilities & services'
+              ? 'Tiện nghi và dịch vụ'
               : panel === 'policies'
                 ? "Chính sách"
                 : "Mô tả"}
@@ -122,7 +122,7 @@ export const ListingDetailPanels = ({
               <Text style={s.title}>Tiện nghi</Text>
               <ListingStats listing={listing} />
               {!listing.amenities?.length && (
-                <Text style={s.policy}>No facilities have been listed for this stay.</Text>
+                <Text style={s.policy}>Chỗ ở này chưa liệt kê tiện nghi.</Text>
               )}
               {groupAmenities(listing.amenities || []).map(([label, amenities]) => (
                 <View key={label} style={s.group}>
@@ -130,7 +130,7 @@ export const ListingDetailPanels = ({
                   {amenities.map((amenity) => (
                     <View key={amenity.id} style={s.amenity}>
                       <AmenityIcon amenity={amenity} />
-                      <Text style={s.amenityText}>{amenity.name}</Text>
+                      <Text style={s.amenityText}>{formatAmenityName(amenity.name)}</Text>
                     </View>
                   ))}
                 </View>
@@ -142,10 +142,9 @@ export const ListingDetailPanels = ({
               <HouseRules listing={listing} />
               <Text style={s.groupTitle}>Điều kiện nhận phòng</Text>
               <CheckinPolicy listing={listing} />
-              <Text style={[s.groupTitle, { marginTop: 24 }]}>Guest limit</Text>
+              <Text style={[s.groupTitle, { marginTop: 24 }]}>Giới hạn số khách</Text>
               <Text style={s.policy}>
-                This stay accommodates up to {listing.max_guests}{' '}
-                {listing.max_guests === 1 ? 'guest' : 'guests'}.
+                Chỗ ở này phục vụ tối đa {listing.max_guests} khách.
               </Text>
             </>
           ) : (
@@ -158,13 +157,13 @@ export const ListingDetailPanels = ({
               </Text>
               <View style={s.location}>
                 <MapPin size={18} color="#00B8CE" />
-                <Text style={s.address}>{listingAddress(listing) || 'Location not provided'}</Text>
+                <Text style={s.address}>{listingAddress(listing) || 'Chưa cung cấp địa chỉ'}</Text>
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Open room in Google Maps"
+                  accessibilityLabel="Mở chỗ ở trong Google Maps"
                   onPress={onMap}
                 >
-                  <Text style={s.link}>Open map</Text>
+                  <Text style={s.link}>Mở bản đồ</Text>
                 </Pressable>
               </View>
             </>

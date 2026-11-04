@@ -80,6 +80,8 @@ const paymentMessages:Record<string,string>={
   ACCOUNT_BLOCKED:'Tài khoản đang bị khóa. Vui lòng liên hệ hỗ trợ.',DATES_ALREADY_BOOKED:'Lịch này vừa được đặt. Vui lòng chọn ngày khác.',DATES_UNAVAILABLE:'Chỗ ở không còn trống trong lịch đã chọn.',MAX_GUESTS_EXCEEDED:'Số khách vượt sức chứa của chỗ ở.',
   BOOKING_EXPIRED:'Đơn đã hết thời hạn giữ phòng. Vui lòng chọn lịch và đặt lại.',PAYMENTS_DISABLED:'Cổng thanh toán chưa được cấu hình. Đơn chưa được thanh toán.',PROVIDER_UNAVAILABLE:'Chưa xác minh được kết quả từ cổng thanh toán. Kiểm tra trạng thái trước khi thử lại.',PAYMENT_IN_PROGRESS:'Đang có một lần thanh toán chờ xử lý. Hãy kiểm tra trạng thái đơn.',ALREADY_PAID:'Đơn đã thanh toán đủ. Vui lòng xem chứng từ.',
   RATE_LIMIT_EXCEEDED:'Bạn thao tác quá nhanh. Vui lòng chờ một chút rồi thử lại.',PRICE_CHANGED:'Giá đã thay đổi. Vui lòng xem báo giá mới và xác nhận lại.',POLICY_CHANGED:'Điều kiện đặt phòng đã thay đổi. Vui lòng đọc và xác nhận lại.',
+  COUPON_NOT_APPLICABLE:'Mã khuyến mãi không hợp lệ, đã hết hạn, hết lượt dùng hoặc không áp dụng cho phòng này.',
+  COUPON_USER_LIMIT:'Bạn đã dùng hết số lượt áp dụng cho phép của mã khuyến mãi này.',
 };
 export const paymentErrorMessage = (error: unknown): string => {
   if(axios.isAxiosError(error)){const code=error.response?.data?.error?.code;return paymentMessages[code] || error.response?.data?.error?.message || 'Không kết nối được dịch vụ. Vui lòng kiểm tra mạng và thử lại.';}

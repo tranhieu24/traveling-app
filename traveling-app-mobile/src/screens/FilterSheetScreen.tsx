@@ -19,6 +19,7 @@ import { X } from 'lucide-react-native';
 import { useFilterStore } from '../store/useFilterStore';
 import { apiClient } from '../services/apiClient';
 import { Amenity } from '../types';
+import { formatAmenityName } from '../utils/listingDetail';
 import { AdvancedFilters, EMPTY_ADVANCED, ROOM_TYPES, validateAdvanced } from '../utils/search';
 import {
   Checkbox,
@@ -39,6 +40,7 @@ export const FilterSheetScreen: React.FC = () => {
         });
   const state = useFilterStore();
   const [draft, setDraft] = useState<AdvancedFilters>(() => ({
+    propertyType: state.propertyType,
     minPrice: state.minPrice,
     maxPrice: state.maxPrice,
     bedrooms: state.bedrooms,
@@ -54,7 +56,7 @@ export const FilterSheetScreen: React.FC = () => {
     queryKey: ['amenities'],
     queryFn: async ({ signal }) => {
       const res = await apiClient.get('/amenities', { signal });
-      if (!Array.isArray(res.data.data)) throw new Error('Could not load facilities.');
+      if (!Array.isArray(res.data.data)) throw new Error('Không thể tải tiện nghi.');
       return res.data.data;
     },
   });
@@ -94,7 +96,7 @@ export const FilterSheetScreen: React.FC = () => {
           <Text style={s.headerTitle}>Bộ lọc</Text>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Close filters"
+            accessibilityLabel="Đóng bộ lọc"
             onPress={dismiss}
             style={s.close}
           >
@@ -106,6 +108,10 @@ export const FilterSheetScreen: React.FC = () => {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={s.content}
         >
+          {!!draft.propertyType&&<View style={s.section}>
+            <Text style={shared.heading}>Loại chỗ ở: {draft.propertyType}</Text>
+            <Pressable accessibilityRole="button" onPress={()=>setDraft(current=>({...current,propertyType:null}))}><Text style={shared.clear}>Bỏ điều kiện loại chỗ ở</Text></Pressable>
+          </View>}
           <View style={s.section}>
             <Text style={shared.heading}>Khoảng giá</Text>
             <Text style={[shared.muted, { fontSize: 12, marginTop: -8, marginBottom: 15 }]}>
@@ -179,19 +185,19 @@ export const FilterSheetScreen: React.FC = () => {
           <View style={[s.section, { borderBottomWidth: 0 }]}>
             <Text style={shared.heading}>Tiện nghi</Text>
             <Text style={[shared.muted, { fontSize: 12 }]}>
-              Stays must include every selected facility.
+              Chỗ ở phải có đầy đủ các tiện nghi được chọn.
             </Text>
             {amenities.isLoading ? (
               <ActivityIndicator color={CYAN} style={{ padding: 24 }} />
             ) : amenities.isError ? (
               <Pressable accessibilityRole="button" onPress={() => amenities.refetch()}>
-                <Text style={shared.error}>Could not load facilities. Tap to retry.</Text>
+                <Text style={shared.error}>Không thể tải tiện nghi. Chạm để thử lại.</Text>
               </Pressable>
             ) : (
               amenities.data?.map((amenity) => (
                 <Checkbox
                   key={amenity.id}
-                  label={amenity.name}
+                  label={formatAmenityName(amenity.name)}
                   checked={draft.selectedAmenities.includes(amenity.id)}
                   onPress={() =>
                     setDraft((old) => ({

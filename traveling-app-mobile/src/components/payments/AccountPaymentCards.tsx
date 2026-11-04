@@ -63,7 +63,7 @@ export const PaymentBookingCard = ({
     <View style={s.card}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`View booking ${booking.booking_code}`}
+        accessibilityLabel={`Xem đơn đặt chỗ ${booking.booking_code}`}
         onPress={onOpen}
         style={s.cardHeader}
       >
@@ -84,17 +84,17 @@ export const PaymentBookingCard = ({
       </View>
       <View style={s.amountRow}>
         <View style={{ flex: 1 }}>
-          <Text style={s.small}>Booking total</Text>
+          <Text style={s.small}>Tổng tiền đặt chỗ</Text>
           <Text style={s.amount}>{formatPaymentMoney(booking.total_price)}</Text>
         </View>
         <View style={{ alignItems: 'flex-end' }}>
-          <Text style={s.small}>Paid</Text>
+          <Text style={s.small}>Đã thanh toán</Text>
           <Text style={s.paid}>{formatPaymentMoney(paidCents(booking) / 100)}</Text>
         </View>
       </View>
       {action && (
         <View style={s.balanceRow}>
-          <Text style={s.small}>Outstanding balance</Text>
+          <Text style={s.small}>Số dư chưa thanh toán</Text>
           <Text style={s.balance}>
             {formatPaymentMoney(booking.balance_due ?? booking.total_price)}
           </Text>
@@ -104,7 +104,7 @@ export const PaymentBookingCard = ({
         {action && (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`${action.label} for ${booking.booking_code}`}
+            accessibilityLabel={`${action.label} cho đơn ${booking.booking_code}`}
             onPress={() => onPay(action.plan)}
             style={s.payButton}
           >
@@ -115,7 +115,7 @@ export const PaymentBookingCard = ({
         {hasReceipt(booking) && (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`Download receipt for ${booking.booking_code}`}
+            accessibilityLabel={`Tải biên lai cho đơn ${booking.booking_code}`}
             accessibilityState={{ disabled: receiptDisabled, busy: downloading }}
             disabled={receiptDisabled}
             onPress={onReceipt}
@@ -126,7 +126,7 @@ export const PaymentBookingCard = ({
             ) : (
               <Download size={16} color="#71808D" />
             )}
-            <Text style={s.receiptLabel}>{downloading ? "Đang chuẩn bị..." : 'PDF receipt'}</Text>
+            <Text style={s.receiptLabel}>{downloading ? 'Đang chuẩn bị...' : 'Biên lai PDF'}</Text>
           </Pressable>
         )}
       </View>
@@ -144,14 +144,14 @@ export const PaymentBookingCard = ({
         <>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`Payment attempts for ${booking.booking_code}`}
+            accessibilityLabel={`Lịch sử thanh toán của đơn ${booking.booking_code}`}
             accessibilityState={{ expanded }}
             aria-expanded={expanded}
             onPress={() => setExpanded(!expanded)}
             style={s.historyToggle}
           >
             <Text style={s.historyLabel}>
-              {payments.length} payment {payments.length === 1 ? 'transaction' : 'transactions'}
+              {payments.length} giao dịch thanh toán
             </Text>
             {expanded ? (
               <ChevronUp size={16} color="#8E99A6" />
@@ -176,11 +176,11 @@ export const PaymentBookingCard = ({
                     {accountDate(payment.paid_at || payment.created_at)}
                   </Text>
                   <Text selectable style={s.transactionReference}>
-                    Ref:{' '}
+                    Mã tham chiếu:{' '}
                     {payment.transaction_reference || payment.provider_payment_id || payment.id}
                   </Text>
                   {payment.requested_plan === 'deposit' && (
-                    <Text style={s.date}>Deposit payment</Text>
+                    <Text style={s.date}>Thanh toán tiền cọc</Text>
                   )}
                   {payment.requested_plan === 'balance' && (
                     <Text style={s.date}>Số tiền còn lại</Text>
@@ -190,7 +190,7 @@ export const PaymentBookingCard = ({
             })}
         </>
       ) : (
-        <Text style={s.noTransactions}>No payment transactions yet.</Text>
+        <Text style={s.noTransactions}>Chưa có giao dịch thanh toán.</Text>
       )}
     </View>
   );
@@ -227,35 +227,35 @@ export const RefundCard = ({
       <Text style={s.refundDescription}>{status.description}</Text>
       <View style={s.refundDetails}>
         <View style={s.detailRow}>
-          <Text style={s.small}>Requested</Text>
+          <Text style={s.small}>Ngày yêu cầu</Text>
           <Text style={s.detailValue}>{accountDate(refund.created_at)}</Text>
         </View>
         {refund.status === 'succeeded' && (
           <View style={s.detailRow}>
-            <Text style={s.small}>Refund confirmed</Text>
+            <Text style={s.small}>Đã xác nhận hoàn tiền</Text>
             <Text style={s.detailValue}>{accountDate(refund.succeeded_at)}</Text>
           </View>
         )}
         {!!refund.reason && (
           <View style={s.reason}>
-            <Text style={s.small}>Reason</Text>
+            <Text style={s.small}>Lý do</Text>
             <Text style={s.detailValue}>{refund.reason}</Text>
           </View>
         )}
         {!!refund.decision_reason && (
           <View style={s.reason}>
-            <Text style={s.small}>Admin response</Text>
+            <Text style={s.small}>Phản hồi của quản trị viên</Text>
             <Text style={s.detailValue}>{refund.decision_reason}</Text>
           </View>
         )}
         <Text selectable style={s.transactionReference}>
-          Refund ref: {refund.provider_refund_id || refund.id}
+          Mã hoàn tiền: {refund.provider_refund_id || refund.id}
         </Text>
         {payment && <Text style={s.date}>{accountPaymentMethod(payment)}</Text>}
       </View>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`View refunded booking ${booking.booking_code}`}
+        accessibilityLabel={`Xem đơn đã hoàn tiền ${booking.booking_code}`}
         onPress={onOpen}
         style={s.refundBooking}
       >

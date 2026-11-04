@@ -213,7 +213,7 @@ export type RootStackParamList = {
   AdminPortal: { section?: import('./admin').AdminSection } | undefined;
   Register: undefined;
   Settings: undefined;
-  HelpCenter: undefined;
+  HelpCenter: { articleId?:string } | undefined;
   PaymentsPayouts: { tab?: 'payments' | 'payouts' } | undefined;
   MainTabs: NavigatorScreenParams<BottomTabParamList> | undefined;
   ListingDetail: { listingId: string };

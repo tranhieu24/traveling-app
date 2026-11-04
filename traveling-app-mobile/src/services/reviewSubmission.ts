@@ -37,17 +37,17 @@ export const fetchReviewEligibility = async (
       (data.existingReview.user_id !== userId || data.existingReview.listing_id !== listingId)) ||
     (data.canReview && data.existingReview)
   )
-    throw new Error('Could not verify review eligibility. Please try again.');
+    throw new Error('Không thể xác minh quyền đánh giá. Vui lòng thử lại.');
   return data;
 };
 export class ReviewAlreadySubmittedError extends Error {
   constructor(public review: OwnReview | null) {
-    super('You have already reviewed this property.');
+    super('Bạn đã đánh giá chỗ ở này.');
   }
 }
 export class ReviewUnconfirmedError extends Error {
   constructor() {
-    super('Your submission could not be confirmed. Check its status before sending again.');
+    super('Chưa thể xác nhận đánh giá đã gửi. Hãy kiểm tra trạng thái trước khi gửi lại.');
   }
 }
 export const matchesSubmittedReview = (review: OwnReview, draft: ReviewDraft): boolean =>
@@ -97,7 +97,7 @@ export const submitPropertyReview = async (
 export const reviewErrorMessage = (error: unknown): string =>
   axios.isAxiosError(error)
     ? error.response?.data?.error?.message ||
-      'Could not connect to the review service. Please try again.'
+      'Không thể kết nối dịch vụ đánh giá. Vui lòng thử lại.'
     : error instanceof Error
       ? error.message
-      : 'Could not submit your review. Please try again.';
+      : 'Không thể gửi đánh giá. Vui lòng thử lại.';

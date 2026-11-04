@@ -47,7 +47,7 @@ apiClient.interceptors.request.use(
         config.headers.delete('Authorization');
       }
     } catch {
-      return Promise.reject(new Error('Could not read saved sign-in. Please enable site storage.'));
+      return Promise.reject(new Error('Không thể đọc dữ liệu đăng nhập đã lưu. Hãy cho phép lưu trữ trang web.'));
     }
     return config;
   },

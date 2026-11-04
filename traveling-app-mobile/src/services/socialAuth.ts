@@ -47,7 +47,7 @@ export function createSocialAuth(
 
   async function finish(url: string): Promise<User> {
     if (!isAuthCallback(url))
-      throw new FriendlyAuthError('Invalid sign-in callback. Please start sign-in again.');
+      throw new FriendlyAuthError('Liên kết đăng nhập không hợp lệ. Vui lòng bắt đầu đăng nhập lại.');
     if (lastUrl !== url || !exchange) {
       lastUrl = url;
       exchange = (async () => {
@@ -73,7 +73,7 @@ export function createSocialAuth(
           );
           if (error)
             throw new FriendlyAuthError(
-              'This sign-in link is invalid or expired. Please start sign-in again.'
+              'Liên kết đăng nhập không hợp lệ hoặc đã hết hạn. Vui lòng bắt đầu lại.'
             );
           session = data.session;
         } else if (fragment.get('access_token') && fragment.get('refresh_token')) {
@@ -90,12 +90,12 @@ export function createSocialAuth(
         }
         if (!session)
           throw new FriendlyAuthError(
-            'No sign-in session was received. Please start sign-in again.'
+            'Không nhận được phiên đăng nhập. Vui lòng bắt đầu đăng nhập lại.'
           );
         if (!session.user.email?.trim()) {
           await supabase.auth.signOut({ scope: 'local' });
           throw new FriendlyAuthError(
-            'Your Google/Facebook account did not provide an email. Allow email access or continue with email.'
+            'Tài khoản Google/Facebook không cung cấp email. Hãy cho phép truy cập email hoặc tiếp tục bằng email.'
           );
         }
         return session;
@@ -116,7 +116,7 @@ export function createSocialAuth(
         requireSecurePKCE();
       } catch (e) {
         throw new FriendlyAuthError(
-          e instanceof Error ? e.message : 'Secure sign-in is unavailable.'
+          e instanceof Error ? e.message : 'Đăng nhập bảo mật không khả dụng.'
         );
       }
       const { data, error } = await prepare(
@@ -131,7 +131,7 @@ export function createSocialAuth(
         provider
       );
       if (error) throw safeAuthError(error);
-      if (!data.url) throw new FriendlyAuthError('Unable to open sign-in. Please try again.');
+      if (!data.url) throw new FriendlyAuthError('Không thể mở đăng nhập. Vui lòng thử lại.');
       // A full-page web redirect persists the verifier in Supabase storage;
       // the callback screen restores the session in the same browser.
       if (Platform.OS === 'web') {
@@ -179,7 +179,7 @@ export function createSocialAuth(
       const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
       if (result.type === 'cancel' || result.type === 'dismiss') return null;
       if (result.type !== 'success')
-        throw new FriendlyAuthError('Could not open sign-in. Please try again.');
+        throw new FriendlyAuthError('Không thể mở đăng nhập. Vui lòng thử lại.');
       return await finish(result.url);
     } finally {
       active = false;

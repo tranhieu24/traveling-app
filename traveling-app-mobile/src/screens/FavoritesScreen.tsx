@@ -40,10 +40,10 @@ export const FavoritesScreen: React.FC = () => {
     <View className="bg-gray-50 flex-1 justify-center items-center px-6">
       <Heart size={64} color="#FF5A5F" fill="#FF5A5F" />
       <Text className="text-2xl font-bold text-gray-800 mt-4 mb-2 text-center">
-        Wishlists
+        Danh sách yêu thích
       </Text>
       <Text className="text-sm text-gray-500 text-center max-w-xs leading-5">
-        Save places you love so you can easily find them later.
+        Lưu những chỗ ở bạn yêu thích để dễ dàng tìm lại sau này.
       </Text>
       <TouchableOpacity
         onPress={() => navigation.navigate('MainTabs', { screen: 'SearchTab' })}
@@ -51,7 +51,7 @@ export const FavoritesScreen: React.FC = () => {
         className="bg-[#00BCD4] py-3 px-8 rounded-xl shadow-sm mt-6"
       >
         <Text className="text-white font-semibold text-base text-center">
-          Explore places
+          Khám phá chỗ ở
         </Text>
       </TouchableOpacity>
     </View>
@@ -72,10 +72,10 @@ export const FavoritesScreen: React.FC = () => {
         <>
           <View className="px-5 py-4 border-b border-gray-100 bg-white">
             <Text className="text-2xl font-bold text-gray-900">
-              Wishlists
+              Danh sách yêu thích
             </Text>
             <Text className="text-xs text-gray-500 mt-0.5">
-              {favorites.length} saved places
+              {favorites.length} chỗ ở đã lưu
             </Text>
           </View>
           <FlatList

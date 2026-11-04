@@ -12,7 +12,7 @@ export const downloadBookingReceipt = async (bookingId: string, bookingCode: str
     try {
       const response = await apiClient.get<Blob>(endpoint, { responseType: 'blob', timeout: 20000 });
       if (!response.data.size || !String(response.headers['content-type'] || response.data.type).includes('application/pdf')) {
-        throw new Error('The server did not return a PDF receipt. Please try again.');
+        throw new Error('Máy chủ không trả về biên lai PDF. Vui lòng thử lại.');
       }
       const url = URL.createObjectURL(response.data);
       const link = document.createElement('a');
@@ -28,12 +28,12 @@ export const downloadBookingReceipt = async (bookingId: string, bookingCode: str
       return;
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
-        if (error.response?.status === 401) throw new Error('Please log in again to download your receipt.');
+        if (error.response?.status === 401) throw new Error('Vui lòng đăng nhập lại để tải biên lai.');
         if (error.response?.data instanceof Blob) {
           const body = await error.response.data.text();
           let message: string | undefined;
           try { message = JSON.parse(body)?.error?.message; } catch { /* Use the default message below. */ }
-          throw new Error(message || 'Could not download your receipt. Please try again.');
+          throw new Error(message || 'Không thể tải biên lai. Vui lòng thử lại.');
         }
       }
       throw error;
@@ -41,15 +41,15 @@ export const downloadBookingReceipt = async (bookingId: string, bookingCode: str
   }
 
   const token = await storage.getItem('traveling_auth_token');
-  if (!token) throw new Error('Please log in again to download your receipt.');
+  if (!token) throw new Error('Vui lòng đăng nhập lại để tải biên lai.');
   if (!FileSystem.cacheDirectory || !(await Sharing.isAvailableAsync())) {
-    throw new Error('Saving or sharing PDF files is not available on this device.');
+    throw new Error('Thiết bị này không hỗ trợ lưu hoặc chia sẻ tệp PDF.');
   }
   const fileUri = `${FileSystem.cacheDirectory}${filename}`;
   try {
     const file = await FileSystem.downloadAsync(`${API_BASE_URL}${endpoint}`, fileUri, { headers: { Authorization: `Bearer ${token}` } });
-    if (file.status !== 200) throw new Error(file.status === 401 ? 'Please log in again to download your receipt.' : 'Could not download your receipt. Please try again.');
-    await Sharing.shareAsync(file.uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf', dialogTitle: 'Save your payment receipt' });
+    if (file.status !== 200) throw new Error(file.status === 401 ? 'Vui lòng đăng nhập lại để tải biên lai.' : 'Không thể tải biên lai. Vui lòng thử lại.');
+    await Sharing.shareAsync(file.uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf', dialogTitle: 'Lưu biên lai thanh toán' });
   } finally {
     await FileSystem.deleteAsync(fileUri, { idempotent: true }).catch(() => {});
   }

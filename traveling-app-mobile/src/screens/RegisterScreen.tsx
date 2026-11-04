@@ -40,12 +40,12 @@ export const RegisterScreen: React.FC = () => {
     if (busy || submittingRef.current) return;
 
     const nextErrors: FormErrors = {};
-    if (!values.fullName.trim()) nextErrors.fullName = 'Please enter your full name.';
-    if (!values.email.trim()) nextErrors.email = 'Please enter your email address.';
+    if (!values.fullName.trim()) nextErrors.fullName = 'Vui lòng nhập họ và tên.';
+    if (!values.email.trim()) nextErrors.email = 'Vui lòng nhập địa chỉ email.';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim())) {
-      nextErrors.email = 'Please enter a valid email address.';
+      nextErrors.email = 'Vui lòng nhập địa chỉ email hợp lệ.';
     }
-    if (values.password.length < 6) nextErrors.password = 'Use at least 6 characters for your password.';
+    if (values.password.length < 6) nextErrors.password = 'Mật khẩu phải có ít nhất 6 ký tự.';
     setErrors(nextErrors);
 
     const invalidField = FIELDS.find((field) => nextErrors[field.key]);
@@ -66,7 +66,7 @@ export const RegisterScreen: React.FC = () => {
         navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
       }
     } catch (error: unknown) {
-      setErrors({ form: error instanceof Error ? error.message : 'Unable to create your account. Please try again.' });
+      setErrors({ form: error instanceof Error ? error.message : 'Không thể tạo tài khoản. Vui lòng thử lại.' });
     } finally {
       submittingRef.current = false;
       setIsSubmitting(false);
@@ -78,15 +78,15 @@ export const RegisterScreen: React.FC = () => {
       <SafeAreaView style={styles.screen}>
         <ScrollView contentContainerStyle={styles.confirmationContent}>
           <View style={styles.emailBadge}><Mail size={30} color="#00B8CE" /></View>
-          <Text accessibilityRole="header" style={styles.confirmationTitle}>Check your email</Text>
-          <Text style={styles.confirmationMessage}>Check the inbox for {confirmationEmail} for a confirmation link. Confirm your email, then come back to log in.</Text>
+          <Text accessibilityRole="header" style={styles.confirmationTitle}>Kiểm tra email của bạn</Text>
+          <Text style={styles.confirmationMessage}>Hãy mở hộp thư {confirmationEmail} và nhấn liên kết xác nhận. Sau đó quay lại để đăng nhập.</Text>
           <Pressable
             cssInterop={false}
             accessibilityRole="button"
             onPress={() => navigation.replace('Login')}
             style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}
           >
-            <Text style={styles.primaryText}>Back to log in</Text>
+            <Text style={styles.primaryText}>Quay lại đăng nhập</Text>
           </Pressable>
         </ScrollView>
       </SafeAreaView>
@@ -101,7 +101,7 @@ export const RegisterScreen: React.FC = () => {
             <Pressable
               cssInterop={false}
               accessibilityRole="button"
-              accessibilityLabel="Go back"
+              accessibilityLabel="Quay lại"
               disabled={busy}
               onPress={() => navigation.canGoBack() ? navigation.goBack() : navigation.replace('CreateAccount')}
               style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
@@ -113,8 +113,8 @@ export const RegisterScreen: React.FC = () => {
 
           <View style={styles.form}>
             <View style={styles.emailBadge}><Mail size={28} color="#00B8CE" /></View>
-            <Text style={styles.heading}>Create your account</Text>
-            <Text style={styles.subtitle}>A few details, and your next adventure begins.</Text>
+            <Text style={styles.heading}>Tạo tài khoản</Text>
+            <Text style={styles.subtitle}>Điền một vài thông tin để bắt đầu hành trình tiếp theo.</Text>
 
             {FIELDS.map((field, index) => {
               const Icon = field.icon;
@@ -158,7 +158,7 @@ export const RegisterScreen: React.FC = () => {
                     {isPassword && (
                       <Pressable
                         accessibilityRole="button"
-                        accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                        accessibilityLabel={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                         disabled={busy}
                         onPress={() => setShowPassword((current) => !current)}
                         style={styles.passwordToggle}
@@ -168,7 +168,7 @@ export const RegisterScreen: React.FC = () => {
                     )}
                   </View>
                   {!!errors[field.key] && <Text accessibilityRole="alert" style={styles.error}>{errors[field.key]}</Text>}
-                  {isPassword && !errors.password && <Text style={styles.hint}>Use at least 6 characters.</Text>}
+                  {isPassword && !errors.password && <Text style={styles.hint}>Sử dụng ít nhất 6 ký tự.</Text>}
                 </View>
               );
             })}
@@ -187,7 +187,7 @@ export const RegisterScreen: React.FC = () => {
               style={({ pressed }) => [styles.primaryButton, (pressed || busy) && styles.pressed]}
             >
               {busy && <ActivityIndicator size="small" color="#FFFFFF" />}
-              <Text style={styles.primaryText}>{busy ? 'Creating account...' : 'Create account'}</Text>
+              <Text style={styles.primaryText}>{busy ? 'Đang tạo tài khoản...' : 'Tạo tài khoản'}</Text>
             </Pressable>
           </View>
 

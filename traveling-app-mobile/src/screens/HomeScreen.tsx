@@ -33,7 +33,6 @@ export const HomeScreen: React.FC = () => {
 const ExploreScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user } = useAuth();
-  const hasInitializedCategory = useRef(false);
   const state = useFilterStore();
   const {
     selectedCategory,
@@ -59,14 +58,6 @@ const ExploreScreen: React.FC = () => {
     },
   });
 
-  useEffect(() => {
-    if (hasInitializedCategory.current || categories.length === 0) return;
-    hasInitializedCategory.current = true;
-    if (!selectedCategory) {
-      const beach = categories.find((category) => category.slug === 'beach');
-      if (beach) setSelectedCategory(beach.id);
-    }
-  }, [categories, selectedCategory, setSelectedCategory]);
 
   let params: Record<string, string | number | boolean> = {},
     invalid = '';
@@ -106,7 +97,7 @@ const ExploreScreen: React.FC = () => {
         <TouchableOpacity
           accessibilityRole="button"
           accessibilityLabel="Bạn muốn ở đâu?"
-          accessibilityHint="Choose a destination, travel dates, and guests"
+          accessibilityHint="Chọn điểm đến, ngày đi và số khách"
           onPress={() => navigation.navigate('SearchSheet')}
           activeOpacity={0.8}
           style={styles.searchButton}
@@ -199,7 +190,7 @@ const ExploreScreen: React.FC = () => {
                   style={{ padding: 20 }}
                 >
                   <Text style={{ color: '#00BCD4', textAlign: 'center' }}>
-                    Could not load more stays. Try again
+                    Không thể tải thêm chỗ ở. Thử lại
                   </Text>
                 </TouchableOpacity>
               ) : undefined

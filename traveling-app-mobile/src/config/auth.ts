@@ -12,13 +12,13 @@ export const NATIVE_AUTH_REDIRECT_URI = `${AUTH_SCHEME}://${AUTH_CALLBACK_PATH}`
 
 export function getAuthRedirectUri(): string {
   if (Platform.OS === 'web') {
-    if (typeof window === 'undefined') throw new Error('Open the app in a browser to sign in.');
+    if (typeof window === 'undefined') throw new Error('Hãy mở ứng dụng trong trình duyệt để đăng nhập.');
     if (window.self !== window.top) throw new FriendlyAuthError('Hãy mở app trực tiếp trong Chrome, Edge hoặc Safari để đăng nhập Google/Facebook. Trình xem nhúng có thể chặn xác thực.');
     return `${window.location.origin}/${AUTH_CALLBACK_PATH}`;
   }
   if (Constants.appOwnership === 'expo' || Constants.executionEnvironment === 'storeClient') {
     throw new Error(
-      'Google and Facebook sign-in require an installed app build. Please use a development build instead of Expo Go.'
+      'Đăng nhập Google và Facebook cần bản ứng dụng đã cài đặt. Vui lòng dùng bản development build thay vì Expo Go.'
     );
   }
   return NATIVE_AUTH_REDIRECT_URI;
@@ -46,16 +46,16 @@ export function safeAuthError(error: unknown): Error {
   const code = (error as { code?: string })?.code;
   if (['flow_state_not_found','flow_state_expired','bad_code_verifier'].includes(code||'')) return new FriendlyAuthError('Phiên đăng nhập đã hết hạn hoặc không khớp trình duyệt. Hãy mở lại app và đăng nhập trong cùng trình duyệt.');
   if (code === 'invalid_credentials')
-    return new FriendlyAuthError('Email or password is incorrect.');
+    return new FriendlyAuthError('Email hoặc mật khẩu không đúng.');
   if (code === 'email_not_confirmed')
-    return new FriendlyAuthError('Please confirm your email before logging in.');
+    return new FriendlyAuthError('Vui lòng xác nhận email trước khi đăng nhập.');
   if (code === 'user_already_exists')
-    return new FriendlyAuthError('An account with this email already exists. Please log in.');
-  if (code === 'weak_password') return new FriendlyAuthError('Please choose a stronger password.');
+    return new FriendlyAuthError('Đã có tài khoản sử dụng email này. Vui lòng đăng nhập.');
+  if (code === 'weak_password') return new FriendlyAuthError('Vui lòng chọn mật khẩu mạnh hơn.');
   if (code === 'over_request_rate_limit' || code === 'over_email_send_rate_limit')
-    return new FriendlyAuthError('Too many attempts. Please wait a moment and try again.');
+    return new FriendlyAuthError('Bạn đã thử quá nhiều lần. Vui lòng chờ một lúc rồi thử lại.');
   return new FriendlyAuthError(
-    'Unable to sign in. Please check your connection or try signing in with email.'
+    'Không thể đăng nhập. Hãy kiểm tra kết nối hoặc thử đăng nhập bằng email.'
   );
 }
 export class FriendlyAuthError extends Error {}

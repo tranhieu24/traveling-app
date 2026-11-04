@@ -7,7 +7,7 @@ export const fetchListingDetail = async (
 ): Promise<Listing> => {
   const response = await apiClient.get(`/listings/${encodeURIComponent(listingId)}`, { signal });
   if (!response.data.success || response.data.data?.id !== listingId)
-    throw new Error('Could not load this stay. Please try again.');
+    throw new Error('Không thể tải chỗ ở này. Vui lòng thử lại.');
   return response.data.data;
 };
 export const fetchReviewPage = async (
@@ -22,7 +22,7 @@ export const fetchReviewPage = async (
   });
   const body = response.data;
   if (!body.success || !Array.isArray(body.data))
-    throw new Error('Could not load reviews. Please try again.');
+    throw new Error('Không thể tải đánh giá. Vui lòng thử lại.');
   return {
     reviews: body.data as Review[],
     total: Number(body.pagination?.total ?? body.data.length),

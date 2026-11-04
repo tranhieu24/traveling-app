@@ -140,14 +140,14 @@ test('logout invalidates a delayed profile and clears token, user and query cach
   await tick();
   await f.bridge.clear();
   gate.resolve(profile);
-  await assert.rejects(pending, /session changed/);
+  await assert.rejects(pending, /Phiên đăng nhập đã thay đổi/);
   assert.equal(await f.tokenModule.readAuthToken(), null);
   assert.deepEqual(f.states.at(-1), { token: null, user: null });
   assert.ok(f.calls.includes('clearCache'));
 });
 test('missing email and failed backend profile never fabricate an authenticated user', async () => {
   const f = fixture();
-  await assert.rejects(f.bridge.sync(session('x', '')), /email address/);
+  await assert.rejects(f.bridge.sync(session('x', '')), /không cung cấp địa chỉ email/);
   assert.equal(
     f.calls.some((x) => x.startsWith('profile:')),
     false
@@ -166,7 +166,7 @@ test('latest session wins when storage/profile responses overlap', async () => {
   await tick();
   await f.bridge.sync(session('new'));
   first.resolve(profile);
-  await assert.rejects(old, /session changed/);
+  await assert.rejects(old, /Phiên đăng nhập đã thay đổi/);
   assert.equal(await f.tokenModule.readAuthToken(), 'new');
   assert.equal(f.states.at(-1).token, 'new');
 });
@@ -301,7 +301,7 @@ test('PKCE callback is exchanged once, including profile retry after network fai
 });
 test('Facebook missing email signs out SDK session and never calls the backend', async () => {
   const f = oauthFixture({ noEmail: true });
-  await assert.rejects(f.social.start('facebook'), /did not provide an email/);
+  await assert.rejects(f.social.start('facebook'), /không cung cấp email/);
   assert.ok(f.calls.includes('signOut'));
   assert.equal(f.calls.includes('profile'), false);
 });
@@ -310,7 +310,7 @@ test('provider errors are sanitized and wrong callback destinations are rejected
   await assert.rejects(f.social.start('google'), (e) => !e.message.includes('sensitive'));
   await assert.rejects(
     f.social.finish('https://attacker.test/auth/callback?code=x'),
-    /Invalid sign-in callback/
+    /Liên kết đăng nhập không hợp lệ/
   );
   const g = oauthFixture();
   await assert.rejects(
@@ -574,7 +574,7 @@ test('PROFILE_NOT_FOUND from the real /auth/me shape is clear and never sets a u
   await tick();
   await assert.rejects(
     c.value.signIn('fixture@example.test', 'password'),
-    /profile has not been created/
+    /hồ sơ tài khoản chưa được tạo/
   );
   assert.equal(c.states[0], null);
   assert.equal(await c.f.tokenModule.readAuthToken(), null);

@@ -47,11 +47,11 @@ export const DateRangeCalendar = ({
     <View>
       <View style={s.monthRow}>
         <Text style={s.month}>
-          {date.toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })}
+          {date.toLocaleDateString('vi-VN', { month: 'long', year: 'numeric', timeZone: 'UTC' })}
         </Text>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Previous month"
+          accessibilityLabel="Tháng trước"
           disabled={month.slice(0, 7) <= today.slice(0, 7)}
           onPress={() => move(-1)}
           style={s.arrow}
@@ -60,7 +60,7 @@ export const DateRangeCalendar = ({
         </Pressable>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Next month"
+          accessibilityLabel="Tháng sau"
           onPress={() => move(1)}
           style={s.arrow}
         >
@@ -68,7 +68,7 @@ export const DateRangeCalendar = ({
         </Pressable>
       </View>
       <View style={s.grid}>
-        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
+        {['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map((day) => (
           <Text key={day} style={s.weekday}>
             {day}
           </Text>
@@ -85,7 +85,7 @@ export const DateRangeCalendar = ({
             <View key={day} style={[s.cell, inside && { backgroundColor: '#E0F9FC' }]}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`Select ${day}`}
+                accessibilityLabel={`Chọn ngày ${day}`}
                 accessibilityState={{ selected: endpoint, disabled }}
                 aria-selected={endpoint}
                 disabled={disabled}
@@ -107,7 +107,7 @@ export const DateRangeCalendar = ({
         })}
       </View>
       <Text style={s.hint}>
-        {!checkIn || checkOut ? 'Choose your check-in date' : 'Choose a later check-out date'}
+        {!checkIn || checkOut ? 'Chọn ngày nhận phòng' : 'Chọn ngày trả phòng sau ngày nhận phòng'}
       </Text>
     </View>
   );

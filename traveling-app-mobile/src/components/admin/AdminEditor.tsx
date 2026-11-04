@@ -23,7 +23,7 @@ import {
   colors,
 } from './AdminUI';
 
-type Photo = { photoUrl: string; isCover: boolean; caption?: string };
+type Photo = { photoUrl: string; isCover: boolean; caption?: string; role?: string; altText?: string };
 interface Props {
   resource: 'listings' | 'categories' | 'customers' | 'coupons';
   record?: AdminRecord;
@@ -92,6 +92,7 @@ const defaults: AdminFormValues = {
   checkInTime: '14:00',
   checkOutTime: '12:00',
   isActive: 'true',
+  mediaUsageStatus: 'needs_review',
   iconName: 'home',
   discountPercent: '10',
   minSubtotal: '0',
@@ -157,16 +158,26 @@ export function AdminEditor({
 
   useEffect(() => {
     if (!detail.data) return;
-    setValues(valuesFor(detail.data, user?.id));
+    const nextValues=valuesFor(detail.data, user?.id);
     if (resource === 'listings') {
       setAmenityIds(detail.data.amenityIds || []);
       const all: any[] = detail.data.photos || [];
+      const audit=detail.data.sourceAudit;
+      const context=all.find(photo=>photo.media_context)?.media_context;
+      Object.assign(nextValues,{
+        sourcePageUrl:audit?.source_page_url||'',mediaUsageStatus:audit?.media_usage_status||'needs_review',
+        contextEvidence:audit?.context_evidence||context?.contextEvidence||'',reviewNotes:audit?.review_notes||'',
+        mediaProvider:context?.provider||'',mediaCreator:context?.creator||'',licenseName:context?.licenseName||'',
+        licenseUrl:context?.licenseUrl||'',attributionText:context?.attributionText||'',
+      });
       setPhotos(
         [...all]
           .sort((first, second) => Number(second.is_cover) - Number(first.is_cover))
-          .map((p, i) => ({ photoUrl: p.photo_url, caption: p.caption || '', isCover: i === 0 }))
+          .map((p, i) => ({ photoUrl: p.photo_url, caption: p.caption || '', isCover: i === 0,
+            role:p.media_context?.role||(i===0?'cover':'other'),altText:p.media_context?.altText||p.caption||'' }))
       );
     }
+    setValues(nextValues);
   }, [detail.data, resource, user?.id]);
 
   const change = (key: string) => (value: string) =>
@@ -206,7 +217,7 @@ export function AdminEditor({
       const image = await uploadAdminImage();
       if (!image) return;
       if (isIcon) change('iconName')(image.iconName);
-      else setPhotos((current) => [...current, { photoUrl: image.url, isCover: !current.length }]);
+      else setPhotos((current) => [...current, { photoUrl: image.url, isCover: !current.length,role:current.length?'other':'cover',altText:'' }]);
     } catch (failure) {
       if (isAdminAccessError(failure)) onAccessError();
       else setError(adminError(failure));
@@ -393,16 +404,16 @@ export function AdminEditor({
               )}
               <Text style={a.sectionTitle}>Bộ sưu tập ảnh *</Text>
               <Text style={a.helper}>
-                Ảnh đầu tiên là ảnh bìa. JPG, PNG hoặc WebP, tối đa 4 MB/ảnh và 30 ảnh/chỗ ở.
+                Ảnh đầu tiên là ảnh bìa. Listing chưa hiển thị có thể lưu khi chưa có ảnh; trước khi bật phải duyệt nguồn và quyền sử dụng.
               </Text>
               <View style={a.wrap}>
                 {photos.map((photo, index) => (
-                  <View key={`${photo.photoUrl}-${index}`} style={{ width: 130, gap: 7 }}>
+                  <View key={`${photo.photoUrl}-${index}`} style={{ width: 230, gap: 7 }}>
                     <Image
                       source={{ uri: photo.photoUrl }}
                       style={{
-                        width: 130,
-                        height: 90,
+                        width: 230,
+                        height: 150,
                         borderRadius: 8,
                         backgroundColor: colors.background,
                       }}
@@ -412,10 +423,7 @@ export function AdminEditor({
                       accessibilityLabel={`Đặt ảnh ${index + 1} làm ảnh bìa`}
                       disabled={busy || uploading}
                       onPress={() =>
-                        setPhotos((current) => [
-                          current[index],
-                          ...current.filter((_, i) => i !== index),
-                        ])
+                        setPhotos((current) => [{...current[index],role:'cover'},...current.filter((_, i) => i !== index).map(item=>item.role==='cover'?{...item,role:'other'}:item)])
                       }
                     >
                       <Text
@@ -424,6 +432,17 @@ export function AdminEditor({
                         {index === 0 ? '✓ Ảnh bìa' : 'Đặt làm ảnh bìa'}
                       </Text>
                     </Pressable>
+                    <AdminField label="Chú thích" value={photo.caption||''} disabled={busy||uploading}
+                      onChange={value=>setPhotos(current=>current.map((item,i)=>i===index?{...item,caption:value}:item))}/>
+                    <AdminField label="Văn bản thay thế" value={photo.altText||''} disabled={busy||uploading}
+                      onChange={value=>setPhotos(current=>current.map((item,i)=>i===index?{...item,altText:value}:item))}/>
+                    <AdminSelect label="Vai trò ảnh" value={index===0?'cover':photo.role||'other'} disabled={busy||uploading||index===0}
+                      onChange={value=>setPhotos(current=>current.map((item,i)=>i===index?{...item,role:value}:item))}
+                      options={[
+                        {value:'cover',label:'Ảnh bìa'},{value:'bedroom',label:'Phòng ngủ'},{value:'bathroom',label:'Phòng tắm'},
+                        {value:'common_area',label:'Không gian chung'},{value:'exterior',label:'Bên ngoài'},{value:'view',label:'Quang cảnh'},
+                        {value:'amenity',label:'Tiện nghi'},{value:'other',label:'Khác'},
+                      ]}/>
                     <AdminButton
                       title="Xóa ảnh"
                       label={`Xóa ảnh ${index + 1}`}
@@ -459,19 +478,36 @@ export function AdminEditor({
                   onPress={() => {
                     try {
                       const url = new URL(photoUrl.trim());
-                      if (!['http:', 'https:'].includes(url.protocol)) throw new Error();
+                      if (url.protocol !== 'https:') throw new Error();
                       setPhotos((current) => [
                         ...current,
-                        { photoUrl: url.toString(), isCover: !current.length },
+                        { photoUrl: url.toString(), isCover: !current.length,role:current.length?'other':'cover',altText:'' },
                       ]);
                       setPhotoUrl('');
                       setError('');
                     } catch {
-                      setError('Nhập đường dẫn ảnh HTTP/HTTPS hợp lệ.');
+                      setError('Nhập đường dẫn ảnh HTTPS hợp lệ.');
                     }
                   }}
                 />
               </View>
+              <Text style={a.sectionTitle}>Nguồn và quyền sử dụng ảnh</Text>
+              <Text style={a.helper}>Để trống trang nguồn cho listing demo cũ. Với 35 homestay có provenance, chỉ chọn “Đã duyệt” khi có bằng chứng quyền sử dụng rõ ràng.</Text>
+              {field('sourcePageUrl','Trang nguồn chính thức',{placeholder:'https://...'})}
+              {choose('mediaUsageStatus','Trạng thái duyệt media',[
+                {value:'needs_review',label:'Cần duyệt thêm'},{value:'blocked',label:'Đang bị chặn'},{value:'approved',label:'Đã duyệt'},
+              ])}
+              {field('contextEvidence','Bằng chứng ảnh đúng cơ sở',{multiline:true})}
+              {field('reviewNotes','Ghi chú duyệt',{multiline:true})}
+              {values.mediaUsageStatus==='approved'&&<>
+                <View style={a.wrap}>
+                  {field('mediaProvider','Nhà cung cấp ảnh *')}
+                  {field('mediaCreator','Tác giả/chủ ảnh *')}
+                  {field('licenseName','Tên giấy phép/văn bản đồng ý *')}
+                </View>
+                {field('licenseUrl','URL bằng chứng quyền sử dụng *',{placeholder:'https://...'})}
+                {field('attributionText','Nội dung ghi công *',{multiline:true})}
+              </>}
             </>
           )}
           {resource === 'categories' && (

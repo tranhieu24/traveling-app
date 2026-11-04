@@ -35,8 +35,10 @@ export function adminError(error: unknown): string {
       PAYMENTS_DISABLED: 'Thanh toán đang tắt. Chưa thể gửi lệnh hoàn tiền.',
       PROVIDER_UNAVAILABLE:
         'Cổng thanh toán chưa xác nhận. Kiểm tra trạng thái và thử lại cùng yêu cầu.',
-      STORAGE_UNAVAILABLE: 'Image storage is unavailable. Try again or use a hosted image URL.',
-      INVALID_IMAGE: 'Please select a JPG, PNG or WebP image up to 4 MB.',
+      STORAGE_UNAVAILABLE: 'Kho lưu trữ ảnh không khả dụng. Hãy thử lại hoặc dùng URL ảnh đã lưu trữ.',
+      INVALID_IMAGE: 'Vui lòng chọn ảnh JPG, PNG hoặc WebP có dung lượng tối đa 4 MB.',
+      MEDIA_APPROVAL_REQUIRED: 'Chỗ ở có provenance chỉ nhận ảnh property đã được duyệt đầy đủ nguồn và quyền sử dụng.',
+      CONSTRAINT_VIOLATION: 'Chưa thể công khai: cần source audit đã duyệt và ảnh bìa property hợp lệ.',
       FORBIDDEN: 'Tài khoản không có quyền quản trị.',
       ACCOUNT_BLOCKED: 'Tài khoản đã bị khóa.',
     };
@@ -105,7 +107,7 @@ export function buildAdminPayload(
   resource: string,
   values: AdminFormValues,
   amenityIds: string[] = [],
-  photos: { photoUrl: string; isCover: boolean }[] = []
+  photos: { photoUrl: string; isCover: boolean; caption?: string; role?: string; altText?: string }[] = []
 ) {
   const required = (key: string, label: string, max = 255) => {
     const value = (values[key] || '').trim();
@@ -125,7 +127,7 @@ export function buildAdminPayload(
     )
       throw new Error(`${label}: giá trị không hợp lệ.`);
     if (!integer && Math.abs(value * 100 - Math.round(value * 100)) > 0.00001)
-      throw new Error(label + ': use at most two decimal places.');
+      throw new Error(label + ': chỉ dùng tối đa hai chữ số thập phân.');
     return value;
   };
   const reference = (key: string, label: string) => {
@@ -189,8 +191,8 @@ export function buildAdminPayload(
     };
   }
   if (resource !== 'listings') throw new Error('Loại dữ liệu không hỗ trợ chỉnh sửa.');
-  if (!photos.length || photos.length > 30)
-    throw new Error('Vui lòng thêm từ 1 đến 30 ảnh cho chỗ ở.');
+  if ((isActive && !photos.length) || photos.length > 30)
+    throw new Error(isActive ? 'Chỗ ở đang hiển thị cần ít nhất một ảnh.' : 'Mỗi chỗ ở có tối đa 30 ảnh.');
   for (const photo of photos) {
     let url: URL;
     try {
@@ -198,8 +200,35 @@ export function buildAdminPayload(
     } catch {
       throw new Error('Đường dẫn ảnh không hợp lệ.');
     }
-    if (!['https:', 'http:'].includes(url.protocol) || photo.photoUrl.length > 2000)
-      throw new Error('Ảnh phải sử dụng đường dẫn HTTP/HTTPS hợp lệ.');
+    if (url.protocol !== 'https:' || photo.photoUrl.length > 2000)
+      throw new Error('Ảnh phải sử dụng đường dẫn HTTPS hợp lệ.');
+  }
+  const sourcePageUrl=values.sourcePageUrl?.trim();
+  const mediaStatus=values.mediaUsageStatus||'needs_review';
+  let sourceAudit:any;
+  if(sourcePageUrl){
+    try {if(new URL(sourcePageUrl).protocol!=='https:')throw new Error();} catch {throw new Error('Trang nguồn phải là URL HTTPS hợp lệ.');}
+    if(!['approved','needs_review','blocked'].includes(mediaStatus))throw new Error('Trạng thái duyệt media không hợp lệ.');
+    const evidence=required('contextEvidence','Bằng chứng liên kết ảnh',2000);
+    sourceAudit={sourcePageUrl,mediaUsageStatus:mediaStatus,contextEvidence:evidence,reviewNotes:values.reviewNotes?.trim()||null,checkedAt:new Date().toISOString()};
+  }
+  if(sourceAudit&&mediaStatus!=='approved'&&photos.length)throw new Error('Chỉ thêm ảnh vào listing sau khi nguồn và quyền sử dụng đã được duyệt.');
+  const approvedContext=sourceAudit&&mediaStatus==='approved'?{
+    sourcePageUrl,
+    provider:required('mediaProvider','Nhà cung cấp ảnh',120),
+    creator:required('mediaCreator','Tác giả/chủ ảnh',200),
+    licenseName:required('licenseName','Tên giấy phép hoặc văn bản đồng ý',200),
+    licenseUrl:required('licenseUrl','URL bằng chứng quyền sử dụng',2000),
+    attributionText:required('attributionText','Nội dung ghi công',1000),
+    contextLevel:'verified_property' as const,contextEvidence:sourceAudit.contextEvidence,usageStatus:'approved' as const,approvedFor:'property_listing' as const,
+    checkedAt:new Date().toISOString(),
+  }:undefined;
+  if(approvedContext){
+    try {if(new URL(approvedContext.licenseUrl).protocol!=='https:')throw new Error();} catch {throw new Error('URL bằng chứng quyền sử dụng phải dùng HTTPS.');}
+    for(const [index,photo] of photos.entries()){
+      if(!photo.altText?.trim())throw new Error(`Ảnh ${index+1}: cần văn bản thay thế.`);
+      if(!['cover','bedroom','bathroom','common_area','exterior','view','amenity','other'].includes(photo.role||''))throw new Error(`Ảnh ${index+1}: cần chọn vai trò ảnh.`);
+    }
   }
   const times = {
     checkInTime: values.checkInTime || '14:00',
@@ -244,6 +273,8 @@ export function buildAdminPayload(
     ...times,
     isActive,
     amenityIds,
-    photos: photos.map((p, i) => ({ ...p, isCover: i === 0 })),
+    photos: photos.map((p, i) => ({photoUrl:p.photoUrl,caption:p.caption?.trim()||undefined,isCover:i===0,
+      ...(approvedContext?{mediaContext:{...approvedContext,role:(i===0?'cover':p.role)||'other',altText:p.altText!.trim()}}:{})})),
+    ...(sourceAudit?{sourceAudit}:{}),
   };
 }

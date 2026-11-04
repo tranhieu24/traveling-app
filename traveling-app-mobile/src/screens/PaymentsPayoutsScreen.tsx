@@ -42,7 +42,7 @@ import { PaymentBookingCard, RefundCard } from '../components/payments/AccountPa
 
 const filters: { key: PaymentHistoryFilter; label: string }[] = [
   { key: 'all', label: "Tất cả" },
-  { key: 'outstanding', label: 'To pay' },
+  { key: 'outstanding', label: 'Cần thanh toán' },
   { key: 'paid', label: 'Paid' },
 ];
 
@@ -97,14 +97,14 @@ export const PaymentsPayoutsScreen: React.FC = () => {
     setReceiptNotice(null);
     try {
       await downloadBookingReceipt(booking.id, booking.booking_code);
-      setReceiptNotice({ id: booking.id, message: 'Your receipt is ready to save.' });
+      setReceiptNotice({ id: booking.id, message: 'Biên lai đã sẵn sàng để lưu.' });
     } catch (error) {
       setReceiptNotice({
         id: booking.id,
         error:
           error instanceof Error
             ? error.message
-            : 'Could not download your receipt. Please try again.',
+            : 'Không thể tải biên lai. Vui lòng thử lại.',
       });
     } finally {
       receiptPending.current = false;
@@ -122,18 +122,18 @@ export const PaymentsPayoutsScreen: React.FC = () => {
         <View style={s.headerInner}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Back to profile"
+            accessibilityLabel="Quay lại hồ sơ"
             onPress={back}
             style={s.headerButton}
           >
             <ArrowLeft size={21} color="#566271" />
           </Pressable>
           <Text accessibilityRole="header" style={s.headerTitle}>
-            Payments & Payouts
+            Thanh toán và nhận tiền
           </Text>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Refresh payments"
+            accessibilityLabel="Cập nhật thanh toán"
             disabled={!user || authLoading || account.isFetching}
             onPress={() => void account.refetch()}
             style={[s.headerButton, (!user || account.isFetching) && { opacity: 0.4 }]}
@@ -145,22 +145,22 @@ export const PaymentsPayoutsScreen: React.FC = () => {
       {authLoading || (!!user && account.isLoading) ? (
         <View style={s.center}>
           <ActivityIndicator color="#00B8CE" />
-          <Text style={s.centerCopy}>Loading your payments...</Text>
+          <Text style={s.centerCopy}>Đang tải thông tin thanh toán...</Text>
         </View>
       ) : needsLogin ? (
         <View style={s.center}>
           <View style={s.emptyIcon}>
             <LockKeyhole size={29} color="#00ABBF" />
           </View>
-          <Text style={s.emptyTitle}>Your payments are private</Text>
+          <Text style={s.emptyTitle}>Thông tin thanh toán của bạn được bảo mật</Text>
           <Text style={s.centerCopy}>
             {user
-              ? 'Your session has expired. Please log in again.'
-              : 'Log in to view payment history, receipts and refunds for your bookings.'}
+              ? 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'
+              : 'Đăng nhập để xem lịch sử thanh toán, biên lai và hoàn tiền của các đơn đặt chỗ.'}
           </Text>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Log in to view payments"
+            accessibilityLabel="Đăng nhập để xem thanh toán"
             onPress={() => navigation.navigate('Login')}
             style={s.primary}
           >
@@ -170,11 +170,11 @@ export const PaymentsPayoutsScreen: React.FC = () => {
       ) : account.isError && !account.data ? (
         <View style={s.center}>
           <AlertCircle size={36} color="#00B8CE" />
-          <Text style={s.emptyTitle}>Unable to load payments</Text>
+          <Text style={s.emptyTitle}>Không thể tải thông tin thanh toán</Text>
           <Text style={s.centerCopy}>Vui lòng kiểm tra kết nối rồi thử lại.</Text>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Retry payment history"
+            accessibilityLabel="Tải lại lịch sử thanh toán"
             onPress={() => void account.refetch()}
             style={s.primary}
           >
@@ -198,26 +198,26 @@ export const PaymentsPayoutsScreen: React.FC = () => {
               <CreditCard size={22} color="#00A8BD" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={s.introTitle}>Every trip, accounted for</Text>
+              <Text style={s.introTitle}>Quản lý chi phí cho mọi chuyến đi</Text>
               <Text style={s.introDescription}>
-                Your payments, receipts and refunds in one place.
+                Thanh toán, biên lai và hoàn tiền được quản lý tại một nơi.
               </Text>
             </View>
           </View>
           <View style={s.summary}>
             <View style={s.summaryTop}>
-              <Text style={s.summaryLabel}>Total paid</Text>
+              <Text style={s.summaryLabel}>Tổng đã thanh toán</Text>
               <Text style={s.currency}>USD</Text>
             </View>
             <Text style={s.total}>{formatPaymentMoney(totals.paid)}</Text>
             <View style={s.summaryBottom}>
               <View style={{ flex: 1 }}>
-                <Text style={s.summarySmall}>To pay</Text>
+                <Text style={s.summarySmall}>Cần thanh toán</Text>
                 <Text style={s.summaryValue}>{formatPaymentMoney(totals.outstanding)}</Text>
               </View>
               <View style={s.summaryDivider} />
               <View style={{ flex: 1 }}>
-                <Text style={s.summarySmall}>Refunded</Text>
+                <Text style={s.summarySmall}>Đã hoàn tiền</Text>
                 <Text style={s.summaryValue}>{formatPaymentMoney(totals.refunded)}</Text>
               </View>
             </View>
@@ -227,14 +227,14 @@ export const PaymentsPayoutsScreen: React.FC = () => {
               <Pressable
                 key={value}
                 accessibilityRole="tab"
-                accessibilityLabel={value === 'payments' ? 'Payments' : 'Payouts'}
+                accessibilityLabel={value === 'payments' ? 'Thanh toán' : 'Hoàn tiền'}
                 accessibilityState={{ selected: tab === value }}
                 aria-selected={tab === value}
                 onPress={() => setTab(value)}
                 style={[s.tab, tab === value && s.activeTab]}
               >
                 <Text style={[s.tabLabel, tab === value && s.activeTabLabel]}>
-                  {value === 'payments' ? 'Payments' : 'Payouts'}
+                  {value === 'payments' ? 'Thanh toán' : 'Hoàn tiền'}
                 </Text>
               </Pressable>
             ))}
@@ -243,23 +243,23 @@ export const PaymentsPayoutsScreen: React.FC = () => {
             <View style={s.refreshError}>
               <AlertCircle size={17} color="#AF7A28" />
               <Text style={s.refreshErrorCopy}>
-                Could not refresh. These are the last loaded details.
+                Không thể cập nhật. Đây là thông tin được tải gần nhất.
               </Text>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Retry refreshing payments"
+                accessibilityLabel="Thử cập nhật thanh toán lần nữa"
                 onPress={() => void account.refetch()}
               >
-                <Text style={s.link}>Retry</Text>
+                <Text style={s.link}>Thử lại</Text>
               </Pressable>
             </View>
           )}
           {tab === 'payments' ? (
             <>
               <View style={s.sectionHeading}>
-                <Text style={s.sectionTitle}>Payment history</Text>
+                <Text style={s.sectionTitle}>Lịch sử thanh toán</Text>
                 <Text style={s.count}>
-                  {bookings.length} {bookings.length === 1 ? 'booking' : 'bookings'}
+                  {bookings.length} đơn đặt chỗ
                 </Text>
               </View>
               <View style={s.filters}>
@@ -267,7 +267,7 @@ export const PaymentsPayoutsScreen: React.FC = () => {
                   <Pressable
                     key={item.key}
                     accessibilityRole="button"
-                    accessibilityLabel={`Payment filter: ${item.label}`}
+                    accessibilityLabel={`Bộ lọc thanh toán: ${item.label}`}
                     accessibilityState={{ selected: filter === item.key }}
                     aria-pressed={filter === item.key}
                     onPress={() => setFilter(item.key)}
@@ -306,21 +306,21 @@ export const PaymentsPayoutsScreen: React.FC = () => {
                   </View>
                   <Text style={s.emptyTitle}>
                     {!bookings.length
-                      ? 'No payments yet'
+                      ? 'Chưa có thanh toán'
                       : filter === 'outstanding'
-                        ? 'No outstanding payments'
-                        : 'No completed payments yet'}
+                        ? 'Không có khoản chưa thanh toán'
+                        : 'Chưa có thanh toán hoàn tất'}
                   </Text>
                   <Text style={s.centerCopy}>
                     {!bookings.length
-                      ? 'Your trip payments and receipts will appear here after you make a booking.'
+                      ? 'Thanh toán và biên lai chuyến đi sẽ xuất hiện ở đây sau khi bạn đặt chỗ.'
                       : filter === 'outstanding'
-                        ? 'There are no booking balances available to pay right now.'
-                        : 'Successful payments will appear here once they are confirmed.'}
+                        ? 'Hiện không có số dư đơn đặt chỗ cần thanh toán.'
+                        : 'Thanh toán thành công sẽ xuất hiện sau khi được xác nhận.'}
                   </Text>
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel={bookings.length ? 'View all payments' : 'Explore stays'}
+                    accessibilityLabel={bookings.length ? 'Xem tất cả thanh toán' : 'Khám phá chỗ ở'}
                     onPress={() =>
                       bookings.length
                         ? setFilter('all')
@@ -329,7 +329,7 @@ export const PaymentsPayoutsScreen: React.FC = () => {
                     style={s.primary}
                   >
                     <Text style={s.primaryLabel}>
-                      {bookings.length ? 'View all payments' : 'Explore stays'}
+                      {bookings.length ? 'Xem tất cả thanh toán' : 'Khám phá chỗ ở'}
                     </Text>
                   </Pressable>
                 </View>
@@ -337,10 +337,10 @@ export const PaymentsPayoutsScreen: React.FC = () => {
               <View style={s.receiptInfo}>
                 <FileText size={21} color="#00A8BD" />
                 <View style={{ flex: 1 }}>
-                  <Text style={s.infoTitle}>Receipts for every paid trip</Text>
+                  <Text style={s.infoTitle}>Biên lai cho mọi chuyến đi đã thanh toán</Text>
                   <Text style={s.infoCopy}>
-                    PDF receipts become available after a successful payment. Payment methods are
-                    selected at checkout.
+                    Biên lai PDF có sau khi thanh toán thành công. Phương thức thanh toán được chọn
+                    tại bước thanh toán.
                   </Text>
                 </View>
               </View>
@@ -348,25 +348,25 @@ export const PaymentsPayoutsScreen: React.FC = () => {
           ) : (
             <>
               <View style={s.sectionHeading}>
-                <Text style={s.sectionTitle}>Refunds</Text>
+                <Text style={s.sectionTitle}>Hoàn tiền</Text>
                 <Text style={s.count}>
-                  {refunds.length} {refunds.length === 1 ? 'refund' : 'refunds'}
+                  {refunds.length} yêu cầu hoàn tiền
                 </Text>
               </View>
               <View style={s.refundInfo}>
                 <ShieldCheck size={23} color="#00A8BD" />
                 <View style={{ flex: 1 }}>
-                  <Text style={s.infoTitle}>Refunds from cancelled bookings</Text>
+                  <Text style={s.infoTitle}>Hoàn tiền từ đơn đặt chỗ đã hủy</Text>
                   <Text style={s.infoCopy}>
-                    An admin reviews each request. Approved refunds return through the original
-                    payment method once processing is confirmed.
+                    Quản trị viên sẽ xem xét từng yêu cầu. Khoản hoàn được duyệt sẽ trả về phương
+                    thức thanh toán ban đầu sau khi xử lý được xác nhận.
                   </Text>
                 </View>
               </View>
               {refunds.length > 0 && (
                 <View style={s.refundCounts}>
-                  <Text style={s.count}>{pendingRefunds} awaiting completion</Text>
-                  <Text style={s.count}>{refundedCount} completed</Text>
+                  <Text style={s.count}>{pendingRefunds} đang chờ hoàn tất</Text>
+                  <Text style={s.count}>{refundedCount} đã hoàn tất</Text>
                 </View>
               )}
               {refunds.length ? (
@@ -383,18 +383,17 @@ export const PaymentsPayoutsScreen: React.FC = () => {
                   <View style={s.emptyIcon}>
                     <RotateCcw size={28} color="#00B0C5" />
                   </View>
-                  <Text style={s.emptyTitle}>No refunds to track</Text>
+                  <Text style={s.emptyTitle}>Chưa có khoản hoàn tiền cần theo dõi</Text>
                   <Text style={s.centerCopy}>
-                    Refund requests for your cancelled bookings will appear here, together with
-                    their approval and processing status.
+                    Yêu cầu hoàn tiền cho đơn đã hủy sẽ xuất hiện ở đây cùng trạng thái phê duyệt và xử lý.
                   </Text>
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel="View bookings from payouts"
+                    accessibilityLabel="Xem đơn đặt chỗ từ mục hoàn tiền"
                     onPress={viewBookings}
                     style={s.primary}
                   >
-                    <Text style={s.primaryLabel}>View bookings</Text>
+                    <Text style={s.primaryLabel}>Xem đơn đặt chỗ</Text>
                   </Pressable>
                 </View>
               )}
@@ -402,7 +401,7 @@ export const PaymentsPayoutsScreen: React.FC = () => {
           )}
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Payment and refund help"
+            accessibilityLabel="Trợ giúp thanh toán và hoàn tiền"
             onPress={() => navigation.navigate('HelpCenter')}
             style={s.help}
           >
@@ -411,7 +410,7 @@ export const PaymentsPayoutsScreen: React.FC = () => {
             <ArrowUpRight size={17} color="#94A0AC" />
           </Pressable>
           <Text style={s.updated}>
-            Updated{' '}
+            Cập nhật{' '}
             {accountDate(
               account.dataUpdatedAt ? new Date(account.dataUpdatedAt).toISOString() : undefined
             )}

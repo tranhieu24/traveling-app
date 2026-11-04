@@ -22,7 +22,7 @@ export const storage = {
           ? localStorage.getItem(key)
           : null;
       } catch (e) {
-        throw new Error('Could not access browser sign-in storage. Please enable site storage.');
+        throw new Error('Không thể truy cập bộ nhớ đăng nhập của trình duyệt. Hãy cho phép lưu trữ trang web.');
       }
     }
     return nativeStorage.getItem(key);
@@ -38,7 +38,7 @@ export const storage = {
           localStorage.setItem(key, value);
         }
       } catch (e) {
-        throw new Error('Could not access browser sign-in storage. Please enable site storage.');
+        throw new Error('Không thể truy cập bộ nhớ đăng nhập của trình duyệt. Hãy cho phép lưu trữ trang web.');
       }
       return;
     }
@@ -55,7 +55,7 @@ export const storage = {
           localStorage.removeItem(key);
         }
       } catch (e) {
-        throw new Error('Could not access browser sign-in storage. Please enable site storage.');
+        throw new Error('Không thể truy cập bộ nhớ đăng nhập của trình duyệt. Hãy cho phép lưu trữ trang web.');
       }
       return;
     }

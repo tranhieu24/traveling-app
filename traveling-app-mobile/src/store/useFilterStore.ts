@@ -56,7 +56,7 @@ export const useFilterStore = create<FilterState>((set, get) => ({
     }),
   setGuests: (guests) => {
     if (!Number.isSafeInteger(guests) || guests < 1 || guests > 1000)
-      throw new Error('Choose a valid guest count.');
+      throw new Error('Hãy chọn số khách hợp lệ.');
     set({ guests, adults: guests, children: 0 });
   },
   setGuestCounts: (adults, children) => {
@@ -67,7 +67,7 @@ export const useFilterStore = create<FilterState>((set, get) => ({
       children < 0 ||
       adults + children > 1000
     )
-      throw new Error('Include at least one adult and a valid guest count.');
+      throw new Error('Cần có ít nhất một người lớn và số khách hợp lệ.');
     set({ adults, children, guests: adults + children });
   },
   setAdvancedFilters: (filters) => {
@@ -85,6 +85,7 @@ export const useFilterStore = create<FilterState>((set, get) => ({
   getActiveFilterCount: () => {
     const state = get();
     return (
+      Number(!!state.propertyType) +
       Number(state.minPrice !== null || state.maxPrice !== null) +
       Number(state.roomTypes.length > 0) +
       Number(state.bedrooms !== null) +

@@ -66,7 +66,7 @@ export const CancelReservationModal = ({
       >
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Dismiss cancellation"
+          accessibilityLabel="Đóng yêu cầu hủy"
           disabled={busy}
           onPress={onClose}
           style={StyleSheet.absoluteFill}
@@ -79,7 +79,7 @@ export const CancelReservationModal = ({
               </View>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Close cancellation"
+                accessibilityLabel="Đóng yêu cầu hủy"
                 disabled={busy}
                 onPress={onClose}
                 style={s.close}
@@ -91,8 +91,7 @@ export const CancelReservationModal = ({
               Hủy đặt phòng?
             </Text>
             <Text style={s.description}>
-              Your stay will be cancelled when you confirm. Tell us why so your request can be
-              reviewed.
+              Kỳ lưu trú sẽ bị hủy khi bạn xác nhận. Hãy cho chúng tôi biết lý do để yêu cầu được xem xét.
             </Text>
             {!!booking.policy_snapshot&&<Text style={s.description}>{booking.policy_snapshot.cancellation}</Text>}
             <View style={s.booking}>
@@ -103,7 +102,7 @@ export const CancelReservationModal = ({
                   booking.check_out_date.slice(0, 10)
                 )}
                 {' \u00b7 '}
-                {booking.number_of_guests} {booking.number_of_guests === 1 ? 'guest' : 'guests'}
+                {booking.number_of_guests} khách
               </Text>
               <Text style={s.reference}>{booking.booking_code}</Text>
             </View>
@@ -111,7 +110,7 @@ export const CancelReservationModal = ({
               Lý do hủy <Text style={{ color: '#D85865' }}>*</Text>
             </Text>
             <TextInput
-              accessibilityLabel="Reason for cancellation"
+              accessibilityLabel="Lý do hủy"
               editable={!busy}
               multiline
               maxLength={500}
@@ -120,7 +119,7 @@ export const CancelReservationModal = ({
                 setReason(value);
                 setFieldError('');
               }}
-              placeholder="Tell us why you need to cancel..."
+              placeholder="Cho chúng tôi biết lý do bạn cần hủy..."
               placeholderTextColor="#A1A9B3"
               textAlignVertical="top"
               style={[s.input, !!fieldError && { borderColor: '#D85865' }]}
@@ -136,13 +135,13 @@ export const CancelReservationModal = ({
               <View style={{ flex: 1 }}>
                 <Text style={s.refundTitle}>
                   {paid > 0
-                    ? `Amount paid: ${formatPaymentMoney(paid)}`
-                    : 'No paid amount recorded'}
+                    ? `Đã thanh toán: ${formatPaymentMoney(paid)}`
+                    : 'Chưa ghi nhận khoản thanh toán'}
                 </Text>
                 <Text style={s.refundCopy}>
                   {paid > 0
-                    ? 'Your refund request will need admin review. Money is returned only after approval and payment service confirmation.'
-                    : 'Your reservation will be cancelled. There is no successful payment currently listed for refund.'}
+                    ? 'Yêu cầu hoàn tiền cần quản trị viên xét duyệt. Tiền chỉ được hoàn sau khi được phê duyệt và dịch vụ thanh toán xác nhận.'
+                    : 'Đơn đặt chỗ sẽ bị hủy. Hiện không có khoản thanh toán thành công để hoàn lại.'}
                 </Text>
               </View>
             </View>
@@ -155,18 +154,18 @@ export const CancelReservationModal = ({
           <View style={s.actions}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Confirm cancellation"
+              accessibilityLabel="Xác nhận hủy"
               disabled={busy}
               accessibilityState={{ busy, disabled: busy }}
               onPress={confirm}
               style={[s.confirm, busy && { opacity: 0.6 }]}
             >
               {busy && <ActivityIndicator color="white" size="small" />}
-              <Text style={s.confirmLabel}>{busy ? 'Cancelling...' : "Xác nhận hủy"}</Text>
+              <Text style={s.confirmLabel}>{busy ? 'Đang hủy...' : 'Xác nhận hủy'}</Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Keep reservation"
+              accessibilityLabel="Giữ đơn đặt chỗ"
               disabled={busy}
               onPress={onClose}
               style={s.keep}

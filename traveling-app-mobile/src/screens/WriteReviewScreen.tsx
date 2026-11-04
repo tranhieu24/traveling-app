@@ -133,7 +133,7 @@ export const WriteReviewScreen: React.FC = () => {
       return;
     }
     if (!data?.canReview || access.isFetching || access.isError) {
-      setFormError('Verify your review access before submitting.');
+      setFormError('Vui lòng xác minh quyền đánh giá trước khi gửi.');
       return;
     }
     const errors = reviewFieldErrors({ rating, comment });
@@ -190,7 +190,7 @@ export const WriteReviewScreen: React.FC = () => {
       } else {
         setPhase(current.canReview ? 'editing' : 'blocked');
         setStatusNote(
-          current.canReview ? 'No review is currently recorded. Your draft is ready to submit.' : ''
+          current.canReview ? 'Chưa ghi nhận đánh giá nào. Bản nháp của bạn đã sẵn sàng để gửi.' : ''
         );
       }
     } catch (error) {
@@ -216,7 +216,7 @@ export const WriteReviewScreen: React.FC = () => {
         <View style={s.header}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Back from writing review"
+            accessibilityLabel="Quay lại từ màn hình viết đánh giá"
             disabled={busy}
             onPress={back}
             style={s.back}
@@ -228,7 +228,7 @@ export const WriteReviewScreen: React.FC = () => {
           </Text>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Refresh review access"
+            accessibilityLabel="Kiểm tra lại quyền đánh giá"
             disabled={!user || authLoading || busy || access.isFetching}
             onPress={() => void refresh()}
             style={s.back}
@@ -239,20 +239,20 @@ export const WriteReviewScreen: React.FC = () => {
         {authLoading || (!!user && access.isLoading) ? (
           <View style={s.center}>
             <ActivityIndicator color="#00B8CE" />
-            <Text style={s.stateCopy}>Checking your stay...</Text>
+            <Text style={s.stateCopy}>Đang kiểm tra kỳ lưu trú...</Text>
           </View>
         ) : needsLogin ? (
           <View style={s.center}>
             <View style={s.stateIcon}>
               <LockKeyhole size={29} color="#00A9BE" />
             </View>
-            <Text style={s.stateTitle}>Log in to write a review</Text>
+            <Text style={s.stateTitle}>Đăng nhập để viết đánh giá</Text>
             <Text style={s.stateCopy}>
-              Your account and completed stay are required to share a review.
+              Bạn cần đăng nhập và đã hoàn thành kỳ lưu trú để viết đánh giá.
             </Text>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Log in to write review"
+              accessibilityLabel="Đăng nhập để viết đánh giá"
               onPress={() => navigation.navigate('Login')}
               style={s.primary}
             >
@@ -261,11 +261,11 @@ export const WriteReviewScreen: React.FC = () => {
           </View>
         ) : !data || forbidden ? (
           <View style={s.center}>
-            <Text style={s.stateTitle}>Unable to verify your stay</Text>
+            <Text style={s.stateTitle}>Không thể xác minh kỳ lưu trú</Text>
             <Text style={s.stateCopy}>Vui lòng kiểm tra kết nối rồi thử lại.</Text>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Retry review eligibility"
+              accessibilityLabel="Thử xác minh quyền đánh giá lần nữa"
               onPress={() => void refresh()}
               style={s.primary}
             >
@@ -290,13 +290,13 @@ export const WriteReviewScreen: React.FC = () => {
                   </View>
                   <Text accessibilityRole="header" style={s.stateTitle}>
                     {phase === 'success'
-                      ? 'Review submitted!'
-                      : 'You have already reviewed this stay'}
+                      ? 'Đã gửi đánh giá!'
+                      : 'Bạn đã đánh giá kỳ lưu trú này'}
                   </Text>
                   <Text style={s.stateCopy}>
                     {phase === 'success'
-                      ? 'Thank you for sharing your experience. Your review has been saved.'
-                      : 'Your account has a review for this property. You can read it below or view all guest reviews.'}
+                      ? 'Cảm ơn bạn đã chia sẻ trải nghiệm. Đánh giá của bạn đã được lưu.'
+                      : 'Tài khoản của bạn đã có đánh giá cho chỗ ở này. Bạn có thể đọc bên dưới hoặc xem tất cả đánh giá.'}
                   </Text>
                   {existing && (
                     <View style={s.savedReview}>
@@ -311,19 +311,19 @@ export const WriteReviewScreen: React.FC = () => {
                   )}
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel="View reviews after submission"
+                    accessibilityLabel="Xem đánh giá sau khi gửi"
                     onPress={viewReviews}
                     style={s.primary}
                   >
-                    <Text style={s.primaryText}>View reviews</Text>
+                    <Text style={s.primaryText}>Xem đánh giá</Text>
                   </Pressable>
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel="Back to reviewed property"
+                    accessibilityLabel="Quay lại chỗ ở đã đánh giá"
                     onPress={() => navigation.navigate('ListingDetail', { listingId })}
                     style={s.secondary}
                   >
-                    <Text style={s.secondaryText}>Back to property</Text>
+                    <Text style={s.secondaryText}>Quay lại chỗ ở</Text>
                   </Pressable>
                 </View>
               ) : blocked ? (
@@ -331,18 +331,18 @@ export const WriteReviewScreen: React.FC = () => {
                   <View style={s.stateIcon}>
                     <CalendarCheck size={31} color="#00A8BD" />
                   </View>
-                  <Text style={s.stateTitle}>Reviews open after your stay</Text>
+                  <Text style={s.stateTitle}>Đánh giá mở sau kỳ lưu trú</Text>
                   <Text style={s.stateCopy}>
-                    You can review this property once your booking is marked Completed. Check your
-                    bookings to see the current status.
+                    Bạn có thể đánh giá chỗ ở sau khi đơn đặt chỗ được đánh dấu Đã hoàn thành. Hãy
+                    kiểm tra đơn đặt chỗ để xem trạng thái hiện tại.
                   </Text>
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel="View bookings for review access"
+                    accessibilityLabel="Xem đơn đặt chỗ để kiểm tra quyền đánh giá"
                     onPress={() => navigation.navigate('MainTabs', { screen: 'BookingsTab' })}
                     style={s.primary}
                   >
-                    <Text style={s.primaryText}>View bookings</Text>
+                    <Text style={s.primaryText}>Xem đơn đặt chỗ</Text>
                   </Pressable>
                 </View>
               ) : (
@@ -350,19 +350,19 @@ export const WriteReviewScreen: React.FC = () => {
                   <Text style={s.subtitle}>Chuyến đi của bạn thế nào? Hãy đánh giá trải nghiệm chung.</Text>
                   <View style={s.verified}>
                     <ShieldCheck size={13} color="#00A6BA" />
-                    <Text style={s.verifiedText}>Completed stay</Text>
+                    <Text style={s.verifiedText}>Kỳ lưu trú đã hoàn thành</Text>
                   </View>
                   <View style={s.ratingBox}>
                     <View
                       accessibilityRole="radiogroup"
-                      accessibilityLabel="Overall stay rating"
+                      accessibilityLabel="Điểm đánh giá tổng thể"
                       style={s.ratingRow}
                     >
                       {[1, 2, 3, 4, 5].map((star) => (
                         <Pressable
                           key={star}
                           accessibilityRole="radio"
-                          accessibilityLabel={`Rate ${star} ${star === 1 ? 'star' : 'stars'}`}
+                          accessibilityLabel={`Đánh giá ${star} sao`}
                           accessibilityState={{
                             checked: rating === star,
                             disabled: busy || phase === 'uncertain',
@@ -394,9 +394,9 @@ export const WriteReviewScreen: React.FC = () => {
                       {fieldErrors.rating}
                     </Text>
                   )}
-                  <Text style={s.feedbackLabel}>YOUR FEEDBACK</Text>
+                  <Text style={s.feedbackLabel}>NHẬN XÉT CỦA BẠN</Text>
                   <TextInput
-                    accessibilityLabel="Your review feedback"
+                    accessibilityLabel="Nội dung đánh giá của bạn"
                     value={comment}
                     editable={!busy && phase !== 'uncertain'}
                     onChangeText={(value) => {
@@ -408,12 +408,12 @@ export const WriteReviewScreen: React.FC = () => {
                     maxLength={1000}
                     multiline
                     textAlignVertical="top"
-                    placeholder="Share your experience, what you loved most, and tips for future guests..."
+                    placeholder="Chia sẻ trải nghiệm, điều bạn thích nhất và lời khuyên cho những khách sau..."
                     placeholderTextColor="#9DA7B3"
                     style={[s.input, !!fieldErrors.comment && s.invalidInput]}
                   />
                   <View style={s.inputHints}>
-                    <Text style={s.hint}>Minimum 5 characters</Text>
+                    <Text style={s.hint}>Tối thiểu 5 ký tự</Text>
                     <Text style={s.hint}>{comment.length}/1000</Text>
                   </View>
                   {!!fieldErrors.comment && (
@@ -434,35 +434,35 @@ export const WriteReviewScreen: React.FC = () => {
                   {access.isError && (
                     <View style={s.accessError}>
                       <Text style={s.stateCopy}>
-                        Could not refresh review access. Refresh before submitting.
+                        Không thể cập nhật quyền đánh giá. Vui lòng kiểm tra lại trước khi gửi.
                       </Text>
                       <Pressable
                         accessibilityRole="button"
-                        accessibilityLabel="Recheck review access"
+                        accessibilityLabel="Kiểm tra lại quyền đánh giá"
                         onPress={() => void refresh()}
                         style={s.secondary}
                       >
-                        <Text style={s.secondaryText}>Refresh access</Text>
+                        <Text style={s.secondaryText}>Kiểm tra lại</Text>
                       </Pressable>
                     </View>
                   )}
                   {phase === 'uncertain' ? (
                     <Pressable
                       accessibilityRole="button"
-                      accessibilityLabel="Check review submission status"
+                      accessibilityLabel="Kiểm tra trạng thái gửi đánh giá"
                       disabled={checking}
                       onPress={() => void checkSubmission()}
                       style={[s.primary, checking && s.disabled]}
                     >
                       {checking && <ActivityIndicator size="small" color="white" />}
                       <Text style={s.primaryText}>
-                        {checking ? 'Checking status...' : 'Check submission status'}
+                        {checking ? 'Đang kiểm tra...' : 'Kiểm tra trạng thái gửi'}
                       </Text>
                     </Pressable>
                   ) : (
                     <Pressable
                       accessibilityRole="button"
-                      accessibilityLabel="Submit Review"
+                      accessibilityLabel="Gửi đánh giá"
                       accessibilityState={{
                         disabled: busy || access.isFetching || access.isError,
                         busy: submitting,
@@ -476,7 +476,7 @@ export const WriteReviewScreen: React.FC = () => {
                     >
                       {submitting && <ActivityIndicator size="small" color="white" />}
                       <Text style={s.primaryText}>
-                        {submitting ? 'Submitting...' : 'Submit Review'}
+                        {submitting ? 'Đang gửi...' : 'Gửi đánh giá'}
                       </Text>
                     </Pressable>
                   )}

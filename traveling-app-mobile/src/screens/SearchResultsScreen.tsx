@@ -57,7 +57,7 @@ export const SearchResultsScreen: React.FC = () => {
         <View style={s.searchBar}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Edit search"
+            accessibilityLabel="Chỉnh sửa tìm kiếm"
             onPress={() => navigation.navigate('SearchSheet')}
             style={s.search}
           >
@@ -87,7 +87,7 @@ export const SearchResultsScreen: React.FC = () => {
           </Pressable>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Clear search and browse categories"
+            accessibilityLabel="Xóa tìm kiếm và duyệt danh mục"
             onPress={state.resetFilters}
             style={s.icon}
           >
@@ -98,7 +98,7 @@ export const SearchResultsScreen: React.FC = () => {
       <View style={s.priceToggle}>
         <Checkbox
           label="Present total price"
-          description={hasDates ? 'Includes taxes and fees' : 'Choose dates to see your trip total'}
+          description={hasDates ? 'Đã gồm thuế và phí' : 'Chọn ngày để xem tổng chi phí chuyến đi'}
           checked={state.showTotalPrice}
           onPress={() =>
             hasDates
@@ -117,16 +117,16 @@ export const SearchResultsScreen: React.FC = () => {
         <EmptyState
           title="Chưa tải được chỗ ở"
           description={invalid || "Vui lòng kiểm tra kết nối rồi thử lại."}
-          actionTitle={invalid ? 'Edit search' : "Thử lại"}
+          actionTitle={invalid ? 'Chỉnh sửa tìm kiếm' : 'Thử lại'}
           onAction={() => (invalid ? navigation.navigate('SearchSheet') : void results.refetch())}
         />
       ) : results.isLoading ? (
         <SkeletonListingList count={3} />
       ) : !listings.length ? (
         <EmptyState
-          title="No stays match your search"
+          title="Không có chỗ ở phù hợp"
           description="Try other dates, fewer guests, or broader filters."
-          actionTitle="Edit search"
+          actionTitle="Chỉnh sửa tìm kiếm"
           onAction={() => navigation.navigate('SearchSheet')}
         />
       ) : (
@@ -164,7 +164,7 @@ export const SearchResultsScreen: React.FC = () => {
                 style={{ padding: 20 }}
               >
                 <Text style={{ textAlign: 'center', color: CYAN }}>
-                  Could not load more stays. Try again
+                  Không thể tải thêm chỗ ở. Thử lại
                 </Text>
               </Pressable>
             ) : results.isError ? (
@@ -173,7 +173,7 @@ export const SearchResultsScreen: React.FC = () => {
                 onPress={() => results.refetch()}
                 style={{ padding: 20 }}
               >
-                <Text style={{ color: CYAN }}>Could not refresh stays. Try again</Text>
+                <Text style={{ color: CYAN }}>Không thể làm mới chỗ ở. Thử lại</Text>
               </Pressable>
             ) : undefined
           }

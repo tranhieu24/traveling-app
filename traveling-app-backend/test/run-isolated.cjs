@@ -30,7 +30,7 @@ try {
   fs.symlinkSync(dependencies, path.join(tempBackend, 'node_modules'), process.platform === 'win32' ? 'junction' : 'dir');
   const childEnv = { ...process.env };
   for (const key of Object.keys(childEnv)) {
-    if (/^(DATABASE_|SUPABASE_|STRIPE_|MOCK_|PAYMENT_|BOOKING_|CANCELLATION_|EMAIL_|TAX_RATE$|RECEIPT_FONT$|CONFIRM_EXPIRY_JOB$|PG)/i.test(key)) delete childEnv[key];
+    if (/^(DATABASE_|SUPABASE_|STRIPE_|MOCK_|PAYMENT_|BOOKING_|CANCELLATION_|EMAIL_|AI_|OPENAI_|TAX_RATE$|RECEIPT_FONT$|CONFIRM_EXPIRY_JOB$|PG)/i.test(key)) delete childEnv[key];
   }
   childEnv.NODE_ENV = 'test';
   const started = Date.now();

@@ -1,40 +1,44 @@
 # Bàn giao Giai đoạn 2 — đọc trước khi tiếp tục
 
-Cập nhật: 03/11/2026 (Asia/Bangkok). Người dùng yêu cầu tiếp tục Giai đoạn 2 và luôn có bàn giao nếu hết ngân sách token. File này được cập nhật theo checkpoint; không coi mục đang làm là đã hoàn thành.
+Cập nhật: 04/11/2026 (Asia/Bangkok). Không tự commit/push/deploy, chạy seed, sửa `.env` hoặc áp migration lên database dùng chung.
 
-## Phạm vi và quyết định
+## Đã triển khai trong source
 
-- Làm POLICY-01, TRIP-01, NOTIFY-01, HELP-01, AUTH-02 trong `TRAVELING_APP_UPGRADE_PROMPT.md` và skill `upgrade-kit/skills/traveling-product-upgrade/SKILL.md`.
-- Giữ Expo/Express/PostgreSQL/Supabase, USD, một listing là một đơn vị đặt chỗ. Backend quyết định quyền, tiền và trạng thái.
-- Giai đoạn 1 đã có source nhưng chưa commit tại lúc bắt đầu; giữ mọi thay đổi hiện có. Kết quả lịch sử: backend 40/40, mobile 61/61, export 3 nền tảng. Không coi đó là kết quả Giai đoạn 2.
-- Người dùng đã tạm dừng việc tìm/thay ảnh. Không tiếp tục việc đó trong Giai đoạn 2. Khi được tiếp tục: làm cả cảnh quan và chỗ ở demo, được đổi tên/mô tả để khớp bộ ảnh có nguồn.
-- Không tự commit/push/deploy, chạy seed, sửa `.env`, dashboard provider hoặc áp migration lên database dùng chung. Thử trên PostgreSQL tạm.
+- HELP-01 và TRIP-01: migration 006, API/repository, UI khách/admin, quyền chủ booking/admin và arrival guide có revision.
+- POLICY-01: migration 007, cấu hình `BOOKING_DEPOSIT_USD`/`CANCELLATION_CUTOFF_DAYS`, snapshot theo booking và UI hiển thị chính sách.
+- AUTH-02: forgot/reset password, allowlisted recovery callback, chống callback lặp và xử lý link không hợp lệ.
+- NOTIFY-01: migration 008, outbox có event key unique, trạng thái/retry/backoff, webhook adapter và CLI `notifications:dispatch`. Event đã nối vào tạo booking, payment succeeded, cancel/refund requested và refund succeeded.
+- Email mặc định disabled. Chưa có provider thật nên không tuyên bố email đã gửi.
 
-## Checkpoint hiện tại
+## Bằng chứng hiện tại
 
-Đang kiểm kê source và thiết kế Giai đoạn 2. Chưa có migration hoặc tính năng Giai đoạn 2 được nghiệm thu.
+- `npm run typecheck` backend: đạt.
+- `npm run build` backend: đạt.
+- `npx tsc --noEmit` mobile: đạt.
+- `node --test scripts/*.test.cjs` mobile: 68/68 đạt.
+- Expo export web/iOS/Android vào `dist/phase2-check`: đạt (artifact bị ignore, có thể tạo lại).
+- OpenAPI/Postman/API reference: sinh và validate 71 operation bằng `node dist/scripts/generate-api-docs.js`.
+- Backend integration trước NOTIFY: 42/42 đạt. Sau NOTIFY đã thêm test dedup/failure/provider-confirmed delivery nhưng chưa chạy được: hai lần `npm run test:isolated` dừng trước test do Node 24/Windows báo `uv_os_get_passwd ENOMEM`. Phải chạy lại trên máy/phiên đủ bộ nhớ.
 
-| Mã | Trạng thái |
-| --- | --- |
-| HELP-01 | Cần làm ticket gắn booking, quyền chủ đơn/admin, nội dung/reply/trạng thái và UI khách/admin |
-| TRIP-01 | Cần timeline và hướng dẫn nhận phòng do admin cung cấp, không bịa liên hệ hoặc giờ thực tế |
-| POLICY-01 | Cần cấu hình chính sách và thực thi theo snapshot; không chỉ sửa lời mô tả |
-| NOTIFY-01 | Cần outbox bền vững/dedup/retry, adapter email và trạng thái chưa cấu hình minh bạch |
-| AUTH-02 | Cần forgot/reset password, callback recovery riêng và kiểm thử link hết hạn |
+## Việc tiếp theo cụ thể
 
-## Chạy trên máy khác
+1. Chạy lại backend integration và sửa mọi lỗi thực tế nếu có.
+2. Kiểm tra thủ công trên web + development build: support, trip guide, policy, forgot/reset.
+3. Backup staging rồi áp lần lượt migration chưa có trong 005–008; không chạy seed.
+4. Cấu hình Supabase recovery redirect/email template và test link thật, gồm link hết hạn.
+5. Chọn/configure email relay webhook, chạy worker bằng scheduler, test dedup/retry; giữ disabled nếu chưa có provider.
+6. Nghiệm thu OAuth/Stripe test thật và UI thiết bị. Sau đó mới kết thúc Giai đoạn 2.
+7. Giai đoạn 3 còn AI-01/AI-02; Giai đoạn 4 còn OPS-01, hồi quy, Postman/OpenAPI và bàn giao cuối.
 
-1. Pull nhánh có cả code và file bàn giao đã được người sở hữu commit/push. **Pull không lấy được file chưa commit/untracked trên máy cũ.** Không đưa `.env`, node_modules, dist hay fixture database vào commit.
-2. `npm ci` riêng trong backend và mobile. Tự cấu hình `.env` theo mẫu bằng secrets của môi trường được phép sử dụng; không gửi secrets qua tài liệu bàn giao.
-3. Đọc prompt, skill, `upgrade-progress.md`, `upgrade-runbook.md` và checkpoint trong file này. `git status --short` trước khi sửa.
-4. Migration đã có 001–005; chưa có bằng chứng 005 đã được áp ở Supabase của người dùng. Không chạy lại migration cũ đã áp.
-5. Backend: `npm run typecheck`, `npm run build`, `npm run docs:generate`, `npm run test:isolated` (DB tạm, Auth/Stripe stub).
-6. Mobile: `npx tsc --noEmit`; `node --test scripts/*.test.cjs`; `npx expo export --platform all --output-dir dist/upgrade-check`.
+## Lưu ý Git
 
-## Lưu ý môi trường và bằng chứng
+`docs/TEAM_ONBOARDING.md` đang bị xóa trong worktree từ trước lượt NOTIFY; coi là thay đổi của người dùng, không tự khôi phục hay commit cùng. Pull trên máy khác chỉ nhận file đã commit/push; không commit `.env`, `node_modules`, `dist` hoặc fixture database.
 
-- Không cần tệp trong `dist` để tiếp tục code; chúng chỉ là kết quả/scratch có thể tạo lại.
-- PowerShell khi pipe Python có tiếng Việt phải đặt `$OutputEncoding = [System.Text.UTF8Encoding]::new($false)`; đọc file bằng UTF-8.
-- Test isolated trên Windows có thể cần quyền chạy PostgreSQL nhúng ngoài sandbox. Không đổi sang database thật để né lỗi quyền.
-- OAuth/Stripe thật, email thật và UI thiết bị cần nghiệm thu riêng; fixture/build không thay thế bằng chứng đó.
-- Cập nhật file này trước khi kết thúc mỗi checkpoint: file thay đổi, test thực chạy, lỗi đang mở và việc tiếp theo cụ thể.
+## Cập nhật tiền đề Giai đoạn 3 — dữ liệu thật và Việt hóa
+
+- Đã Việt hóa sâu giao diện mobile, gồm màn hình đặt chỗ/thanh toán/tài khoản/tìm kiếm/đánh giá, nhãn trợ năng, thông báo lỗi từ `services`/`utils`, trạng thái hoàn tiền và toàn bộ nội dung FAQ.
+- Đã sửa chuỗi tiếng Việt lỗi mã hóa ở màn hình đánh giá và nút đăng nhập mạng xã hội.
+- Bằng chứng sau thay đổi: `npx tsc --noEmit` đạt; 68/68 test mobile đạt; backend `npm run build` đạt.
+- Đã tạo `database/migrations/009_real_homestay_catalog.sql` để bổ sung 35 hồ sơ property/hạng phòng thật bằng ID cố định, kèm bảng provenance `listing_source_audits`. Tất cả listing mới được để `is_active = false`; migration không chèn ảnh `needs_review`/`blocked`.
+- Chủ project xác nhận migration 009 đã chạy thành công trên Supabase ngày 04/11/2026. Chưa có truy vấn đối soát từ agent trong phiên này; cần giữ kết quả SQL/backup của môi trường làm bằng chứng rollout.
+- Đã chuẩn bị migration 010 để chặn kích hoạt listing có provenance khi chưa có source audit `approved` và cover `verified_property`/`approved`. Migration 010 chưa được áp dụng. Người tiếp tục vẫn phải xác minh giá, phí, tọa độ, sức chứa và quyền sử dụng ảnh trước khi kích hoạt từng listing.

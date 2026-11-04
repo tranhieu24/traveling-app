@@ -37,11 +37,11 @@ export const LoginScreen: React.FC = () => {
     if (busy || submittingRef.current) return;
 
     const nextErrors: typeof errors = {};
-    if (!email.trim()) nextErrors.email = 'Please enter your email address.';
+    if (!email.trim()) nextErrors.email = 'Vui lòng nhập địa chỉ email.';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      nextErrors.email = 'Please enter a valid email address.';
+      nextErrors.email = 'Vui lòng nhập địa chỉ email hợp lệ.';
     }
-    if (!password) nextErrors.password = 'Please enter your password.';
+    if (!password) nextErrors.password = 'Vui lòng nhập mật khẩu.';
     setErrors(nextErrors);
 
     if (nextErrors.email || nextErrors.password) {
@@ -61,7 +61,7 @@ export const LoginScreen: React.FC = () => {
       });
     } catch (error: unknown) {
       setErrors({
-        form: error instanceof Error ? error.message : 'Unable to log in. Please try again.',
+        form: error instanceof Error ? error.message : 'Không thể đăng nhập. Vui lòng thử lại.',
       });
     } finally {
       submittingRef.current = false;
@@ -116,7 +116,7 @@ export const LoginScreen: React.FC = () => {
                 <Mail size={19} color="#93979F" />
                 <TextInput
                   ref={emailRef}
-                  accessibilityLabel="Email address"
+                  accessibilityLabel="Địa chỉ email"
                   value={email}
                   onChangeText={(value) => {
                     setEmail(value);
@@ -157,7 +157,7 @@ export const LoginScreen: React.FC = () => {
                 <Lock size={19} color="#93979F" />
                 <TextInput
                   ref={passwordRef}
-                  accessibilityLabel="Password"
+                  accessibilityLabel="Mật khẩu"
                   value={password}
                   onChangeText={(value) => {
                     setPassword(value);
@@ -179,7 +179,7 @@ export const LoginScreen: React.FC = () => {
                 />
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                  accessibilityLabel={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                   accessibilityState={{ checked: showPassword }}
                   disabled={busy}
                   onPress={() => setShowPassword((value) => !value)}
@@ -212,7 +212,7 @@ export const LoginScreen: React.FC = () => {
 
               cssInterop={false}
               accessibilityRole="button"
-              accessibilityLabel={isSubmitting ? 'Logging in' : "Đăng nhập"}
+              accessibilityLabel={isSubmitting ? 'Đang đăng nhập' : 'Đăng nhập'}
               accessibilityState={{ disabled: busy, busy }}
               disabled={busy}
               onPress={handleLogin}
@@ -224,7 +224,7 @@ export const LoginScreen: React.FC = () => {
 
             <View style={styles.separator}>
               <View style={styles.separatorLine} />
-              <Text style={styles.separatorText}>or continue with</Text>
+              <Text style={styles.separatorText}>hoặc tiếp tục với</Text>
               <View style={styles.separatorLine} />
             </View>
             <SocialSignInButtons disabled={busy} />
@@ -248,7 +248,7 @@ export const LoginScreen: React.FC = () => {
             onPress={() => navigation.navigate('AdminLogin')}
             style={styles.adminLink}
           >
-            <Text style={styles.adminText}>Admin Portal</Text>
+            <Text style={styles.adminText}>Cổng quản trị</Text>
           </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>

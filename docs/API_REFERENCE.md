@@ -852,6 +852,7 @@ Success HTTP 200.
       "version": "stay-v1",
       "currency": "USD",
       "depositAmount": 30,
+      "cancellationCutoffDays": 0,
       "timezone": "UTC",
       "cancellation": "Đơn đã xác nhận chỉ được hủy trước ngày nhận phòng theo UTC. Tiền đã trả được tạo yêu cầu hoàn; cần quản trị duyệt và nhà cung cấp xác nhận.",
       "payment": "Đặt phòng chỉ được xác nhận sau khi server kiểm tra thanh toán. Nếu trả cọc, bạn cần thanh toán phần còn lại trước khi hoàn tất chuyến đi.",
@@ -2607,6 +2608,75 @@ Success HTTP 200.
 ```
 
 Endpoint error codes: `INVALID_WEBHOOK_SIGNATURE,INVALID_WEBHOOK,PAYMENT_MISMATCH,REFUND_MISMATCH`. HTTP responses: 200, 400, 404, 409, 429, 500.
+
+## POST /api/v1/ai/search
+
+Hiểu nhu cầu tìm phòng và truy vấn danh mục thật
+
+Permission: **optional**. Read-only. Optional auth validates supplied tokens. Six requests/minute per identity, ten/IP. Daily durable budgets before provider calls. USD/night only; missing or unsupported conditions return questions and no listings. Disabled, quota or provider errors return explicit fallback. Returned listing/price data comes from repository, not model.
+
+Request schema: `AiSearchRequest` in OpenAPI.
+
+```json
+{
+  "message": "Homestay Đà Lạt, 2 khách, cuối tuần này, dưới 100 USD mỗi đêm",
+  "timeZone": "Asia/Ho_Chi_Minh"
+}
+```
+
+Success HTTP 200.
+
+```json
+{
+  "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
+  "data": {
+    "mode": "fallback",
+    "reason": "disabled",
+    "ready": false,
+    "message": "AI chưa được bật.",
+    "filters": null,
+    "questions": [],
+    "notes": [],
+    "items": [],
+    "total": 0,
+    "fetchedAt": "2026-11-04T00:00:00Z"
+  }
+}
+```
+
+Endpoint error codes: `AI_RATE_LIMIT,VALIDATION_ERROR`. HTTP responses: 200, 400, 401, 403, 404, 409, 429, 500.
+
+## POST /api/v1/ai/help
+
+Tìm bài trợ giúp hoặc đọc số liệu đơn của chính mình
+
+Permission: **optional**. Without bookingId: model selects allowlisted FAQ IDs; server renders approved article text. With bookingId: requires authenticated owner (even admin cannot read another guest here); server renders booking/payment/refund values without calling model. No write actions and no arbitrary URLs. Account-blocked tokens rejected. Cache-Control: private, no-store.
+
+Request schema: `AiHelpRequest` in OpenAPI.
+
+```json
+{
+  "message": "Hủy đặt chỗ có chắc chắn hoàn tiền không?"
+}
+```
+
+Success HTTP 200.
+
+```json
+{
+  "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
+  "data": {
+    "mode": "fallback",
+    "answer": "Xem bài trợ giúp hoặc gửi yêu cầu hỗ trợ.",
+    "sourceRefs": [],
+    "fetchedAt": "2026-11-04T00:00:00Z"
+  }
+}
+```
+
+Endpoint error codes: `AI_RATE_LIMIT,AUTH_REQUIRED,BOOKING_NOT_FOUND`. HTTP responses: 200, 400, 401, 403, 404, 409, 429, 500.
 
 ## GET /api/v1/health
 

@@ -50,16 +50,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const code = error.response?.data?.error?.code;
         if (code === 'PROFILE_NOT_FOUND')
           throw new FriendlyAuthError(
-            'Your sign-in succeeded, but your account profile has not been created. Please contact support.'
+            'Đăng nhập thành công nhưng hồ sơ tài khoản chưa được tạo. Vui lòng liên hệ hỗ trợ.'
           );
         if (code === 'ACCOUNT_BLOCKED')
-          throw new FriendlyAuthError('This account is blocked. Please contact support.');
+          throw new FriendlyAuthError('Tài khoản này đã bị khóa. Vui lòng liên hệ hỗ trợ.');
         if (error.response?.status === 401)
-          throw new FriendlyAuthError('Your session expired. Please log in again.');
+          throw new FriendlyAuthError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
       }
     }
     throw new FriendlyAuthError(
-      'Could not load your account profile. Check your connection and try again.'
+      'Không thể tải hồ sơ tài khoản. Hãy kiểm tra kết nối rồi thử lại.'
     );
   };
 
@@ -83,7 +83,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   async function run<T>(action: () => Promise<T>): Promise<T> {
     if (operation.current)
-      throw new FriendlyAuthError('Sign-in is already in progress. Please wait.');
+      throw new FriendlyAuthError('Đăng nhập đang được xử lý. Vui lòng chờ.');
     operation.current = true;
     setIsLoading(true);
     setAuthError(null);
@@ -111,7 +111,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (event === 'SIGNED_OUT') {
         void bridge.clear().catch(() => {
           if (mounted.current)
-            setAuthError('Could not clear saved sign-in. Please retry logging out.');
+            setAuthError('Không thể xóa dữ liệu đăng nhập đã lưu. Vui lòng thử đăng xuất lại.');
         });
       } else if (session && ['SIGNED_IN', 'TOKEN_REFRESHED', 'USER_UPDATED'].includes(event)) {
         void bridge.sync(session).catch((error) => {
@@ -162,7 +162,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         password,
       });
       if (error) throw error;
-      if (!data.session) throw new FriendlyAuthError('Unable to create a sign-in session.');
+      if (!data.session) throw new FriendlyAuthError('Không thể tạo phiên đăng nhập.');
       return bridge.sync(data.session);
     });
 
@@ -186,14 +186,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Invalidate pending profile results immediately, before remote revocation.
     try {
       await bridge.clear().catch(() => {
-        setAuthError('Could not clear saved sign-in. Please retry logging out.');
+        setAuthError('Không thể xóa dữ liệu đăng nhập đã lưu. Vui lòng thử đăng xuất lại.');
       });
       const { error } = await supabase.auth.signOut({ scope: 'local' });
       if (error)
-        setAuthError('Signed out locally. Remote session revocation could not be confirmed.');
+        setAuthError('Đã đăng xuất trên thiết bị nhưng chưa thể xác nhận thu hồi phiên từ xa.');
       else setAuthError(null);
     } catch {
-      setAuthError('Signed out locally. Remote session revocation could not be confirmed.');
+      setAuthError('Đã đăng xuất trên thiết bị nhưng chưa thể xác nhận thu hồi phiên từ xa.');
     } finally {
       try {
         await bridge.clear();
@@ -204,12 +204,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const changePassword = async (currentPassword: string, newPassword: string) => {
-    if (!user?.email) throw new FriendlyAuthError('Please log in to change your password.');
-    if (!currentPassword) throw new FriendlyAuthError('Enter your current password.');
+    if (!user?.email) throw new FriendlyAuthError('Vui lòng đăng nhập để đổi mật khẩu.');
+    if (!currentPassword) throw new FriendlyAuthError('Nhập mật khẩu hiện tại.');
     if (newPassword.length < 6)
-      throw new FriendlyAuthError('Use at least 6 characters for your new password.');
+      throw new FriendlyAuthError('Mật khẩu mới phải có ít nhất 6 ký tự.');
     if (newPassword === currentPassword)
-      throw new FriendlyAuthError('Choose a different password.');
+      throw new FriendlyAuthError('Hãy chọn mật khẩu khác.');
     await run(async () => {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: user.email,
@@ -218,7 +218,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
       if (!data.session || data.user?.id !== user.id) {
         await signOut();
-        throw new FriendlyAuthError('Your session changed. Please log in again.');
+        throw new FriendlyAuthError('Phiên đăng nhập đã thay đổi. Vui lòng đăng nhập lại.');
       }
       await bridge.sync(data.session);
       const { error: updateError } = await supabase.auth.updateUser({

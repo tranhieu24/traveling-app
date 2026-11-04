@@ -25,7 +25,7 @@ import { useAuth } from '../context/AuthContext';
 import { useFilterStore } from '../store/useFilterStore';
 import { ListingShareDialog } from '../components/common/ListingShareDialog';
 import { getListingShareContent } from '../utils/listingShare';
-import { listingMapUrl, listingPhotos, previewAmenities } from '../utils/listingDetail';
+import { formatAmenityName, listingMapUrl, listingPhotos, previewAmenities } from '../utils/listingDetail';
 import { formatPaymentMoney } from '../utils/paymentSummary';
 import { validateTrip } from '../utils/checkout';
 import { searchDateLabel } from '../utils/search';
@@ -98,11 +98,11 @@ export const ListingDetailScreen: React.FC = () => {
       const response = await apiClient.post('/favorites/toggle', { listingId });
       const value = response.data.data?.isFavorite;
       if (!response.data.success || typeof value !== 'boolean')
-        throw new Error('Could not update favorites. Please try again.');
+        throw new Error('Không thể cập nhật mục yêu thích. Vui lòng thử lại.');
       queryClient.setQueryData<Listing>(detailKey, (current: Listing | undefined) =>
         current ? { ...current, is_favorite: value } : current
       );
-      setFavoriteFeedback(value ? 'Saved to favorites.' : 'Removed from favorites.');
+      setFavoriteFeedback(value ? 'Đã lưu vào mục yêu thích.' : 'Đã xóa khỏi mục yêu thích.');
       void Promise.all(
         ['my_favorites', 'listings', 'search_results'].map((key) =>
           queryClient.invalidateQueries({ queryKey: [key] })
@@ -111,7 +111,7 @@ export const ListingDetailScreen: React.FC = () => {
     } catch (error) {
       queryClient.setQueryData(detailKey, previous);
       setNotice({
-        title: 'Could not update favorites',
+        title: 'Không thể cập nhật mục yêu thích',
         message: errorMessage(error),
         login: axios.isAxiosError(error) && error.response?.status === 401,
       });
@@ -180,7 +180,7 @@ export const ListingDetailScreen: React.FC = () => {
         quote.checkOutDate !== draft.checkOutDate ||
         quote.guests !== draft.adults + draft.children
       )
-        throw new Error('Could not confirm this trip price. Please try again.');
+        throw new Error('Không thể xác nhận giá chuyến đi. Vui lòng thử lại.');
       filters.setDates(draft.checkInDate, draft.checkOutDate);
       filters.setGuestCounts(draft.adults, draft.children);
       setTripVisible(false);
@@ -224,7 +224,7 @@ export const ListingDetailScreen: React.FC = () => {
     try {
       await quoteTrip(trip);
     } catch (error) {
-      setNotice({ title: 'Check your trip', message: errorMessage(error), dates: true });
+      setNotice({ title: 'Kiểm tra chuyến đi', message: errorMessage(error), dates: true });
     }
   };
   const openTrip = () => {
@@ -237,8 +237,8 @@ export const ListingDetailScreen: React.FC = () => {
     const url = listingMapUrl(listing);
     if (!url) {
       setNotice({
-        title: 'Location unavailable',
-        message: 'No location has been provided for this stay.',
+        title: 'Không có vị trí',
+        message: 'Chỗ ở này chưa cung cấp vị trí.',
       });
       return;
     }
@@ -246,7 +246,7 @@ export const ListingDetailScreen: React.FC = () => {
       await Linking.openURL(url);
     } catch {
       setNotice({
-        title: 'Could not open map',
+        title: 'Không thể mở bản đồ',
         message: "Vui lòng kiểm tra kết nối rồi thử lại.",
       });
     }
@@ -278,7 +278,7 @@ export const ListingDetailScreen: React.FC = () => {
               <ActivityIndicator color="#00B8CE" />
             ) : (
               <>
-                <Text style={s.emptyTitle}>Unable to load this stay</Text>
+                <Text style={s.emptyTitle}>Không thể tải chỗ ở này</Text>
                 <Text style={s.muted}>
                   It may be unavailable, or your connection was interrupted.
                 </Text>
@@ -300,7 +300,7 @@ export const ListingDetailScreen: React.FC = () => {
     descriptionPhoto = photos[1] || photos[0];
   const count = reviews.data?.total ?? listing.review_count;
   const rating = Number(listing.rating_avg);
-  const ratingLabel = count > 0 && Number.isFinite(rating) ? rating.toFixed(1) : 'New';
+  const ratingLabel = count > 0 && Number.isFinite(rating) ? rating.toFixed(1) : 'Mới';
   return (
     <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={s.screen}>
       <View style={s.frame}>
@@ -339,7 +339,7 @@ export const ListingDetailScreen: React.FC = () => {
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={
-                      listing.is_favorite ? 'Remove from favorites' : 'Save to favorites'
+                      listing.is_favorite ? 'Xóa khỏi mục yêu thích' : 'Lưu vào mục yêu thích'
                     }
                     aria-pressed={!!listing.is_favorite}
                     accessibilityState={{
@@ -365,7 +365,7 @@ export const ListingDetailScreen: React.FC = () => {
             }
           />
           <View style={s.intro}>
-            <MediaNotice context={listing.photo_context} compact/>
+            <MediaNotice context={listing.photo_context} compact />
             <Text style={s.title}>{listing.title}</Text>
             <View style={s.location}>
               <MapPin size={15} color="#00B8CE" />
@@ -374,7 +374,7 @@ export const ListingDetailScreen: React.FC = () => {
               </Text>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="View room map"
+                accessibilityLabel="Xem bản đồ chỗ ở"
                 onPress={() => void openMap()}
               >
                 <Text style={s.mapLink}>Xem bản đồ</Text>
@@ -382,7 +382,7 @@ export const ListingDetailScreen: React.FC = () => {
             </View>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Read all guest reviews"
+              accessibilityLabel="Xem tất cả đánh giá của khách"
               onPress={openReviews}
               style={s.ratingStrip}
             >
@@ -393,7 +393,7 @@ export const ListingDetailScreen: React.FC = () => {
               </Text>
               <View style={{ flex: 1 }} />
               <Text style={s.reviewCount}>
-                {count} {count === 1 ? 'review' : 'reviews'}
+                {count} đánh giá
               </Text>
               <ChevronRight size={17} color="#A2AAB5" />
             </Pressable>
@@ -404,29 +404,29 @@ export const ListingDetailScreen: React.FC = () => {
             )}
             {detail.isError && (
               <Pressable accessibilityRole="button" onPress={() => detail.refetch()}>
-                <Text style={s.muted}>Could not refresh this stay. Tap to try again.</Text>
+                <Text style={s.muted}>Không thể cập nhật chỗ ở. Chạm để thử lại.</Text>
               </Pressable>
             )}
           </View>
           <View style={s.section}>
-            <Text style={s.heading}>Facilities & services</Text>
+            <Text style={s.heading}>Tiện nghi và dịch vụ</Text>
             <ListingStats listing={listing} />
             {previewAmenities(listing.amenities || []).map((amenity) => (
               <View key={amenity.id} style={s.amenity}>
                 <AmenityIcon amenity={amenity} />
-                <Text style={s.amenityName}>{amenity.name}</Text>
+                <Text style={s.amenityName}>{formatAmenityName(amenity.name)}</Text>
               </View>
             ))}
             {!listing.amenities?.length && (
-              <Text style={s.muted}>No facilities have been listed for this stay.</Text>
+              <Text style={s.muted}>Chỗ ở này chưa liệt kê tiện nghi.</Text>
             )}
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Show all facilities and services"
+              accessibilityLabel="Xem tất cả tiện nghi và dịch vụ"
               onPress={() => setPanel('facilities')}
               style={s.outline}
             >
-              <Text style={s.outlineLabel}>Show all</Text>
+              <Text style={s.outlineLabel}>Xem tất cả</Text>
             </Pressable>
           </View>
           <View style={s.section}>
@@ -434,7 +434,7 @@ export const ListingDetailScreen: React.FC = () => {
               <Text style={s.heading}>Đánh giá</Text>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="See all reviews"
+                accessibilityLabel="Xem tất cả đánh giá"
                 onPress={openReviews}
                 style={s.seeAll}
               >
@@ -488,7 +488,7 @@ export const ListingDetailScreen: React.FC = () => {
             </Pressable>
           </View>
           <View style={s.section}>
-            <MediaNotice context={listing.photo_context}/>
+            <MediaNotice context={listing.photo_context} />
             <Text style={s.heading}>Mô tả</Text>
             <View style={s.descriptionPhoto}>
               <ListingImage url={descriptionPhoto} />
@@ -520,7 +520,7 @@ export const ListingDetailScreen: React.FC = () => {
             <Text style={s.tripHint} numberOfLines={1}>
               {trip.checkInDate && trip.checkOutDate
                 ? searchDateLabel(trip.checkInDate, trip.checkOutDate)
-                : 'Select dates'}
+                : 'Chọn ngày'}
             </Text>
           </Pressable>
           <Pressable
@@ -595,7 +595,7 @@ export const ListingDetailScreen: React.FC = () => {
                   }}
                   style={s.book}
                 >
-                  <Text style={s.bookLabel}>Change dates</Text>
+                  <Text style={s.bookLabel}>Đổi ngày</Text>
                 </Pressable>
               )}
               <Pressable
@@ -618,7 +618,7 @@ const errorMessage = (error: unknown): string =>
     ? error.response?.data?.error?.message || "Vui lòng kiểm tra kết nối rồi thử lại."
     : error instanceof Error
       ? error.message
-      : 'Please try again.';
+      : 'Vui lòng thử lại.';
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#F0F2F5' },
   frame: { flex: 1, width: '100%', maxWidth: 560, alignSelf: 'center', backgroundColor: 'white' },

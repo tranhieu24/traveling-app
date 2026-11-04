@@ -13,7 +13,10 @@
     "expire-bookings": "tsx src/scripts/expire-bookings.ts",
     "docs:generate": "tsx src/scripts/generate-api-docs.ts",
     "test:isolated": "node test/run-isolated.cjs",
-    "media:catalog": "tsx src/scripts/apply-media-catalog.ts"
+    "test:ai": "node --test test/ai.test.cjs",
+    "test:ai:integration": "npm run build && node test/ai-integration.cjs",
+    "media:catalog": "tsx src/scripts/apply-media-catalog.ts",
+    "notifications:dispatch": "tsx src/scripts/dispatch-notifications.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",

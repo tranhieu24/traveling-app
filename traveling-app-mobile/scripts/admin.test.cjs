@@ -36,6 +36,20 @@ test('listing form payload matches backend schema, requires photos and preserves
   assert.throws(() => utils.buildAdminPayload('listings', validListing, [], [{ photoUrl: 'javascript:alert(1)', isCover: true }]));
 });
 
+test('inactive audited listings can wait for media and approved property media preserves provenance', () => {
+  const inactive = utils.buildAdminPayload('listings', { ...validListing, isActive: 'false' }, [], []);
+  assert.equal(inactive.isActive, false); assert.deepEqual(inactive.photos, []);
+  const needsReview = { ...validListing, isActive: 'false', sourcePageUrl: 'https://example.test/property', mediaUsageStatus: 'needs_review', contextEvidence: 'Official property page maps the room name.' };
+  assert.throws(() => utils.buildAdminPayload('listings', needsReview, [], photos), /sau khi nguồn/);
+  const approved = { ...needsReview, mediaUsageStatus: 'approved', mediaProvider: 'Property owner', mediaCreator: 'Property owner', licenseName: 'Written permission', licenseUrl: 'https://example.test/permission', attributionText: 'Photo supplied by property owner' };
+  const reviewedPhotos = photos.map((photo,index)=>({...photo,role:index?'bedroom':'cover',altText:index?'Phòng ngủ của cơ sở':'Mặt ngoài cơ sở'}));
+  const payload = utils.buildAdminPayload('listings', approved, [], reviewedPhotos);
+  assert.equal(schemas.listingSchema.safeParse(payload).success, true);
+  assert.equal(payload.sourceAudit.mediaUsageStatus, 'approved');
+  assert.equal(payload.photos[0].mediaContext.contextLevel, 'verified_property');
+  assert.equal(payload.photos[1].mediaContext.role, 'bedroom');
+});
+
 test('category media identifiers fit the existing column and only resolve known image paths', () => {
   const iconName = `media:${id}.png`;
   const payload = utils.buildAdminPayload('categories', { name: 'Beach', slug: 'beach', iconName });

@@ -43,6 +43,8 @@ export class AdminRepository {
     if(resource==='listings') {
       row.amenityIds=(await pool.query('SELECT amenity_id FROM listing_amenities WHERE listing_id=$1',[id])).rows.map(r=>r.amenity_id);
       row.photos=(await pool.query('SELECT * FROM listing_photos WHERE listing_id=$1 ORDER BY display_order,id',[id])).rows;
+      row.sourceAudit=(await pool.query('SELECT * FROM listing_source_audits WHERE listing_id=$1',[id])).rows[0]||null;
+      row.mediaPublishable=(await pool.query('SELECT public.is_listing_media_publishable($1) AS ready',[id])).rows[0].ready;
     }
     return row;
   }
@@ -58,6 +60,8 @@ export class AdminRepository {
         const host=(await c.query("SELECT id FROM users WHERE id=$1 AND role IN ('host','admin') AND account_status='active'",[data.hostId])).rows[0];
         if(!host) throw new AppError('Active host/admin required',400,'INVALID_HOST');
       }
+      const relationsBeforeUpdate=resource==='listings'&&!!id;
+      if(relationsBeforeUpdate) await this.listingRelations(c,id!,data);
       const pairs=Object.entries(data).filter(([k])=>k in maps[resource]).map(([k,v])=>[(maps[resource] as any)[k],v]);
       let result=before;
       if(pairs.length) {
@@ -68,7 +72,7 @@ export class AdminRepository {
         } else result=(await c.query('INSERT INTO '+resource+'('+cols.join(',')+') VALUES('+values.map((_,i)=>'$'+(i+1)).join(',')+') RETURNING *',values)).rows[0];
       }
       if(!result) throw new AppError('No writable fields',400,'VALIDATION_ERROR');
-      if(resource==='listings') await this.listingRelations(c,result.id,data);
+      if(resource==='listings'&&!relationsBeforeUpdate) await this.listingRelations(c,result.id,data);
       await audit(c,actor,resource+(id?'.update':'.create'),resource,result.id,before,{...result,amenityIds:data.amenityIds,photos:data.photos});
       return result;
     });
@@ -79,8 +83,26 @@ export class AdminRepository {
       for(const amenity of new Set<string>(data.amenityIds)) await c.query('INSERT INTO listing_amenities(listing_id,amenity_id) VALUES($1,$2)',[id,amenity]);
     }
     if(data.photos!==undefined) {
+      if(data.sourceAudit!==undefined) {
+        await c.query(`INSERT INTO listing_source_audits(listing_id,source_page_url,media_usage_status,context_evidence,review_notes,checked_at,updated_at)
+          VALUES($1,$2,$3,$4,$5,coalesce($6::timestamptz,now()),now())
+          ON CONFLICT(listing_id) DO UPDATE SET source_page_url=excluded.source_page_url,media_usage_status=excluded.media_usage_status,
+          context_evidence=excluded.context_evidence,review_notes=excluded.review_notes,checked_at=excluded.checked_at,updated_at=now()`,
+          [id,data.sourceAudit.sourcePageUrl,data.sourceAudit.mediaUsageStatus,data.sourceAudit.contextEvidence,data.sourceAudit.reviewNotes??null,data.sourceAudit.checkedAt??null]);
+      }
+      const sourceAudit=(await c.query('SELECT media_usage_status FROM listing_source_audits WHERE listing_id=$1',[id])).rows[0];
+      if(sourceAudit && data.photos.some((photo:any)=>!photo.mediaContext)) throw new AppError('Audited listings only accept approved verified-property photos',400,'MEDIA_APPROVAL_REQUIRED');
       await c.query('DELETE FROM listing_photos WHERE listing_id=$1',[id]);
-      for(const [i,p] of data.photos.entries()) await c.query('INSERT INTO listing_photos(listing_id,photo_url,caption,display_order,is_cover) VALUES($1,$2,$3,$4,$5)',[id,p.photoUrl,p.caption||null,i,p.isCover]);
+      for(const [i,p] of data.photos.entries()) {
+        const mediaContext=p.mediaContext?{...p.mediaContext,targetType:'listing',targetId:id,displayOrder:i,isCover:p.isCover,caption:p.caption||''}:null;
+        await c.query('INSERT INTO listing_photos(listing_id,photo_url,caption,display_order,is_cover,media_context) VALUES($1,$2,$3,$4,$5,$6)',[id,p.photoUrl,p.caption||null,i,p.isCover,mediaContext]);
+      }
+    } else if(data.sourceAudit!==undefined) {
+      await c.query(`INSERT INTO listing_source_audits(listing_id,source_page_url,media_usage_status,context_evidence,review_notes,checked_at,updated_at)
+        VALUES($1,$2,$3,$4,$5,coalesce($6::timestamptz,now()),now())
+        ON CONFLICT(listing_id) DO UPDATE SET source_page_url=excluded.source_page_url,media_usage_status=excluded.media_usage_status,
+        context_evidence=excluded.context_evidence,review_notes=excluded.review_notes,checked_at=excluded.checked_at,updated_at=now()`,
+        [id,data.sourceAudit.sourcePageUrl,data.sourceAudit.mediaUsageStatus,data.sourceAudit.contextEvidence,data.sourceAudit.reviewNotes??null,data.sourceAudit.checkedAt??null]);
     }
   }
   async deactivate(resource:Resource,id:string,actor:string) {

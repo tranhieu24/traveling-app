@@ -16,7 +16,7 @@ export const copyWebText = async (text: string): Promise<void> => {
       // Fall back to a selected input on browsers that deny Clipboard API access.
     }
   }
-  if (typeof document === 'undefined') throw new Error('Clipboard is not available.');
+  if (typeof document === 'undefined') throw new Error('Bộ nhớ tạm không khả dụng.');
 
   const previousFocus = document.activeElement;
   const input = document.createElement('textarea');
@@ -28,7 +28,7 @@ export const copyWebText = async (text: string): Promise<void> => {
     input.focus();
     input.select();
     input.setSelectionRange(0, text.length);
-    if (!document.execCommand('copy')) throw new Error('Could not copy the link.');
+    if (!document.execCommand('copy')) throw new Error('Không thể sao chép liên kết.');
   } finally {
     input.remove();
     if (previousFocus instanceof HTMLElement) previousFocus.focus();

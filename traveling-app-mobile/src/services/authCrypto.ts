@@ -15,7 +15,7 @@ if (Platform.OS !== 'web') {
       value: {
         digest: async (algorithm: AlgorithmIdentifier, data: BufferSource) => {
           const name = typeof algorithm === 'string' ? algorithm : algorithm.name;
-          if (name.toUpperCase() !== 'SHA-256') throw new Error('Unsupported digest algorithm.');
+          if (name.toUpperCase() !== 'SHA-256') throw new Error('Thuật toán băm không được hỗ trợ.');
           return Crypto.digest(Crypto.CryptoDigestAlgorithm.SHA256, data);
         },
       } as SubtleCrypto,
@@ -31,7 +31,7 @@ export function requireSecurePKCE() {
     typeof TextEncoder === 'undefined'
   ) {
     throw new Error(
-      'Secure sign-in is unavailable here. Open the web app on localhost or HTTPS, or use an installed mobile build.'
+      'Đăng nhập bảo mật không khả dụng tại đây. Hãy mở ứng dụng web qua localhost hoặc HTTPS, hoặc dùng bản mobile đã cài đặt.'
     );
   }
 }

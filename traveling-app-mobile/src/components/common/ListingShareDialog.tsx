@@ -33,7 +33,7 @@ export const ListingShareDialog: React.FC<ListingShareDialogProps> = ({ listing,
       await copyWebText(content.url);
       setCopied(true);
     } catch {
-      setError('Could not copy automatically. Select and copy the link above.');
+      setError('Không thể tự động sao chép. Hãy chọn và sao chép liên kết phía trên.');
     } finally {
       setCopying(false);
     }
@@ -47,7 +47,7 @@ export const ListingShareDialog: React.FC<ListingShareDialogProps> = ({ listing,
       await Share.share(content);
     } catch (shareError: unknown) {
       if (!(shareError instanceof Error && shareError.name === 'AbortError')) {
-        setError('Sharing is unavailable here. You can copy the link instead.');
+        setError('Thiết bị hiện không hỗ trợ chia sẻ. Bạn có thể sao chép liên kết.');
       }
     } finally {
       setSharing(false);
@@ -57,11 +57,11 @@ export const ListingShareDialog: React.FC<ListingShareDialogProps> = ({ listing,
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Close sharing" style={StyleSheet.absoluteFill} onPress={onClose} />
+        <Pressable accessibilityRole="button" accessibilityLabel="Đóng hộp thoại chia sẻ" style={StyleSheet.absoluteFill} onPress={onClose} />
         <View style={styles.card} accessibilityViewIsModal>
           <View style={styles.header}>
-            <Text accessibilityRole="header" style={styles.heading}>Share this place</Text>
-            <Pressable accessibilityRole="button" accessibilityLabel="Close sharing" onPress={onClose} style={styles.closeButton}>
+            <Text accessibilityRole="header" style={styles.heading}>Chia sẻ chỗ ở này</Text>
+            <Pressable accessibilityRole="button" accessibilityLabel="Đóng hộp thoại chia sẻ" onPress={onClose} style={styles.closeButton}>
               <X size={22} color="#292C30" />
             </Pressable>
           </View>
@@ -75,29 +75,29 @@ export const ListingShareDialog: React.FC<ListingShareDialogProps> = ({ listing,
             </View>
           </View>
           <View style={styles.linkBox}>
-            <Text selectable accessibilityLabel="Listing link" style={styles.link}>{content.url}</Text>
+            <Text selectable accessibilityLabel="Liên kết chỗ ở" style={styles.link}>{content.url}</Text>
           </View>
           {Platform.OS === 'web' && (
             <Pressable
               cssInterop={false}
               accessibilityRole="button"
-              accessibilityLabel={copied ? 'Link copied' : 'Copy link'}
+              accessibilityLabel={copied ? 'Đã sao chép liên kết' : 'Sao chép liên kết'}
               disabled={copying}
               onPress={handleCopy}
               style={({ pressed }) => [styles.copyButton, (pressed || copying) && styles.pressed]}
             >
               {copying ? <ActivityIndicator size="small" color="#FFFFFF" /> : copied ? <Check size={19} color="#FFFFFF" /> : <Copy size={19} color="#FFFFFF" />}
-              <Text style={styles.copyText}>{copied ? 'Link copied!' : 'Copy link'}</Text>
+              <Text style={styles.copyText}>{copied ? 'Đã sao chép!' : 'Sao chép liên kết'}</Text>
             </Pressable>
           )}
           {canShare && (
             <Pressable accessibilityRole="button" disabled={sharing} onPress={handleSystemShare} style={styles.shareButton}>
               <Share2 size={18} color="#00A6BC" />
-              <Text style={styles.shareText}>{sharing ? 'Opening sharing...' : 'More sharing options'}</Text>
+              <Text style={styles.shareText}>{sharing ? 'Đang mở chia sẻ...' : 'Tùy chọn chia sẻ khác'}</Text>
             </Pressable>
           )}
           {!!error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
-          {copied && <Text accessibilityRole="alert" style={styles.success}>The link is ready to paste into a message.</Text>}
+          {copied && <Text accessibilityRole="alert" style={styles.success}>Liên kết đã sẵn sàng để dán vào tin nhắn.</Text>}
         </View>
       </View>
     </Modal>

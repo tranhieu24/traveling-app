@@ -3943,7 +3943,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n  \"success\": true,\n  \"serverTime\": \"2026-11-03T00:00:00Z\",\n  \"data\": {\n    \"currency\": \"USD\",\n    \"listingId\": \"11111111-1111-4111-8111-111111111111\",\n    \"title\": \"Beach Apartment\",\n    \"city\": \"Da Nang\",\n    \"nightlyRate\": 100,\n    \"totalNights\": 2,\n    \"roomSubtotal\": 200,\n    \"cleaningFee\": 20,\n    \"serviceFee\": 10,\n    \"discountAmount\": 0,\n    \"taxRate\": 0,\n    \"taxAmount\": 0,\n    \"tripTotal\": 230,\n    \"pricePerNight\": 100,\n    \"basePriceTotal\": 200,\n    \"totalPrice\": 230,\n    \"checkInDate\": \"2099-01-10\",\n    \"checkOutDate\": \"2099-01-12\",\n    \"guests\": 2,\n    \"maxGuests\": 4,\n    \"quoteIsReservation\": false,\n    \"policy\": {\n      \"version\": \"stay-v1\",\n      \"currency\": \"USD\",\n      \"depositAmount\": 30,\n      \"timezone\": \"UTC\",\n      \"cancellation\": \"Đơn đã xác nhận chỉ được hủy trước ngày nhận phòng theo UTC. Tiền đã trả được tạo yêu cầu hoàn; cần quản trị duyệt và nhà cung cấp xác nhận.\",\n      \"payment\": \"Đặt phòng chỉ được xác nhận sau khi server kiểm tra thanh toán. Nếu trả cọc, bạn cần thanh toán phần còn lại trước khi hoàn tất chuyến đi.\",\n      \"hold\": \"Chưa thanh toán trong thời hạn giữ lịch: đơn có thể hết hạn. Báo giá chưa giữ phòng.\"\n    }\n  }\n}"
+              "body": "{\n  \"success\": true,\n  \"serverTime\": \"2026-11-03T00:00:00Z\",\n  \"data\": {\n    \"currency\": \"USD\",\n    \"listingId\": \"11111111-1111-4111-8111-111111111111\",\n    \"title\": \"Beach Apartment\",\n    \"city\": \"Da Nang\",\n    \"nightlyRate\": 100,\n    \"totalNights\": 2,\n    \"roomSubtotal\": 200,\n    \"cleaningFee\": 20,\n    \"serviceFee\": 10,\n    \"discountAmount\": 0,\n    \"taxRate\": 0,\n    \"taxAmount\": 0,\n    \"tripTotal\": 230,\n    \"pricePerNight\": 100,\n    \"basePriceTotal\": 200,\n    \"totalPrice\": 230,\n    \"checkInDate\": \"2099-01-10\",\n    \"checkOutDate\": \"2099-01-12\",\n    \"guests\": 2,\n    \"maxGuests\": 4,\n    \"quoteIsReservation\": false,\n    \"policy\": {\n      \"version\": \"stay-v1\",\n      \"currency\": \"USD\",\n      \"depositAmount\": 30,\n      \"cancellationCutoffDays\": 0,\n      \"timezone\": \"UTC\",\n      \"cancellation\": \"Đơn đã xác nhận chỉ được hủy trước ngày nhận phòng theo UTC. Tiền đã trả được tạo yêu cầu hoàn; cần quản trị duyệt và nhà cung cấp xác nhận.\",\n      \"payment\": \"Đặt phòng chỉ được xác nhận sau khi server kiểm tra thanh toán. Nếu trả cọc, bạn cần thanh toán phần còn lại trước khi hoàn tất chuyến đi.\",\n      \"hold\": \"Chưa thanh toán trong thời hạn giữ lịch: đơn có thể hết hạn. Báo giá chưa giữ phòng.\"\n    }\n  }\n}"
             }
           ],
           "event": [
@@ -4943,6 +4943,191 @@
                 }
               ],
               "body": "{\n  \"success\": true,\n  \"serverTime\": \"2026-11-03T00:00:00Z\",\n  \"data\": {\n    \"ignored\": true\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ai",
+      "item": [
+        {
+          "name": "POST /api/v1/ai/search",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/ai/search",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Read-only. Optional auth validates supplied tokens. Six requests/minute per identity, ten/IP. Daily durable budgets before provider calls. USD/night only; missing or unsupported conditions return questions and no listings. Disabled, quota or provider errors return explicit fallback. Returned listing/price data comes from repository, not model.\nErrors: AI_RATE_LIMIT,VALIDATION_ERROR",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Homestay Đà Lạt, 2 khách, cuối tuần này, dưới 100 USD mỗi đêm\",\n  \"timeZone\": \"Asia/Ho_Chi_Minh\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "POST",
+                "url": "{{baseUrl}}/api/v1/ai/search",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Read-only. Optional auth validates supplied tokens. Six requests/minute per identity, ten/IP. Daily durable budgets before provider calls. USD/night only; missing or unsupported conditions return questions and no listings. Disabled, quota or provider errors return explicit fallback. Returned listing/price data comes from repository, not model.\nErrors: AI_RATE_LIMIT,VALIDATION_ERROR",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"message\": \"Homestay Đà Lạt, 2 khách, cuối tuần này, dưới 100 USD mỗi đêm\",\n  \"timeZone\": \"Asia/Ho_Chi_Minh\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"serverTime\": \"2026-11-03T00:00:00Z\",\n  \"data\": {\n    \"mode\": \"fallback\",\n    \"reason\": \"disabled\",\n    \"ready\": false,\n    \"message\": \"AI chưa được bật.\",\n    \"filters\": null,\n    \"questions\": [],\n    \"notes\": [],\n    \"items\": [],\n    \"total\": 0,\n    \"fetchedAt\": \"2026-11-04T00:00:00Z\"\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success response', () => pm.expect([200,201,202]).to.include(pm.response.code));",
+                  "const j=pm.response.json();",
+                  "pm.test('Response envelope', () => pm.expect(j.success === true || j.status === 'healthy').to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/v1/ai/help",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/ai/help",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Without bookingId: model selects allowlisted FAQ IDs; server renders approved article text. With bookingId: requires authenticated owner (even admin cannot read another guest here); server renders booking/payment/refund values without calling model. No write actions and no arbitrary URLs. Account-blocked tokens rejected. Cache-Control: private, no-store.\nErrors: AI_RATE_LIMIT,AUTH_REQUIRED,BOOKING_NOT_FOUND",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Hủy đặt chỗ có chắc chắn hoàn tiền không?\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Success example",
+              "originalRequest": {
+                "method": "POST",
+                "url": "{{baseUrl}}/api/v1/ai/help",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Without bookingId: model selects allowlisted FAQ IDs; server renders approved article text. With bookingId: requires authenticated owner (even admin cannot read another guest here); server renders booking/payment/refund values without calling model. No write actions and no arbitrary URLs. Account-blocked tokens rejected. Cache-Control: private, no-store.\nErrors: AI_RATE_LIMIT,AUTH_REQUIRED,BOOKING_NOT_FOUND",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"message\": \"Hủy đặt chỗ có chắc chắn hoàn tiền không?\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"serverTime\": \"2026-11-03T00:00:00Z\",\n  \"data\": {\n    \"mode\": \"fallback\",\n    \"answer\": \"Xem bài trợ giúp hoặc gửi yêu cầu hỗ trợ.\",\n    \"sourceRefs\": [],\n    \"fetchedAt\": \"2026-11-04T00:00:00Z\"\n  }\n}"
             }
           ],
           "event": [

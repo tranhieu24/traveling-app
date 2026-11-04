@@ -21,7 +21,7 @@ export const Counter = ({
   <View style={s.counter}>
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Decrease ${label}`}
+      accessibilityLabel={`Giảm ${label}`}
       hitSlop={6}
       disabled={value <= minimum}
       onPress={() => onChange(value - 1)}
@@ -29,12 +29,12 @@ export const Counter = ({
     >
       <Minus size={18} color="#8B9097" />
     </Pressable>
-    <Text accessibilityLabel={`${label}: ${any && value === 0 ? 'Any' : value}`} style={s.number}>
-      {any && value === 0 ? 'Any' : value}
+    <Text accessibilityLabel={`${label}: ${any && value === 0 ? 'Bất kỳ' : value}`} style={s.number}>
+      {any && value === 0 ? 'Bất kỳ' : value}
     </Text>
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Increase ${label}`}
+      accessibilityLabel={`Tăng ${label}`}
       hitSlop={6}
       disabled={value >= maximum}
       onPress={() => onChange(value + 1)}
