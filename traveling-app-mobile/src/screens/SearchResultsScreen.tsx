@@ -1,3 +1,5 @@
+import { uiLocale, useUiPreferences, uiStyle, uiText, uiColor, uiTextStyle } from '../preferences/ui';
+
 import React from 'react';
 import {
   ActivityIndicator,
@@ -21,9 +23,11 @@ import { fetchListingPage } from '../services/search';
 import { ListingCard } from '../components/common/ListingCard';
 import { SkeletonListingList } from '../components/common/SkeletonLoader';
 import { EmptyState } from '../components/common/EmptyState';
+import { NotificationBell } from '../components/common/NotificationBell';
 import { Checkbox, CYAN } from '../components/search/SearchControls';
 
 export const SearchResultsScreen: React.FC = () => {
+  useUiPreferences();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const state = useFilterStore();
   const { user } = useAuth();
@@ -52,53 +56,56 @@ export const SearchResultsScreen: React.FC = () => {
   const count = state.getActiveFilterCount(),
     hasDates = !!state.checkInDate && !!state.checkOutDate;
   return (
-    <SafeAreaView edges={['top', 'left', 'right']} style={s.screen}>
-      <View style={s.header}>
-        <View style={s.searchBar}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={uiStyle(s.screen)}>
+      <View style={uiStyle(s.header)}>
+        <View style={uiStyle(s.searchRow)}>
+        <View style={uiStyle(s.searchBar)}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Chỉnh sửa tìm kiếm"
+            accessibilityLabel={uiText("Chỉnh sửa tìm kiếm")}
             onPress={() => navigation.navigate('SearchSheet')}
-            style={s.search}
+            style={uiStyle(s.search)}
           >
-            <Search size={22} color="#4E5761" />
-            <View style={{ flex: 1 }}>
-              <Text numberOfLines={1} style={s.destination}>
-                {state.destination.label}
+            <Search size={22} color={uiColor("#4E5761")} />
+            <View style={uiStyle({ flex: 1 })}>
+              <Text numberOfLines={1} style={uiTextStyle(s.destination)}>
+                {uiText(state.destination.label)}
               </Text>
-              <Text numberOfLines={1} style={s.details}>
-                {searchDateLabel(state.checkInDate, state.checkOutDate)} {'\u00b7'} {state.guests}{' '}
-                {state.guests === 1 ? 'guest' : 'guests'}
+              <Text numberOfLines={1} style={uiTextStyle(s.details)}>
+                {uiText(searchDateLabel(state.checkInDate, state.checkOutDate, uiLocale()))} {uiText('\u00b7')} {uiText(state.guests)}{uiText(' ')}
+                {state.guests === 1 ? uiText('guest') : uiText('guests')}
               </Text>
             </View>
           </Pressable>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`Filters${count ? `, ${count} active` : ''}`}
+            accessibilityLabel={uiText(`Filters${count ? `, ${count} active` : ''}`)}
             onPress={() => navigation.navigate('FilterSheet')}
-            style={s.icon}
+            style={uiStyle(s.icon)}
           >
-            <SlidersHorizontal size={21} color={count ? CYAN : '#929AA5'} />
+            <SlidersHorizontal size={21} color={uiColor(count ? CYAN : '#929AA5')} />
             {count > 0 && (
-              <View style={s.badge}>
-                <Text style={s.badgeText}>{count}</Text>
+              <View style={uiStyle(s.badge)}>
+                <Text style={uiTextStyle(s.badgeText)}>{uiText(count)}</Text>
               </View>
             )}
           </Pressable>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Xóa tìm kiếm và duyệt danh mục"
+            accessibilityLabel={uiText("Xóa tìm kiếm và duyệt danh mục")}
             onPress={state.resetFilters}
-            style={s.icon}
+            style={uiStyle(s.icon)}
           >
-            <X size={18} color="#929AA5" />
+            <X size={18} color={uiColor("#929AA5")} />
           </Pressable>
         </View>
+        <NotificationBell />
+        </View>
       </View>
-      <View style={s.priceToggle}>
+      <View style={uiStyle(s.priceToggle)}>
         <Checkbox
-          label="Present total price"
-          description={hasDates ? 'Đã gồm thuế và phí' : 'Chọn ngày để xem tổng chi phí chuyến đi'}
+          label={uiText("Present total price")}
+          description={hasDates ? uiText('Đã gồm thuế và phí') : uiText('Chọn ngày để xem tổng chi phí chuyến đi')}
           checked={state.showTotalPrice}
           onPress={() =>
             hasDates
@@ -108,38 +115,37 @@ export const SearchResultsScreen: React.FC = () => {
         />
       </View>
       {!invalid && !results.isLoading && !results.isError && (
-        <Text style={s.count}>
-          {results.data?.pages[0]?.pagination.total || 0}{' '}
-          {results.data?.pages[0]?.pagination.total === 1 ? 'stay' : 'stays'} available
-        </Text>
+        <Text style={uiTextStyle(s.count)}>
+          {uiText(results.data?.pages[0]?.pagination.total || 0)}{uiText(' ')}
+          {results.data?.pages[0]?.pagination.total === 1 ? uiText('stay') : uiText('stays')}{uiText(" available")}</Text>
       )}
       {invalid || (results.isError && !listings.length) ? (
         <EmptyState
-          title="Chưa tải được chỗ ở"
-          description={invalid || "Vui lòng kiểm tra kết nối rồi thử lại."}
-          actionTitle={invalid ? 'Chỉnh sửa tìm kiếm' : 'Thử lại'}
+          title={uiText("Chưa tải được chỗ ở")}
+          description={uiText(invalid || "Vui lòng kiểm tra kết nối rồi thử lại.")}
+          actionTitle={invalid ? uiText('Chỉnh sửa tìm kiếm') : uiText('Thử lại')}
           onAction={() => (invalid ? navigation.navigate('SearchSheet') : void results.refetch())}
         />
       ) : results.isLoading ? (
         <SkeletonListingList count={3} />
       ) : !listings.length ? (
         <EmptyState
-          title="Không có chỗ ở phù hợp"
-          description="Try other dates, fewer guests, or broader filters."
-          actionTitle="Chỉnh sửa tìm kiếm"
+          title={uiText("Không có chỗ ở phù hợp")}
+          description={uiText("Try other dates, fewer guests, or broader filters.")}
+          actionTitle={uiText("Chỉnh sửa tìm kiếm")}
           onAction={() => navigation.navigate('SearchSheet')}
         />
       ) : (
         <FlatList
           data={listings}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={s.list}
+          contentContainerStyle={uiStyle(s.list)}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
               refreshing={results.isRefetching && !results.isFetchingNextPage}
               onRefresh={() => void results.refetch()}
-              tintColor={CYAN}
+              tintColor={uiColor(CYAN)}
             />
           }
           onEndReachedThreshold={0.4}
@@ -156,24 +162,22 @@ export const SearchResultsScreen: React.FC = () => {
           )}
           ListFooterComponent={
             results.isFetchingNextPage ? (
-              <ActivityIndicator color={CYAN} style={{ padding: 20 }} />
+              <ActivityIndicator color={uiColor(CYAN)} style={uiStyle({ padding: 20 })} />
             ) : results.isFetchNextPageError ? (
               <Pressable
                 accessibilityRole="button"
                 onPress={() => results.fetchNextPage()}
-                style={{ padding: 20 }}
+                style={uiStyle({ padding: 20 })}
               >
-                <Text style={{ textAlign: 'center', color: CYAN }}>
-                  Không thể tải thêm chỗ ở. Thử lại
-                </Text>
+                <Text style={uiTextStyle({ textAlign: 'center', color: CYAN })}>{uiText("Không thể tải thêm chỗ ở. Thử lại")}</Text>
               </Pressable>
             ) : results.isError ? (
               <Pressable
                 accessibilityRole="button"
                 onPress={() => results.refetch()}
-                style={{ padding: 20 }}
+                style={uiStyle({ padding: 20 })}
               >
-                <Text style={{ color: CYAN }}>Không thể làm mới chỗ ở. Thử lại</Text>
+                <Text style={uiTextStyle({ color: CYAN })}>{uiText("Không thể làm mới chỗ ở. Thử lại")}</Text>
               </Pressable>
             ) : undefined
           }
@@ -185,7 +189,9 @@ export const SearchResultsScreen: React.FC = () => {
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: 'white' },
   header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 },
+  searchRow: { flexDirection: 'row', gap: 10, alignItems: 'center' },
   searchBar: {
+    flex: 1,
     borderWidth: 1,
     borderColor: '#C9CDD1',
     borderRadius: 6,

@@ -1,57 +1,67 @@
 {
-  "startedAt": "2026-11-03T16:48:39.239Z",
-  "finishedAt": "2026-11-03T16:48:48.790Z",
+  "startedAt": "2026-11-05T09:45:15.017Z",
+  "finishedAt": "2026-11-05T09:45:28.633Z",
   "postgres": "PostgreSQL 18.4 on x86_64-windows, compiled by msvc-19.44.35226, 64-bit",
   "database": "new isolated local PostgreSQL; no live database used",
   "auth": "Supabase methods mocked in test process only",
   "stripe": "SDK requests mocked; genuine SDK HMAC verification exercised; no Stripe account transaction",
-  "passed": 42,
+  "passed": 47,
   "failed": 0,
   "results": [
     {
       "name": "Migration preserves historical mock payment/refund ledger",
       "passed": true,
-      "ms": 6
+      "ms": 9
+    },
+    {
+      "name": "Fresh catalog migration resolves categories without creating ineligible reviews",
+      "passed": true,
+      "ms": 7
+    },
+    {
+      "name": "Audited listings require approved verified-property media to publish",
+      "passed": true,
+      "ms": 16
     },
     {
       "name": "Auth missing/expired/invalid/blocked; non-admin cannot access admin",
       "passed": true,
-      "ms": 116
+      "ms": 95
     },
     {
       "name": "Booking rejects impossible/past/reversed dates, fractional guests and capacity",
       "passed": true,
-      "ms": 37
+      "ms": 52
     },
     {
       "name": "Search validates UUIDs, date pair, min/max and pagination",
       "passed": true,
-      "ms": 12
+      "ms": 14
     },
     {
       "name": "Search combines location/type/category/amenities and server trip pricing",
       "passed": true,
-      "ms": 17
+      "ms": 19
     },
     {
       "name": "Two concurrent HTTP bookings: exactly one 201/one 409, no automatic payment",
       "passed": true,
-      "ms": 63
+      "ms": 53
     },
     {
       "name": "Database exclusion independently rejects overlapping dates",
       "passed": true,
-      "ms": 6
+      "ms": 1
     },
     {
       "name": "Back-to-back stays allowed; frontend totals ignored",
       "passed": true,
-      "ms": 8
+      "ms": 10
     },
     {
       "name": "Deposit $30 then balance; concurrent idempotent initialization; listing no duplicate rows",
       "passed": true,
-      "ms": 58
+      "ms": 64
     },
     {
       "name": "Ownership blocks booking, payment, refund and PDF access by other users",
@@ -66,22 +76,22 @@
     {
       "name": "Complete after checkout; concurrent duplicate reviews; completed cancellation refused",
       "passed": true,
-      "ms": 30
+      "ms": 29
     },
     {
       "name": "Receipt after completed streams PDF with private no-store cache",
       "passed": true,
-      "ms": 78
+      "ms": 88
     },
     {
       "name": "Cancellation creates requested refund; cannot process before admin approval",
       "passed": true,
-      "ms": 74
+      "ms": 84
     },
     {
       "name": "Admin approval and mock refund succeed once; repeated processing refused",
       "passed": true,
-      "ms": 17
+      "ms": 16
     },
     {
       "name": "Invalid terminal booking/payment/refund transitions refused",
@@ -91,17 +101,17 @@
     {
       "name": "Verified webhook replay atomic under concurrent delivery",
       "passed": true,
-      "ms": 76
+      "ms": 79
     },
     {
       "name": "Webhook signature and amount mismatches refused without ledger mutation",
       "passed": true,
-      "ms": 28
+      "ms": 38
     },
     {
       "name": "Failed and timed-out payment attempts remain unpaid; new attempt can succeed",
       "passed": true,
-      "ms": 42
+      "ms": 49
     },
     {
       "name": "Expired hold released; late success requests refund without resurrecting booking",
@@ -111,77 +121,77 @@
     {
       "name": "Coupon global quota serialized across different accommodations",
       "passed": true,
-      "ms": 25
+      "ms": 27
     },
     {
       "name": "Coupon applicability/per-user limits; merged PATCH validation",
       "passed": true,
-      "ms": 28
+      "ms": 32
     },
     {
       "name": "Favorites isolate owners; concurrent toggles serialize",
       "passed": true,
-      "ms": 20
+      "ms": 22
     },
     {
       "name": "Admin CRUD, soft hide, category linkage and audit trail",
       "passed": true,
-      "ms": 31
+      "ms": 46
     },
     {
       "name": "Account blocking revokes refresh sessions and old JWTs; failed auth sync retry",
       "passed": true,
-      "ms": 19
+      "ms": 27
     },
     {
       "name": "RLS denies direct business reads/writes/role edits; runtime audit is append-only",
       "passed": true,
-      "ms": 3
+      "ms": 4
     },
     {
       "name": "Stripe test adapter and signed callbacks (SDK mocked; no provider network)",
       "passed": true,
-      "ms": 42
+      "ms": 61
     },
     {
       "name": "Revenue from succeeded transactions/refunds; exported Excel parses",
       "passed": true,
-      "ms": 52
+      "ms": 63
     },
     {
       "name": "Disabled provider refuses payment; no automatic succeeded row",
       "passed": true,
-      "ms": 8
+      "ms": 9
     },
     {
       "name": "Admin cannot confirm unpaid booking; database refuses premature/terminal transitions",
       "passed": true,
-      "ms": 10
+      "ms": 11
     },
     {
       "name": "Confirmed deposit survives balance timeout; unpaid completion and late cancellation refused",
       "passed": true,
-      "ms": 27
+      "ms": 37
     },
     {
       "name": "Expired coupon and minimum subtotal rejected; admin can search coupon status",
       "passed": true,
-      "ms": 13
+      "ms": 16
     },
     {
       "name": "Configured tax priced on server and snapshotted; client tax ignored",
       "passed": true,
-      "ms": 9
+      "ms": 8
     },
     {
       "name": "Checkout snapshots, consent, stale quote and concurrent retry identity",
       "passed": true,
-      "ms": 85
+      "ms": 95
     },
     {
       "name": "Review summary aggregates separately and never fabricates criterion scores",
       "passed": true,
-      "ms": 9
+      "ms": 11
     },
     {
       "name": "Payment public configuration never exposes secret credentials",
@@ -189,34 +199,49 @@
       "ms": 1
     },
     {
+      "name": "Notification outbox is durable, deduplicated and only marks provider-confirmed delivery",
+      "passed": true,
+      "ms": 20
+    },
+    {
+      "name": "In-app notifications isolate recipients, redact delivery data and preserve read timestamps",
+      "passed": true,
+      "ms": 111
+    },
+    {
+      "name": "Read-all is owner-scoped, honors snapshot cutoffs and does not consume future notifications",
+      "passed": true,
+      "ms": 29
+    },
+    {
       "name": "Photo provenance remains consistent across listing, favorites, quote and booking",
       "passed": true,
-      "ms": 32
+      "ms": 35
     },
     {
       "name": "Media replacement protects custom photos and rejects random image catalogs",
       "passed": true,
-      "ms": 8
+      "ms": 11
     },
     {
       "name": "Media CLI dry-run, scoped apply, idempotency and guarded restore use real fixture database",
       "passed": true,
-      "ms": 2561
+      "ms": 1649
     },
     {
       "name": "Support isolates owners, serializes retries, paginates and audits admin replies",
       "passed": true,
-      "ms": 74
+      "ms": 88
     },
     {
       "name": "Arrival instructions stay private, require confirmed booking and reject stale edits",
       "passed": true,
-      "ms": 74
+      "ms": 78
     },
     {
       "name": "OpenAPI covers every actual route; Postman operation count and empty token templates",
       "passed": true,
-      "ms": 19
+      "ms": 28
     }
   ]
 }

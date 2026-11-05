@@ -1,3 +1,4 @@
+import { useUiPreferences, uiStyle, uiColor, uiTextStyle, uiText } from '../../preferences/ui';
 import React, { useEffect } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
@@ -25,6 +26,7 @@ export function AdminOverview({
   onBooking: (id: string) => void;
   onAccessError: () => void;
 }) {
+  useUiPreferences();
   const range = monthRange();
   const query = useQuery({
     queryKey: ['admin', userId, 'overview', range],
@@ -45,17 +47,17 @@ export function AdminOverview({
   }, [query.error, onAccessError]);
   if (query.isLoading)
     return (
-      <View style={{ padding: 70 }}>
-        <ActivityIndicator color={colors.primary} />
+      <View style={uiStyle({ padding: 70 })}>
+        <ActivityIndicator color={uiColor(colors.primary)} />
       </View>
     );
   if (query.error || !query.data)
     return <AdminEmpty error={adminError(query.error)} onRetry={() => void query.refetch()} />;
   const { listings, customers, bookings, refunds, revenue } = query.data;
   return (
-    <View style={{ gap: 22 }}>
+    <View style={uiStyle({ gap: 22 })}>
       <View
-        style={[
+        style={uiStyle([
           a.card,
           {
             padding: 23,
@@ -67,53 +69,49 @@ export function AdminOverview({
             gap: 18,
             flexWrap: 'wrap',
           },
-        ]}
+        ])}
       >
-        <View style={{ flex: 1, minWidth: 200, gap: 7 }}>
-          <Text style={{ color: '#167B8B', fontSize: 20, fontWeight: '700' }}>
-            Mọi chuyến đi, một nơi quản lý.
-          </Text>
-          <Text style={[a.muted, { color: '#5A929D' }]}>
-            Theo dõi đặt phòng, quản lý chỗ ở và chăm sóc khách hàng của Traveling.
-          </Text>
+        <View style={uiStyle({ flex: 1, minWidth: 200, gap: 7 })}>
+          <Text style={uiTextStyle({ color: '#167B8B', fontSize: 20, fontWeight: '700' })}>{uiText("Mọi chuyến đi, một nơi quản lý.")}</Text>
+          <Text style={uiTextStyle([a.muted, { color: '#5A929D' }])}>{uiText("Theo dõi đặt phòng, quản lý chỗ ở và chăm sóc khách hàng của Traveling.")}</Text>
         </View>
         <AdminButton
-          title="Quản lý đặt phòng"
+          title={uiText("Quản lý đặt phòng")}
           onPress={() => onSection('bookings')}
-          icon={<ArrowUpRight size={17} color="#FFF" />}
+          icon={<ArrowUpRight size={17} color={uiColor("#FFF")} />}
         />
       </View>
-      <View style={a.wrap}>
+      <View style={uiStyle(a.wrap)}>
         <AdminStat
-          label="Doanh thu thuần tháng này"
+          label={uiText("Doanh thu thuần tháng này")}
           value={adminMoney(revenue.net_revenue)}
           detail="Đã thu trừ hoàn tiền · USD · UTC"
         />
         <AdminStat
-          label="Tổng đơn đặt phòng"
+          label={uiText("Tổng đơn đặt phòng")}
           value={String(bookings.pagination.total)}
           detail="Tất cả trạng thái"
-          icon={<CalendarDays size={17} color="#8B73C7" />}
+          icon={<CalendarDays size={17} color={uiColor("#8B73C7")} />}
           tone="#F1EDFD"
         />
         <AdminStat
-          label="Chỗ ở đang hiển thị"
+          label={uiText("Chỗ ở đang hiển thị")}
           value={String(listings.pagination.total)}
           detail="Đang được niêm yết"
-          icon={<Building2 size={17} color="#D39B51" />}
+          icon={<Building2 size={17} color={uiColor("#D39B51")} />}
           tone="#FFF2E3"
         />
         <AdminStat
-          label="Tài khoản khách hàng"
+          label={uiText("Tài khoản khách hàng")}
           value={String(customers.pagination.total)}
           detail="Khách hàng và chủ chỗ ở"
-          icon={<Users size={17} color="#4E9E80" />}
+          icon={<Users size={17} color={uiColor("#4E9E80")} />}
           tone="#E8F8F0"
         />
       </View>
       {refunds.pagination.total > 0 && (
         <View
-          style={[
+          style={uiStyle([
             a.card,
             {
               padding: 16,
@@ -123,11 +121,11 @@ export function AdminOverview({
               gap: 15,
               flexWrap: 'wrap',
             },
-          ]}
+          ])}
         >
-          <Text style={a.text}>{refunds.pagination.total} yêu cầu hoàn tiền đang chờ duyệt.</Text>
+          <Text style={uiTextStyle(a.text)}>{uiText(refunds.pagination.total)}{uiText(" yêu cầu hoàn tiền đang chờ duyệt.")}</Text>
           <AdminButton
-            title="Xem yêu cầu"
+            title={uiText("Xem yêu cầu")}
             variant="secondary"
             small
             onPress={() => onSection('refunds')}
@@ -135,11 +133,11 @@ export function AdminOverview({
         </View>
       )}
       <RevenueChart report={revenue} compact />
-      <View style={a.card}>
-        <View style={[a.row, { padding: 20, justifyContent: 'space-between' }]}>
-          <Text style={[a.sectionTitle, { marginBottom: 0 }]}>Đặt phòng gần đây</Text>
+      <View style={uiStyle(a.card)}>
+        <View style={uiStyle([a.row, { padding: 20, justifyContent: 'space-between' }])}>
+          <Text style={uiTextStyle([a.sectionTitle, { marginBottom: 0 }])}>{uiText("Đặt phòng gần đây")}</Text>
           <AdminButton
-            title="Xem tất cả"
+            title={uiText("Xem tất cả")}
             small
             variant="ghost"
             onPress={() => onSection('bookings')}
@@ -152,7 +150,7 @@ export function AdminOverview({
               key: 'code',
               title: 'MÃ ĐẶT PHÒNG',
               width: 190,
-              render: (r) => <Text style={[a.text, { fontWeight: '600' }]}>{r.booking_code}</Text>,
+              render: (r) => <Text style={uiTextStyle([a.text, { fontWeight: '600' }])}>{uiText(r.booking_code)}</Text>,
             },
             {
               key: 'stay',
@@ -160,10 +158,10 @@ export function AdminOverview({
               width: 230,
               render: (r) => (
                 <View>
-                  <Text numberOfLines={1} style={a.text}>
-                    {r.listing_title || r.listing_id}
+                  <Text numberOfLines={1} style={uiTextStyle(a.text)}>
+                    {uiText(r.listing_title || r.listing_id)}
                   </Text>
-                  <Text style={a.helper}>{r.guest_name || r.guest_email}</Text>
+                  <Text style={uiTextStyle(a.helper)}>{uiText(r.guest_name || r.guest_email)}</Text>
                 </View>
               ),
             },
@@ -172,8 +170,8 @@ export function AdminOverview({
               title: 'NHẬN / TRẢ PHÒNG',
               width: 190,
               render: (r) => (
-                <Text style={a.muted}>
-                  {adminDate(r.check_in_date)} → {adminDate(r.check_out_date)}
+                <Text style={uiTextStyle(a.muted)}>
+                  {uiText(adminDate(r.check_in_date))}{uiText(" → ")}{uiText(adminDate(r.check_out_date))}
                 </Text>
               ),
             },
@@ -182,7 +180,7 @@ export function AdminOverview({
               title: 'TỔNG TIỀN',
               width: 130,
               render: (r) => (
-                <Text style={[a.text, { fontWeight: '600' }]}>{adminMoney(r.total_price)}</Text>
+                <Text style={uiTextStyle([a.text, { fontWeight: '600' }])}>{uiText(adminMoney(r.total_price))}</Text>
               ),
             },
             {
@@ -197,7 +195,7 @@ export function AdminOverview({
               width: 110,
               render: (r) => (
                 <AdminButton
-                  title="Chi tiết"
+                  title={uiText("Chi tiết")}
                   small
                   variant="secondary"
                   onPress={() => onBooking(r.id)}
@@ -208,8 +206,8 @@ export function AdminOverview({
         />
         {!bookings.items.length && (
           <AdminEmpty
-            title="Chưa có đơn đặt phòng"
-            description="Đơn đặt phòng mới sẽ xuất hiện tại đây."
+            title={uiText("Chưa có đơn đặt phòng")}
+            description={uiText("Đơn đặt phòng mới sẽ xuất hiện tại đây.")}
           />
         )}
       </View>

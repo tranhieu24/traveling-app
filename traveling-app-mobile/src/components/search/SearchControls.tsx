@@ -1,3 +1,4 @@
+import { useUiPreferences, uiStyle, uiText, uiColor, uiTextStyle } from '../../preferences/ui';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Check, Minus, Plus } from 'lucide-react-native';
@@ -17,33 +18,33 @@ export const Counter = ({
   minimum?: number;
   maximum?: number;
   any?: boolean;
-}) => (
-  <View style={s.counter}>
+}) => { useUiPreferences(); return ((
+  <View style={uiStyle(s.counter)}>
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Giảm ${label}`}
+      accessibilityLabel={uiText(`Giảm ${label}`)}
       hitSlop={6}
       disabled={value <= minimum}
       onPress={() => onChange(value - 1)}
-      style={[s.circle, value <= minimum && s.disabled]}
+      style={uiStyle([s.circle, value <= minimum && s.disabled])}
     >
-      <Minus size={18} color="#8B9097" />
+      <Minus size={18} color={uiColor("#8B9097")} />
     </Pressable>
-    <Text accessibilityLabel={`${label}: ${any && value === 0 ? 'Bất kỳ' : value}`} style={s.number}>
-      {any && value === 0 ? 'Bất kỳ' : value}
+    <Text accessibilityLabel={uiText(`${label}: ${any && value === 0 ? 'Bất kỳ' : value}`)} style={uiTextStyle(s.number)}>
+      {any && value === 0 ? uiText('Bất kỳ') : uiText(value)}
     </Text>
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Tăng ${label}`}
+      accessibilityLabel={uiText(`Tăng ${label}`)}
       hitSlop={6}
       disabled={value >= maximum}
       onPress={() => onChange(value + 1)}
-      style={[s.circle, value >= maximum && s.disabled]}
+      style={uiStyle([s.circle, value >= maximum && s.disabled])}
     >
-      <Plus size={18} color="#8B9097" />
+      <Plus size={18} color={uiColor("#8B9097")} />
     </Pressable>
   </View>
-);
+)); };
 export const Checkbox = ({
   label,
   description,
@@ -54,24 +55,24 @@ export const Checkbox = ({
   description?: string;
   checked: boolean;
   onPress: () => void;
-}) => (
+}) => { useUiPreferences(); return ((
   <Pressable
     accessibilityRole="checkbox"
-    accessibilityLabel={label}
+    accessibilityLabel={uiText(label)}
     accessibilityState={{ checked }}
     aria-checked={checked}
     onPress={onPress}
-    style={s.checkRow}
+    style={uiStyle(s.checkRow)}
   >
-    <View style={{ flex: 1 }}>
-      <Text style={s.label}>{label}</Text>
-      {description && <Text style={s.description}>{description}</Text>}
+    <View style={uiStyle({ flex: 1 })}>
+      <Text style={uiTextStyle(s.label)}>{uiText(label)}</Text>
+      {description && <Text style={uiTextStyle(s.description)}>{uiText(description)}</Text>}
     </View>
-    <View style={[s.box, checked && { borderColor: CYAN, backgroundColor: CYAN }]}>
-      {checked && <Check color="white" size={16} />}
+    <View style={uiStyle([s.box, checked && { borderColor: CYAN, backgroundColor: CYAN }])}>
+      {checked && <Check color={uiColor("white")} size={16} />}
     </View>
   </Pressable>
-);
+)); };
 export const searchStyles = StyleSheet.create({
   title: { fontSize: 25, fontWeight: '700', color: '#26282B', marginBottom: 22 },
   heading: { fontSize: 20, fontWeight: '700', color: '#26282B', marginBottom: 16 },

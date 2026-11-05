@@ -1,3 +1,4 @@
+import { useUiPreferences, uiStyle, uiText } from '../../preferences/ui';
 import React, { useRef, useState } from 'react';
 import { PanResponder, StyleSheet, View } from 'react-native';
 import { CYAN } from './SearchControls';
@@ -12,6 +13,7 @@ export const PriceRangeSlider = ({
   maximum: number | null;
   onChange: (low: number, high: number) => void;
 }) => {
+  useUiPreferences();
   const [width, setWidth] = useState(1);
   const high = Number.isFinite(maximum) && maximum !== null ? maximum : Math.max(250, minimum || 0);
   const low = Number.isFinite(minimum) && minimum !== null ? minimum : Math.min(10, high);
@@ -44,27 +46,27 @@ export const PriceRangeSlider = ({
     `${Math.max(0, Math.min(100, ((value - floor) / (ceiling - floor)) * 100))}%` as `${number}%`;
   return (
     <View
-      style={s.wrap}
+      style={uiStyle(s.wrap)}
       onLayout={(event) => setWidth(Math.max(1, event.nativeEvent.layout.width))}
     >
-      <View style={s.rail} />
+      <View style={uiStyle(s.rail)} />
       <View
-        style={[
+        style={uiStyle([
           s.rail,
           { backgroundColor: CYAN, left: percent(low), right: percent(ceiling - high + floor) },
-        ]}
+        ])}
       />
       <View
         {...left.panHandlers}
         accessible
-        accessibilityLabel="Mức giá tối thiểu; dùng ô giá tối thiểu để nhập bằng bàn phím"
-        style={[s.thumb, { left: percent(low) }]}
+        accessibilityLabel={uiText("Mức giá tối thiểu; dùng ô giá tối thiểu để nhập bằng bàn phím")}
+        style={uiStyle([s.thumb, { left: percent(low) }])}
       />
       <View
         {...right.panHandlers}
         accessible
-        accessibilityLabel="Mức giá tối đa; dùng ô giá tối đa để nhập bằng bàn phím"
-        style={[s.thumb, { left: percent(high) }]}
+        accessibilityLabel={uiText("Mức giá tối đa; dùng ô giá tối đa để nhập bằng bàn phím")}
+        style={uiStyle([s.thumb, { left: percent(high) }])}
       />
     </View>
   );

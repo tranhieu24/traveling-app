@@ -1,3 +1,4 @@
+import { useUiPreferences, uiTextStyle, uiText, uiColor, uiStyle } from '../preferences/ui';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -173,6 +174,7 @@ const stateOptions: Partial<Record<AdminSection, { value: string; label: string 
 };
 
 export function AdminPortalScreen() {
+  useUiPreferences();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, 'AdminPortal'>>();
   const { user, isLoading: authLoading, signOut } = useAuth();
@@ -414,17 +416,17 @@ export function AdminPortalScreen() {
     });
 
   const text = (value: unknown, bold = false) => (
-    <Text numberOfLines={2} style={[a.text, bold && { fontWeight: '600' }]}>
-      {String(value ?? '—')}
+    <Text numberOfLines={2} style={uiTextStyle([a.text, bold && { fontWeight: '600' }])}>
+      {uiText(String(value ?? '—'))}
     </Text>
   );
   const edit = (resource: Editable, row: AdminRecord) => (
     <AdminButton
-      title="Sửa"
-      label={`Sửa ${row.title || row.name || row.full_name || row.code}`}
+      title={uiText("Sửa")}
+      label={uiText(`Sửa ${row.title || row.name || row.full_name || row.code}`)}
       small
       variant="secondary"
-      icon={<Pencil size={12} color={colors.muted} />}
+      icon={<Pencil size={12} color={uiColor(colors.muted)} />}
       onPress={() => setEditor({ resource, record: row })}
     />
   );
@@ -436,13 +438,13 @@ export function AdminPortalScreen() {
             title: 'CHỖ Ở',
             width: 300,
             render: (r) => (
-              <View style={{ gap: 5 }}>
+              <View style={uiStyle({ gap: 5 })}>
                 {text(r.title, true)}
-                <Text style={a.helper}>
-                  {r.city}, {r.country}
+                <Text style={uiTextStyle(a.helper)}>
+                  {uiText(r.city)}{uiText(", ")}{uiText(r.country)}
                 </Text>
-                <Text selectable style={[a.helper, { fontSize: 9 }]}>
-                  {r.id}
+                <Text selectable style={uiTextStyle([a.helper, { fontSize: 9 }])}>
+                  {uiText(r.id)}
                 </Text>
               </View>
             ),
@@ -476,10 +478,10 @@ export function AdminPortalScreen() {
             title: 'THAO TÁC',
             width: 210,
             render: (r) => (
-              <View style={a.row}>
+              <View style={uiStyle(a.row)}>
                 {edit('listings', r)}
                 <AdminButton
-                  title={r.is_active ? 'Ẩn' : 'Hiện lại'}
+                  title={r.is_active ? uiText('Ẩn') : uiText('Hiện lại')}
                   small
                   variant={r.is_active ? 'danger' : 'secondary'}
                   onPress={() => deactivate('listings', r)}
@@ -495,15 +497,15 @@ export function AdminPortalScreen() {
               title: 'DANH MỤC',
               width: 240,
               render: (r) => (
-                <View style={a.row}>
+                <View style={uiStyle(a.row)}>
                   {categoryImage(r.icon_name) ? (
                     <Image
                       source={{ uri: categoryImage(r.icon_name) }}
-                      style={{ width: 36, height: 36, borderRadius: 9 }}
+                      style={uiStyle({ width: 36, height: 36, borderRadius: 9 })}
                     />
                   ) : (
-                    <View style={s.categoryIcon}>
-                      <Tags size={18} color={colors.primary} />
+                    <View style={uiStyle(s.categoryIcon)}>
+                      <Tags size={18} color={uiColor(colors.primary)} />
                     </View>
                   )}
                   {text(r.name, true)}
@@ -523,10 +525,10 @@ export function AdminPortalScreen() {
               title: 'THAO TÁC',
               width: 210,
               render: (r) => (
-                <View style={a.row}>
+                <View style={uiStyle(a.row)}>
                   {edit('categories', r)}
                   <AdminButton
-                    title={r.is_active ? 'Xóa' : 'Hiện lại'}
+                    title={r.is_active ? uiText('Xóa') : uiText('Hiện lại')}
                     small
                     variant={r.is_active ? 'danger' : 'secondary'}
                     onPress={() => deactivate('categories', r)}
@@ -544,7 +546,7 @@ export function AdminPortalScreen() {
                 render: (r) => (
                   <View>
                     {text(r.full_name, true)}
-                    <Text style={a.helper}>{r.role === 'host' ? 'Chủ chỗ ở' : 'Khách hàng'}</Text>
+                    <Text style={uiTextStyle(a.helper)}>{r.role === 'host' ? uiText('Chủ chỗ ở') : uiText('Khách hàng')}</Text>
                   </View>
                 ),
               },
@@ -555,7 +557,7 @@ export function AdminPortalScreen() {
                 render: (r) => (
                   <View>
                     {text(r.email)}
-                    <Text style={a.helper}>{r.phone_number || 'Chưa có số điện thoại'}</Text>
+                    <Text style={uiTextStyle(a.helper)}>{uiText(r.phone_number || 'Chưa có số điện thoại')}</Text>
                   </View>
                 ),
               },
@@ -564,10 +566,10 @@ export function AdminPortalScreen() {
                 title: 'TRẠNG THÁI',
                 width: 170,
                 render: (r) => (
-                  <View style={{ gap: 7 }}>
+                  <View style={uiStyle({ gap: 7 })}>
                     <AdminBadge status={r.account_status || 'active'} />
                     {r.auth_sync_pending && (
-                      <Text style={[a.helper, { color: '#BE8F39' }]}>Chờ đồng bộ xác thực</Text>
+                      <Text style={uiTextStyle([a.helper, { color: '#BE8F39' }])}>{uiText("Chờ đồng bộ xác thực")}</Text>
                     )}
                   </View>
                 ),
@@ -583,17 +585,17 @@ export function AdminPortalScreen() {
                 title: 'THAO TÁC',
                 width: 290,
                 render: (r) => (
-                  <View style={[a.row, { flexWrap: 'wrap' }]}>
+                  <View style={uiStyle([a.row, { flexWrap: 'wrap' }])}>
                     {edit('customers', r)}
                     <AdminButton
-                      title={r.account_status === 'blocked' ? 'Mở khóa' : 'Khóa'}
+                      title={r.account_status === 'blocked' ? uiText('Mở khóa') : uiText('Khóa')}
                       small
                       variant={r.account_status === 'blocked' ? 'secondary' : 'danger'}
                       onPress={() => accountStatus(r)}
                     />
                     {r.auth_sync_pending && (
                       <AdminButton
-                        title="Đồng bộ lại"
+                        title={uiText("Đồng bộ lại")}
                         small
                         variant="secondary"
                         onPress={() =>
@@ -628,8 +630,8 @@ export function AdminPortalScreen() {
                   render: (r) => (
                     <View>
                       {text(r.listing_title, true)}
-                      <Text style={a.helper}>
-                        {r.guest_name} · {r.guest_email}
+                      <Text style={uiTextStyle(a.helper)}>
+                        {uiText(r.guest_name)}{uiText(" · ")}{uiText(r.guest_email)}
                       </Text>
                     </View>
                   ),
@@ -641,9 +643,7 @@ export function AdminPortalScreen() {
                   render: (r) => (
                     <View>
                       {text(adminDate(r.check_in_date))}
-                      <Text style={a.helper}>
-                        đến {adminDate(r.check_out_date)} · {r.total_nights} đêm
-                      </Text>
+                      <Text style={uiTextStyle(a.helper)}>{uiText("đến ")}{uiText(adminDate(r.check_out_date))}{uiText(" · ")}{uiText(r.total_nights)}{uiText(" đêm")}</Text>
                     </View>
                   ),
                 },
@@ -665,8 +665,8 @@ export function AdminPortalScreen() {
                   width: 130,
                   render: (r) => (
                     <AdminButton
-                      title="Chi tiết"
-                      label={`Chi tiết ${r.booking_code}`}
+                      title={uiText("Chi tiết")}
+                      label={uiText(`Chi tiết ${r.booking_code}`)}
                       small
                       variant="secondary"
                       onPress={() => setBookingId(r.id)}
@@ -683,7 +683,7 @@ export function AdminPortalScreen() {
                     render: (r) => (
                       <View>
                         {text(r.booking_code || r.booking_id, true)}
-                        <Text style={a.helper}>{r.guest_email}</Text>
+                        <Text style={uiTextStyle(a.helper)}>{uiText(r.guest_email)}</Text>
                       </View>
                     ),
                   },
@@ -695,7 +695,7 @@ export function AdminPortalScreen() {
                       <View>
                         {text(r.reason)}
                         {!!r.decision_reason && (
-                          <Text style={a.helper}>Quyết định: {r.decision_reason}</Text>
+                          <Text style={uiTextStyle(a.helper)}>{uiText("Quyết định: ")}{uiText(r.decision_reason)}</Text>
                         )}
                       </View>
                     ),
@@ -717,9 +717,9 @@ export function AdminPortalScreen() {
                     title: 'THAO TÁC',
                     width: 310,
                     render: (r) => (
-                      <View style={[a.row, { flexWrap: 'wrap' }]}>
+                      <View style={uiStyle([a.row, { flexWrap: 'wrap' }])}>
                         <AdminButton
-                          title="Xem đơn"
+                          title={uiText("Xem đơn")}
                           small
                           variant="secondary"
                           onPress={() => setBookingId(r.booking_id)}
@@ -727,12 +727,12 @@ export function AdminPortalScreen() {
                         {r.status === 'requested' && (
                           <>
                             <AdminButton
-                              title="Duyệt"
+                              title={uiText("Duyệt")}
                               small
                               onPress={() => refundAction(r, 'approve')}
                             />
                             <AdminButton
-                              title="Từ chối"
+                              title={uiText("Từ chối")}
                               small
                               variant="danger"
                               onPress={() => refundAction(r, 'reject')}
@@ -741,7 +741,7 @@ export function AdminPortalScreen() {
                         )}
                         {['approved', 'failed'].includes(r.status) && (
                           <AdminButton
-                            title={r.status === 'failed' ? 'Thử lại xử lý' : 'Thực hiện hoàn tiền'}
+                            title={r.status === 'failed' ? uiText('Thử lại xử lý') : uiText('Thực hiện hoàn tiền')}
                             small
                             onPress={() => refundAction(r, 'process')}
                           />
@@ -764,10 +764,8 @@ export function AdminPortalScreen() {
                     render: (r) => (
                       <View>
                         {text(`${r.discount_percent}%`, true)}
-                        <Text style={a.helper}>
-                          {r.max_discount != null
-                            ? `Tối đa ${adminMoney(r.max_discount)}`
-                            : 'Không giới hạn tối đa'}
+                        <Text style={uiTextStyle(a.helper)}>
+                          {r.max_discount != null ? uiText(`Tối đa ${adminMoney(r.max_discount)}`) : uiText('Không giới hạn tối đa')}
                         </Text>
                       </View>
                     ),
@@ -779,7 +777,7 @@ export function AdminPortalScreen() {
                     render: (r) => (
                       <View>
                         {text(adminDate(r.starts_at))}
-                        <Text style={a.helper}>đến {adminDate(r.ends_at)}</Text>
+                        <Text style={uiTextStyle(a.helper)}>{uiText("đến ")}{uiText(adminDate(r.ends_at))}</Text>
                       </View>
                     ),
                   },
@@ -800,10 +798,10 @@ export function AdminPortalScreen() {
                     title: 'THAO TÁC',
                     width: 240,
                     render: (r) => (
-                      <View style={a.row}>
+                      <View style={uiStyle(a.row)}>
                         {edit('coupons', r)}
                         <AdminButton
-                          title={r.is_active ? 'Ngừng áp dụng' : 'Kích hoạt'}
+                          title={r.is_active ? uiText('Ngừng áp dụng') : uiText('Kích hoạt')}
                           small
                           variant={r.is_active ? 'danger' : 'secondary'}
                           onPress={() => deactivate('coupons', r)}
@@ -814,20 +812,20 @@ export function AdminPortalScreen() {
                 ];
 
   const navItems = (
-    <View style={{ gap: 6 }}>
-      <AdminButton title="Yêu cầu hỗ trợ" onPress={()=>navigation.navigate('AdminSupport')}/>
+    <View style={uiStyle({ gap: 6 })}>
+      <AdminButton title={uiText("Yêu cầu hỗ trợ")} onPress={()=>navigation.navigate('AdminSupport')}/>
       {sections.map((item) => (
         <Pressable
           key={item.key}
           accessibilityRole="button"
-          accessibilityLabel={item.label}
+          accessibilityLabel={uiText(item.label)}
           accessibilityState={{ selected: item.key === section }}
           onPress={() => selectSection(item.key)}
-          style={[s.navItem, item.key === section && s.navActive]}
+          style={uiStyle([s.navItem, item.key === section && s.navActive])}
         >
-          <item.icon size={19} color={item.key === section ? '#41D0DF' : '#91A7B3'} />
-          <Text style={[s.navText, item.key === section && { color: '#FFF' }]}>{item.label}</Text>
-          {item.key === section && <View style={s.navDot} />}
+          <item.icon size={19} color={uiColor(item.key === section ? '#41D0DF' : '#91A7B3')} />
+          <Text style={uiTextStyle([s.navText, item.key === section && { color: '#FFF' }])}>{uiText(item.label)}</Text>
+          {item.key === section && <View style={uiStyle(s.navDot)} />}
         </Pressable>
       ))}
     </View>
@@ -835,36 +833,28 @@ export function AdminPortalScreen() {
 
   if (authLoading || (user?.role === 'admin' && session.isLoading))
     return (
-      <SafeAreaView style={s.gate}>
-        <ActivityIndicator color={colors.primary} />
-        <Text style={a.muted}>Đang xác minh phiên quản trị...</Text>
+      <SafeAreaView style={uiStyle(s.gate)}>
+        <ActivityIndicator color={uiColor(colors.primary)} />
+        <Text style={uiTextStyle(a.muted)}>{uiText("Đang xác minh phiên quản trị...")}</Text>
       </SafeAreaView>
     );
   if (!authorized)
     return (
-      <SafeAreaView style={s.gate}>
-        <ShieldCheck size={42} color={colors.primary} />
-        <Text style={a.modalTitle}>
-          {!user
-            ? 'Đăng nhập quản trị'
-            : user.role !== 'admin'
-              ? 'Bạn không có quyền quản trị'
-              : 'Không thể xác minh phiên quản trị'}
+      <SafeAreaView style={uiStyle(s.gate)}>
+        <ShieldCheck size={42} color={uiColor(colors.primary)} />
+        <Text style={uiTextStyle(a.modalTitle)}>
+          {!user ? uiText('Đăng nhập quản trị') : user.role !== 'admin' ? uiText('Bạn không có quyền quản trị') : uiText('Không thể xác minh phiên quản trị')}
         </Text>
-        <Text style={[a.emptyText, { marginBottom: 8 }]}>
-          {session.error
-            ? adminError(session.error)
-            : denied
-              ? 'Phiên quản trị đã hết hạn hoặc quyền truy cập đã thay đổi.'
-              : 'Trang này chỉ dành cho tài khoản đã được cấp quyền admin.'}
+        <Text style={uiTextStyle([a.emptyText, { marginBottom: 8 }])}>
+          {session.error ? uiText(adminError(session.error)) : denied ? uiText('Phiên quản trị đã hết hạn hoặc quyền truy cập đã thay đổi.') : uiText('Trang này chỉ dành cho tài khoản đã được cấp quyền admin.')}
         </Text>
         <AdminButton
-          title="Đến trang đăng nhập quản trị"
+          title={uiText("Đến trang đăng nhập quản trị")}
           onPress={() => navigation.replace('AdminLogin')}
         />
         {user?.role === 'admin' && (
           <AdminButton
-            title="Kiểm tra lại phiên"
+            title={uiText("Kiểm tra lại phiên")}
             variant="secondary"
             onPress={() =>
               void session.refetch().then((result) => {
@@ -874,7 +864,7 @@ export function AdminPortalScreen() {
           />
         )}
         <AdminButton
-          title="Về ứng dụng"
+          title={uiText("Về ứng dụng")}
           variant="ghost"
           onPress={() => navigation.replace('MainTabs')}
         />
@@ -883,109 +873,102 @@ export function AdminPortalScreen() {
 
   const rows = list.error ? [] : list.data?.items || [];
   return (
-    <SafeAreaView edges={['top', 'left', 'right']} style={s.screen}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={uiStyle(s.screen)}>
       {wide && (
-        <View style={s.sidebar}>
-          <View style={s.brand}>
-            <View style={s.brandMark}>
-              <ShieldCheck size={24} color="#39CEDF" />
+        <View style={uiStyle(s.sidebar)}>
+          <View style={uiStyle(s.brand)}>
+            <View style={uiStyle(s.brandMark)}>
+              <ShieldCheck size={24} color={uiColor("#39CEDF")} />
             </View>
             <View>
-              <Text style={s.brandText}>
-                traveling<Text style={{ color: '#39CEDF' }}>.</Text>
+              <Text style={uiTextStyle(s.brandText)}>{uiText("traveling")}<Text style={uiTextStyle({ color: '#39CEDF' })}>{uiText(".")}</Text>
               </Text>
-              <Text style={s.brandCaption}>ADMIN PORTAL</Text>
+              <Text style={uiTextStyle(s.brandCaption)}>{uiText("ADMIN PORTAL")}</Text>
             </View>
           </View>
-          <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
-            <Text style={s.groupLabel}>QUẢN LÝ HỆ THỐNG</Text>
+          <ScrollView style={uiStyle({ flex: 1 })} showsVerticalScrollIndicator={false}>
+            <Text style={uiTextStyle(s.groupLabel)}>{uiText("QUẢN LÝ HỆ THỐNG")}</Text>
             {navItems}
           </ScrollView>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Xem ứng dụng"
+            accessibilityLabel={uiText("Xem ứng dụng")}
             onPress={() => navigation.navigate('MainTabs')}
-            style={s.preview}
+            style={uiStyle(s.preview)}
           >
-            <ArrowUpRight size={17} color="#91A7B3" />
-            <Text style={s.navText}>Xem ứng dụng</Text>
+            <ArrowUpRight size={17} color={uiColor("#91A7B3")} />
+            <Text style={uiTextStyle(s.navText)}>{uiText("Xem ứng dụng")}</Text>
           </Pressable>
-          <View style={s.sidebarFooter}>
-            <View style={s.avatar}>
-              <Text style={{ color: '#40BDCB', fontWeight: '700' }}>
-                {(user.full_name || 'A').charAt(0).toUpperCase()}
+          <View style={uiStyle(s.sidebarFooter)}>
+            <View style={uiStyle(s.avatar)}>
+              <Text style={uiTextStyle({ color: '#40BDCB', fontWeight: '700' })}>
+                {uiText((user.full_name || 'A').charAt(0).toUpperCase())}
               </Text>
             </View>
-            <View style={{ flex: 1 }}>
-              <Text numberOfLines={1} style={{ color: '#ECF5F7', fontSize: 12, fontWeight: '600' }}>
+            <View style={uiStyle({ flex: 1 })}>
+              <Text numberOfLines={1} style={uiTextStyle({ color: '#ECF5F7', fontSize: 12, fontWeight: '600' })}>
                 {user.full_name}
               </Text>
-              <Text style={s.brandCaption}>Quản trị viên</Text>
+              <Text style={uiTextStyle(s.brandCaption)}>{uiText("Quản trị viên")}</Text>
             </View>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Đăng xuất quản trị"
+              accessibilityLabel={uiText("Đăng xuất quản trị")}
               onPress={logout}
             >
-              <LogOut size={17} color="#91A7B3" />
+              <LogOut size={17} color={uiColor("#91A7B3")} />
             </Pressable>
           </View>
         </View>
       )}
-      <View style={{ flex: 1, minWidth: 0 }}>
-        <View style={[s.header, !wide && { paddingHorizontal: 18 }]}>
-          <View style={[a.row, { flex: 1, minWidth: 0 }]}>
+      <View style={uiStyle({ flex: 1, minWidth: 0 })}>
+        <View style={uiStyle([s.header, !wide && { paddingHorizontal: 18 }])}>
+          <View style={uiStyle([a.row, { flex: 1, minWidth: 0 }])}>
             {!wide && (
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Mở menu quản trị"
+                accessibilityLabel={uiText("Mở menu quản trị")}
                 onPress={() => setMenu(true)}
-                style={a.iconButton}
+                style={uiStyle(a.iconButton)}
               >
-                <Menu size={20} color={colors.ink} />
+                <Menu size={20} color={uiColor(colors.ink)} />
               </Pressable>
             )}
-            <Text style={a.muted}>Admin</Text>
-            <ChevronRight size={13} color="#A4B3BC" />
-            <Text numberOfLines={1} style={[a.text, { flexShrink: 1 }]}>{current.label}</Text>
+            <Text style={uiTextStyle(a.muted)}>{uiText("Admin")}</Text>
+            <ChevronRight size={13} color={uiColor("#A4B3BC")} />
+            <Text numberOfLines={1} style={uiTextStyle([a.text, { flexShrink: 1 }])}>{uiText(current.label)}</Text>
           </View>
-          <View style={a.row}>
-            <View style={s.adminTag}>
-              <ShieldCheck size={13} color={colors.primary} />
-              <Text style={{ color: colors.primary, fontSize: 10, fontWeight: '700' }}>ADMIN</Text>
+          <View style={uiStyle(a.row)}>
+            <View style={uiStyle(s.adminTag)}>
+              <ShieldCheck size={13} color={uiColor(colors.primary)} />
+              <Text style={uiTextStyle({ color: colors.primary, fontSize: 10, fontWeight: '700' })}>{uiText("ADMIN")}</Text>
             </View>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Đăng xuất quản trị"
+              accessibilityLabel={uiText("Đăng xuất quản trị")}
               onPress={logout}
-              style={a.iconButton}
+              style={uiStyle(a.iconButton)}
             >
-              <LogOut size={17} color={colors.muted} />
+              <LogOut size={17} color={uiColor(colors.muted)} />
             </Pressable>
           </View>
         </View>
         <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{ padding: wide ? 30 : 18, gap: 23, paddingBottom: 40 }}
+          style={uiStyle({ flex: 1 })}
+          contentContainerStyle={uiStyle({ padding: wide ? 30 : 18, gap: 23, paddingBottom: 40 })}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={[a.wrap, { alignItems: 'center', justifyContent: 'space-between' }]}>
-            <View style={{ gap: 8, flex: 1, minWidth: 180 }}>
-              <Text accessibilityRole="header" style={s.pageTitle}>
-                {current.title}
+          <View style={uiStyle([a.wrap, { alignItems: 'center', justifyContent: 'space-between' }])}>
+            <View style={uiStyle({ gap: 8, flex: 1, minWidth: 180 })}>
+              <Text accessibilityRole="header" style={uiTextStyle(s.pageTitle)}>
+                {uiText(current.title)}
               </Text>
-              <Text style={a.muted}>{current.description}</Text>
+              <Text style={uiTextStyle(a.muted)}>{uiText(current.description)}</Text>
             </View>
             {['listings', 'categories', 'coupons'].includes(section) && (
               <AdminButton
-                title={
-                  section === 'listings'
-                    ? 'Thêm chỗ ở'
-                    : section === 'categories'
-                      ? 'Thêm danh mục'
-                      : 'Thêm coupon'
-                }
-                icon={<Plus size={17} color="#FFF" />}
+                title={section === 'listings' ? uiText('Thêm chỗ ở') : section === 'categories' ? uiText('Thêm danh mục') : uiText('Thêm coupon')}
+                icon={<Plus size={17} color={uiColor("#FFF")} />}
                 onPress={() => setEditor({ resource: section as Editable })}
               />
             )}
@@ -1002,24 +985,16 @@ export function AdminPortalScreen() {
             <AdminRevenue userId={user.id} onAccessError={accessError} />
           ) : (
             <>
-              <View style={[a.card, { padding: 18, gap: 15 }]}>
-                <View style={[a.wrap, { alignItems: 'flex-end' }]}>
+              <View style={uiStyle([a.card, { padding: 18, gap: 15 }])}>
+                <View style={uiStyle([a.wrap, { alignItems: 'flex-end' }])}>
                   <AdminField
-                    label={
-                      section === 'bookings'
-                        ? 'Mã đặt phòng, số điện thoại hoặc tên chỗ ở'
-                        : section === 'customers'
-                          ? 'Tên, email hoặc số điện thoại'
-                          : section === 'refunds'
-                            ? 'Mã đặt phòng, khách hàng hoặc lý do'
-                            : 'Tìm kiếm'
-                    }
+                    label={section === 'bookings' ? uiText('Mã đặt phòng, số điện thoại hoặc tên chỗ ở') : section === 'customers' ? uiText('Tên, email hoặc số điện thoại') : section === 'refunds' ? uiText('Mã đặt phòng, khách hàng hoặc lý do') : uiText('Tìm kiếm')}
                     value={draft}
                     onChange={setDraft}
-                    placeholder="Nhập từ khóa..."
+                    placeholder={uiText("Nhập từ khóa...")}
                   />
                   <AdminSelect
-                    label="Trạng thái"
+                    label={uiText("Trạng thái")}
                     value={filters.isActive || filters.status || ''}
                     options={[
                       { value: '', label: 'Tất cả trạng thái' },
@@ -1036,8 +1011,8 @@ export function AdminPortalScreen() {
                     }
                   />
                   <AdminButton
-                    title="Tìm kiếm"
-                    icon={<Search size={16} color="#FFF" />}
+                    title={uiText("Tìm kiếm")}
+                    icon={<Search size={16} color={uiColor("#FFF")} />}
                     onPress={() =>
                       setFilters((f) => ({
                         ...f,
@@ -1048,18 +1023,18 @@ export function AdminPortalScreen() {
                     }
                   />
                   <AdminButton
-                    title="Tải lại"
-                    label="Làm mới danh sách"
+                    title={uiText("Tải lại")}
+                    label={uiText("Làm mới danh sách")}
                     variant="secondary"
                     disabled={list.isFetching}
-                    icon={<RefreshCw size={15} color={colors.primary} />}
+                    icon={<RefreshCw size={15} color={uiColor(colors.primary)} />}
                     onPress={() => void list.refetch()}
                   />
                 </View>
                 {section === 'listings' && (
-                  <View style={a.wrap}>
+                  <View style={uiStyle(a.wrap)}>
                     <AdminSelect
-                      label="Lọc danh mục"
+                      label={uiText("Lọc danh mục")}
                       value={filters.categoryId || ''}
                       options={[
                         { value: '', label: 'Tất cả danh mục' },
@@ -1070,10 +1045,10 @@ export function AdminPortalScreen() {
                       }
                     />
                     <AdminField
-                      label="Thành phố"
+                      label={uiText("Thành phố")}
                       value={city}
                       onChange={setCity}
-                      placeholder="Ví dụ: Da Nang"
+                      placeholder={uiText("Ví dụ: Da Nang")}
                     />
                   </View>
                 )}
@@ -1081,18 +1056,16 @@ export function AdminPortalScreen() {
                   <AdminNotice text="Không tải được danh mục. Hãy làm mới để thử lại." error />
                 )}
               </View>
-              <View style={a.card}>
-                <View style={[a.row, { padding: 20, justifyContent: 'space-between' }]}>
-                  <Text style={[a.sectionTitle, { marginBottom: 0 }]}>{current.label}</Text>
-                  <Text style={a.helper}>
-                    {list.isFetching
-                      ? 'Đang tải...'
-                      : `${list.data?.pagination.total ?? 0} kết quả`}
+              <View style={uiStyle(a.card)}>
+                <View style={uiStyle([a.row, { padding: 20, justifyContent: 'space-between' }])}>
+                  <Text style={uiTextStyle([a.sectionTitle, { marginBottom: 0 }])}>{uiText(current.label)}</Text>
+                  <Text style={uiTextStyle(a.helper)}>
+                    {list.isFetching ? uiText('Đang tải...') : uiText(`${list.data?.pagination.total ?? 0} kết quả`)}
                   </Text>
                 </View>
                 {list.isLoading ? (
-                  <View style={{ padding: 60 }}>
-                    <ActivityIndicator color={colors.primary} />
+                  <View style={uiStyle({ padding: 60 })}>
+                    <ActivityIndicator color={uiColor(colors.primary)} />
                   </View>
                 ) : list.error ? (
                   <AdminEmpty error={adminError(list.error)} onRetry={() => void list.refetch()} />
@@ -1100,8 +1073,8 @@ export function AdminPortalScreen() {
                   <AdminTable columns={columns} rows={rows} />
                 ) : (
                   <AdminEmpty
-                    title="Không tìm thấy kết quả"
-                    description="Thử đổi từ khóa hoặc bộ lọc. Dữ liệu mới sẽ xuất hiện sau khi được tạo."
+                    title={uiText("Không tìm thấy kết quả")}
+                    description={uiText("Thử đổi từ khóa hoặc bộ lọc. Dữ liệu mới sẽ xuất hiện sau khi được tạo.")}
                   />
                 )}
                 {list.data && !list.error && (
@@ -1116,7 +1089,7 @@ export function AdminPortalScreen() {
               </View>
             </>
           )}
-          <Text style={s.footer}>Traveling Admin · Đồng hành cùng mỗi hành trình</Text>
+          <Text style={uiTextStyle(s.footer)}>{uiText("Traveling Admin · Đồng hành cùng mỗi hành trình")}</Text>
         </ScrollView>
       </View>
       {editor && (
@@ -1140,20 +1113,20 @@ export function AdminPortalScreen() {
       )}
       <AdminModal
         visible={!!action}
-        title={action?.title || ''}
+        title={uiText(action?.title || '')}
         onClose={() => setAction(null)}
         busy={acting}
         width={520}
         footer={
           <>
             <AdminButton
-              title="Hủy bỏ"
+              title={uiText("Hủy bỏ")}
               variant="secondary"
               onPress={() => setAction(null)}
               disabled={acting}
             />
             <AdminButton
-              title={action?.button || 'Xác nhận'}
+              title={uiText(action?.button || 'Xác nhận')}
               variant={action?.danger ? 'danger' : 'primary'}
               onPress={() => void confirm()}
               busy={acting}
@@ -1161,17 +1134,17 @@ export function AdminPortalScreen() {
           </>
         }
       >
-        <Text style={a.text}>{action?.description}</Text>
+        <Text style={uiTextStyle(a.text)}>{uiText(action?.description)}</Text>
         {!!action?.context && (
-          <View style={{ padding: 14, borderRadius: 9, backgroundColor: colors.background }}>
-            <Text selectable style={a.text}>
-              {action.context}
+          <View style={uiStyle({ padding: 14, borderRadius: 9, backgroundColor: colors.background })}>
+            <Text selectable style={uiTextStyle(a.text)}>
+              {uiText(action.context)}
             </Text>
           </View>
         )}
         {action?.reason && (
           <AdminField
-            label="Lý do *"
+            label={uiText("Lý do *")}
             value={reason}
             onChange={setReason}
             multiline
@@ -1181,8 +1154,8 @@ export function AdminPortalScreen() {
         )}
         {!!actionError && <AdminNotice text={actionError} error />}
       </AdminModal>
-      <AdminModal visible={menu} title="Menu quản trị" onClose={() => setMenu(false)} width={360}>
-        <View style={{ backgroundColor: colors.navy, padding: 10, borderRadius: 12 }}>
+      <AdminModal visible={menu} title={uiText("Menu quản trị")} onClose={() => setMenu(false)} width={360}>
+        <View style={uiStyle({ backgroundColor: colors.navy, padding: 10, borderRadius: 12 })}>
           {navItems}
         </View>
       </AdminModal>

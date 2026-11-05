@@ -86,12 +86,12 @@ export const validateAdvanced = (filters: AdvancedFilters): void => {
   if (filters.roomTypes.some((value) => !ROOM_TYPES.some((type) => type.value === value)))
     throw new Error('Hãy chọn loại chỗ ở hợp lệ.');
 };
-export const searchDateLabel = (checkIn: string | null, checkOut: string | null): string => {
+export const searchDateLabel = (checkIn: string | null, checkOut: string | null, locale = 'vi-VN'): string => {
   if (!checkIn || !checkOut) return 'Bất kỳ lúc nào';
   const start = new Date(`${checkIn}T00:00:00Z`),
     end = new Date(`${checkOut}T00:00:00Z`);
   const month = (date: Date) =>
-    date.toLocaleDateString('vi-VN', { month: 'short', timeZone: 'UTC' });
+    date.toLocaleDateString(locale, { month: 'short', timeZone: 'UTC' });
   if (start.getUTCFullYear() !== end.getUTCFullYear())
     return `${start.getUTCDate()} ${month(start)} ${start.getUTCFullYear()} - ${end.getUTCDate()} ${month(end)} ${end.getUTCFullYear()}`;
   if (start.getUTCMonth() === end.getUTCMonth())

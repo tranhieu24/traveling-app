@@ -1,3 +1,6 @@
+import { uiLocale, useUiPreferences, uiStyle, uiText, uiColor, uiTextStyle } from '../preferences/ui';
+
+import { requestLogin } from '../navigation/authReturn';
 import { MediaNotice } from '../components/common/MediaNotice';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -19,6 +22,7 @@ import { formatPaymentMoney } from '../utils/paymentSummary';
 import { formatTripDates, paymentSplit } from '../utils/checkout';
 
 export const OrderReviewScreen: React.FC = () => {
+  useUiPreferences();
   const route = useRoute<RouteProp<RootStackParamList, 'OrderReview'>>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user, isLoading: authLoading } = useAuth();
@@ -58,7 +62,7 @@ export const OrderReviewScreen: React.FC = () => {
     queryFn: async () => (await apiClient.get(`/listings/${encodeURIComponent(quote.listingId)}`)).data.data,
     staleTime: 60000,
   });
-  const money = (value: number | string) => formatPaymentMoney(value, quote.currency || 'USD');
+  const money = (value: number | string) => formatPaymentMoney(value, quote.currency || 'USD', uiLocale());
   const partial = paymentSplit(quote.totalPrice, 'deposit', quote.policy?.depositAmount ?? 30);
   const trip: TripDraft = {
     checkInDate: quote.checkInDate,
@@ -154,7 +158,7 @@ export const OrderReviewScreen: React.FC = () => {
   const bookNow = async () => {
     if (pending.current || busy || editor) return;
     if (!user) {
-      navigation.navigate('Login');
+      requestLogin(navigation, { name: 'ListingDetail', params: { listingId: quote.listingId, openBooking: true, trip } });
       return;
     }
     if (!createdBooking.current) {
@@ -238,190 +242,186 @@ export const OrderReviewScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={styles.screen}>
-      <View style={styles.header}>
+    <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={uiStyle(styles.screen)}>
+      <View style={uiStyle(styles.header)}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Back from confirm and pay"
+          accessibilityLabel={uiText("Back from confirm and pay")}
           disabled={busy}
           onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.replace('ListingDetail', { listingId: quote.listingId }))}
-          style={styles.backButton}
+          style={uiStyle(styles.backButton)}
         >
-          <ChevronLeft size={25} color="#90979F" />
+          <ChevronLeft size={25} color={uiColor("#90979F")} />
         </Pressable>
-        <Text accessibilityRole="header" style={styles.headerTitle}>Xác nhận đặt phòng</Text>
-        <View style={styles.backButton} />
+        <Text accessibilityRole="header" style={uiTextStyle(styles.headerTitle)}>{uiText("Xác nhận đặt phòng")}</Text>
+        <View style={uiStyle(styles.backButton)} />
       </View>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <View style={styles.stayCard}>
-            <View style={styles.stayCopy}>
-              <Text style={styles.nightlyPrice}>
-                {money(quote.pricePerNight)}
-                <Text style={styles.perNight}>/đêm</Text>
+      <KeyboardAvoidingView style={uiStyle({ flex: 1 })} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={uiStyle(styles.content)} showsVerticalScrollIndicator={false}>
+          <View style={uiStyle(styles.stayCard)}>
+            <View style={uiStyle(styles.stayCopy)}>
+              <Text style={uiTextStyle(styles.nightlyPrice)}>
+                {uiText(money(quote.pricePerNight))}
+                <Text style={uiTextStyle(styles.perNight)}>{uiText("/đêm")}</Text>
               </Text>
-              <Text style={styles.stayTitle} numberOfLines={2}>{quote.title}</Text>
-              <View style={styles.ratingRow}>
-                <Star size={13} fill="#EBCB55" color="#EBCB55" />
-                <Text style={styles.rating}>
-                  {rating} <Text style={styles.reviewCount}>({listing?.review_count ?? 0})</Text>
+              <Text style={uiTextStyle(styles.stayTitle)} numberOfLines={2}>{uiText(quote.title)}</Text>
+              <View style={uiStyle(styles.ratingRow)}>
+                <Star size={13} fill={uiColor("#EBCB55")} color={uiColor("#EBCB55")} />
+                <Text style={uiTextStyle(styles.rating)}>
+                  {uiText(rating)} <Text style={uiTextStyle(styles.reviewCount)}>{uiText("(")}{uiText(listing?.review_count ?? 0)}{uiText(")")}</Text>
                 </Text>
               </View>
             </View>
             {photo ? (
-              <Image source={{ uri: photo }} resizeMode="cover" style={styles.stayImage} accessibilityLabel={quote.title} />
+              <Image source={{ uri: photo }} resizeMode="cover" style={uiStyle(styles.stayImage)} accessibilityLabel={uiText(quote.title)} />
             ) : (
-              <View style={[styles.stayImage, styles.imagePlaceholder]}><Home size={30} color="#9CA3AF" /></View>
+              <View style={uiStyle([styles.stayImage, styles.imagePlaceholder])}><Home size={30} color={uiColor("#9CA3AF")} /></View>
             )}
           </View>
 
           <MediaNotice context={quote.photoContext || listing?.photo_context} />
-          <View style={styles.tripSection}>
-            <Text style={styles.sectionTitle}>Chuyến đi của bạn</Text>
-            <View style={styles.tripRow}>
-              <View style={styles.rowCopy}>
-                <Text style={styles.tripLabel}>Ngày lưu trú</Text>
-                <Text style={styles.tripValue}>{formatTripDates(quote.checkInDate, quote.checkOutDate)}</Text>
+          <View style={uiStyle(styles.tripSection)}>
+            <Text style={uiTextStyle(styles.sectionTitle)}>{uiText("Chuyến đi của bạn")}</Text>
+            <View style={uiStyle(styles.tripRow)}>
+              <View style={uiStyle(styles.rowCopy)}>
+                <Text style={uiTextStyle(styles.tripLabel)}>{uiText("Ngày lưu trú")}</Text>
+                <Text style={uiTextStyle(styles.tripValue)}>{uiText(formatTripDates(quote.checkInDate, quote.checkOutDate))}</Text>
               </View>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Edit trip dates"
+                accessibilityLabel={uiText("Edit trip dates")}
                 disabled={busy || bookingCreated}
                 onPress={() => setEditor('dates')}
-                style={styles.editButton}
+                style={uiStyle(styles.editButton)}
               >
-                <Edit3 size={20} color="#424B53" />
+                <Edit3 size={20} color={uiColor("#424B53")} />
               </Pressable>
             </View>
-            <View style={styles.tripRow}>
-              <View style={styles.rowCopy}>
-                <Text style={styles.tripLabel}>Số khách</Text>
-                <Text style={styles.tripValue}>{quote.guests} khách</Text>
+            <View style={uiStyle(styles.tripRow)}>
+              <View style={uiStyle(styles.rowCopy)}>
+                <Text style={uiTextStyle(styles.tripLabel)}>{uiText("Số khách")}</Text>
+                <Text style={uiTextStyle(styles.tripValue)}>{uiText(quote.guests)}{uiText(" khách")}</Text>
               </View>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Edit trip guests"
+                accessibilityLabel={uiText("Edit trip guests")}
                 disabled={busy || bookingCreated}
                 onPress={() => setEditor('guests')}
-                style={styles.editButton}
+                style={uiStyle(styles.editButton)}
               >
-                <Edit3 size={20} color="#424B53" />
+                <Edit3 size={20} color={uiColor("#424B53")} />
               </Pressable>
             </View>
           </View>
 
-          <View style={styles.paymentSection}>
-            <Text style={styles.sectionTitle}>Hình thức thanh toán</Text>
+          <View style={uiStyle(styles.paymentSection)}>
+            <Text style={uiTextStyle(styles.sectionTitle)}>{uiText("Hình thức thanh toán")}</Text>
             <View accessibilityRole="radiogroup">
               <Pressable
                 accessibilityRole="radio"
-                accessibilityLabel="Pay in full"
+                accessibilityLabel={uiText("Pay in full")}
                 aria-checked={paymentPlan === 'full'}
                 accessibilityState={{ checked: paymentPlan === 'full', disabled: busy || bookingCreated }}
                 disabled={busy || bookingCreated}
                 onPress={() => setPaymentPlan('full')}
-                style={styles.paymentOption}
+                style={uiStyle(styles.paymentOption)}
               >
-                <View style={styles.optionCopy}>
-                  <Text style={styles.optionTitle}>Thanh toán toàn bộ</Text>
-                  <Text style={styles.optionDescription}>Thanh toán {money(quote.totalPrice)} để server xác nhận đặt phòng.</Text>
+                <View style={uiStyle(styles.optionCopy)}>
+                  <Text style={uiTextStyle(styles.optionTitle)}>{uiText("Thanh toán toàn bộ")}</Text>
+                  <Text style={uiTextStyle(styles.optionDescription)}>{uiText("Thanh toán ")}{uiText(money(quote.totalPrice))}{uiText(" để server xác nhận đặt phòng.")}</Text>
                 </View>
-                <View style={[styles.radio, paymentPlan === 'full' && styles.checkedRadio]}>
-                  {paymentPlan === 'full' && <View style={styles.radioDot} />}
+                <View style={uiStyle([styles.radio, paymentPlan === 'full' && styles.checkedRadio])}>
+                  {paymentPlan === 'full' && <View style={uiStyle(styles.radioDot)} />}
                 </View>
               </Pressable>
               <Pressable
                 accessibilityRole="radio"
-                accessibilityLabel="Pay a part now"
+                accessibilityLabel={uiText("Pay a part now")}
                 aria-checked={paymentPlan === 'deposit'}
                 accessibilityState={{ checked: paymentPlan === 'deposit', disabled: busy || bookingCreated }}
                 disabled={busy || bookingCreated}
                 onPress={() => setPaymentPlan('deposit')}
-                style={styles.paymentOption}
+                style={uiStyle(styles.paymentOption)}
               >
-                <View style={styles.optionCopy}>
-                  <Text style={styles.optionTitle}>Trả cọc trước</Text>
-                  <Text style={styles.optionDescription}>
-                    Trả trước {money(partial.dueNow)}. Phần còn lại cần thanh toán trước khi hoàn tất chuyến đi.
-                  </Text>
+                <View style={uiStyle(styles.optionCopy)}>
+                  <Text style={uiTextStyle(styles.optionTitle)}>{uiText("Trả cọc trước")}</Text>
+                  <Text style={uiTextStyle(styles.optionDescription)}>{uiText("Trả trước ")}{uiText(money(partial.dueNow))}{uiText(". Phần còn lại cần thanh toán trước khi hoàn tất chuyến đi.")}</Text>
                 </View>
-                <View style={[styles.radio, paymentPlan === 'deposit' && styles.checkedRadio]}>
-                  {paymentPlan === 'deposit' && <View style={styles.radioDot} />}
+                <View style={uiStyle([styles.radio, paymentPlan === 'deposit' && styles.checkedRadio])}>
+                  {paymentPlan === 'deposit' && <View style={uiStyle(styles.radioDot)} />}
                 </View>
               </Pressable>
             </View>
           </View>
 
-          <View style={styles.contextCard}>
-            <Text style={styles.sectionTitle}>Thông tin liên hệ</Text>
-            <Text style={styles.contextHelp}>Thông tin này được lưu cho đơn đặt phòng, không tự thay đổi hồ sơ tài khoản.</Text>
+          <View style={uiStyle(styles.contextCard)}>
+            <Text style={uiTextStyle(styles.sectionTitle)}>{uiText("Thông tin liên hệ")}</Text>
+            <Text style={uiTextStyle(styles.contextHelp)}>{uiText("Thông tin này được lưu cho đơn đặt phòng, không tự thay đổi hồ sơ tài khoản.")}</Text>
             {([
               { key: 'fullName', label: 'Họ và tên', placeholder: 'Tên người liên hệ' },
               { key: 'email', label: 'Email liên hệ', placeholder: 'email@example.com' },
               { key: 'phone', label: 'Số điện thoại (không bắt buộc)', placeholder: '+84 ...' },
             ] as const).map((field) => (
-              <View key={field.key} style={{ gap: 6 }}>
-                <Text style={styles.fieldLabel}>{field.label}</Text>
+              <View key={field.key} style={uiStyle({ gap: 6 })}>
+                <Text style={uiTextStyle(styles.fieldLabel)}>{uiText(field.label)}</Text>
                 <TextInput
-                  accessibilityLabel={field.label}
+                  accessibilityLabel={uiText(field.label)}
                   value={contact[field.key]}
                   onChangeText={(value) => setContact((current) => ({ ...current, [field.key]: value }))}
                   editable={!busy && !bookingCreated}
-                  placeholder={field.placeholder}
+                  placeholder={uiText(field.placeholder)}
                   keyboardType={field.key === 'email' ? 'email-address' : field.key === 'phone' ? 'phone-pad' : 'default'}
                   autoCapitalize={field.key === 'fullName' ? 'words' : 'none'}
                   maxLength={field.key === 'fullName' ? 100 : field.key === 'email' ? 255 : 30}
-                  style={styles.input}
+                  style={uiStyle(styles.input)}
                 />
               </View>
             ))}
-            <Text style={styles.fieldLabel}>Yêu cầu đặc biệt (không bắt buộc)</Text>
+            <Text style={uiTextStyle(styles.fieldLabel)}>{uiText("Yêu cầu đặc biệt (không bắt buộc)")}</Text>
             <TextInput
-              accessibilityLabel="Yêu cầu đặc biệt"
-              placeholder="Ví dụ: dự kiến đến muộn. Yêu cầu cần được cơ sở xác nhận."
+              accessibilityLabel={uiText("Yêu cầu đặc biệt")}
+              placeholder={uiText("Ví dụ: dự kiến đến muộn. Yêu cầu cần được cơ sở xác nhận.")}
               multiline
               maxLength={500}
               value={specialRequests}
               onChangeText={setSpecialRequests}
               editable={!busy && !bookingCreated}
-              style={[styles.input, { minHeight: 84, textAlignVertical: 'top' }]}
+              style={uiStyle([styles.input, { minHeight: 84, textAlignVertical: 'top' }])}
             />
           </View>
 
           {/* Ô nhập mã khuyến mãi / Coupon */}
-          <View style={styles.contextCard}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Tag size={16} color="#00B8CE" />
-                <Text style={styles.sectionTitle}>Mã khuyến mãi / Coupon</Text>
+          <View style={uiStyle(styles.contextCard)}>
+            <View style={uiStyle({ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' })}>
+              <View style={uiStyle({ flexDirection: 'row', alignItems: 'center', gap: 6 })}>
+                <Tag size={16} color={uiColor("#00B8CE")} />
+                <Text style={uiTextStyle(styles.sectionTitle)}>{uiText("Mã khuyến mãi / Coupon")}</Text>
               </View>
               {appliedCoupon ? (
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Hủy áp dụng mã khuyến mãi"
+                  accessibilityLabel={uiText("Hủy áp dụng mã khuyến mãi")}
                   disabled={busy || bookingCreated || checkingCoupon}
                   onPress={removeCouponCode}
                 >
-                  <Text style={styles.removeCouponText}>Hủy áp dụng</Text>
+                  <Text style={uiTextStyle(styles.removeCouponText)}>{uiText("Hủy áp dụng")}</Text>
                 </Pressable>
               ) : null}
             </View>
 
             {appliedCoupon ? (
-              <View style={styles.appliedRow}>
-                <View style={styles.appliedTag}>
-                  <Text style={styles.appliedTagText}>{appliedCoupon}</Text>
+              <View style={uiStyle(styles.appliedRow)}>
+                <View style={uiStyle(styles.appliedTag)}>
+                  <Text style={uiTextStyle(styles.appliedTagText)}>{uiText(appliedCoupon)}</Text>
                 </View>
-                <Text style={styles.appliedNotice}>
-                  Đã giảm {money(quote.discountAmount || 0)} vào tổng tiền
-                </Text>
+                <Text style={uiTextStyle(styles.appliedNotice)}>{uiText("Đã giảm ")}{uiText(money(quote.discountAmount || 0))}{uiText(" vào tổng tiền")}</Text>
               </View>
             ) : (
-              <View style={styles.couponInputRow}>
+              <View style={uiStyle(styles.couponInputRow)}>
                 <TextInput
-                  accessibilityLabel="Nhập mã khuyến mãi"
-                  placeholder="Nhập mã (ví dụ: SALE2026)"
-                  placeholderTextColor="#9CA3AF"
+                  accessibilityLabel={uiText("Nhập mã khuyến mãi")}
+                  placeholder={uiText("Nhập mã (ví dụ: SALE2026)")}
+                  placeholderTextColor={uiColor("#9CA3AF")}
                   value={couponInput}
                   onChangeText={(val) => {
                     setCouponInput(val.toUpperCase());
@@ -430,22 +430,22 @@ export const OrderReviewScreen: React.FC = () => {
                   autoCapitalize="characters"
                   maxLength={40}
                   editable={!busy && !bookingCreated && !checkingCoupon}
-                  style={[styles.input, { flex: 1, textTransform: 'uppercase' }]}
+                  style={uiStyle([styles.input, { flex: 1, textTransform: 'uppercase' }])}
                 />
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Áp dụng mã khuyến mãi"
+                  accessibilityLabel={uiText("Áp dụng mã khuyến mãi")}
                   disabled={!couponInput.trim() || busy || bookingCreated || checkingCoupon}
                   onPress={applyCouponCode}
-                  style={[
+                  style={uiStyle([
                     styles.applyCouponBtn,
                     (!couponInput.trim() || busy || bookingCreated || checkingCoupon) && styles.disabledApplyBtn,
-                  ]}
+                  ])}
                 >
                   {checkingCoupon ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
+                    <ActivityIndicator size="small" color={uiColor("#FFFFFF")} />
                   ) : (
-                    <Text style={styles.applyCouponBtnText}>Áp dụng</Text>
+                    <Text style={uiTextStyle(styles.applyCouponBtnText)}>{uiText("Áp dụng")}</Text>
                   )}
                 </Pressable>
               </View>
@@ -454,103 +454,99 @@ export const OrderReviewScreen: React.FC = () => {
             {couponMessage ? (
               <Text
                 accessibilityRole={couponMessage.isError ? 'alert' : 'none'}
-                style={[styles.couponFeedback, couponMessage.isError ? styles.couponError : styles.couponSuccess]}
+                style={uiTextStyle([styles.couponFeedback, couponMessage.isError ? styles.couponError : styles.couponSuccess])}
               >
-                {couponMessage.text}
+                {uiText(couponMessage.text)}
               </Text>
             ) : null}
           </View>
 
-          <View style={styles.contextCard}>
-            <Text style={styles.sectionTitle}>Điều kiện đặt phòng</Text>
+          <View style={uiStyle(styles.contextCard)}>
+            <Text style={uiTextStyle(styles.sectionTitle)}>{uiText("Điều kiện đặt phòng")}</Text>
             {quote.policy ? (
               <>
-                <Text style={styles.contextHelp}>{quote.policy.cancellation}</Text>
-                <Text style={styles.contextHelp}>{quote.policy.payment}</Text>
-                <Text style={styles.contextHelp}>{quote.policy.hold}</Text>
-                <Text style={styles.contextHelp}>
-                  Thời gian xét điều kiện: {quote.policy.timezone}. Đây là điều kiện hiện hành của phiên bản {quote.policy.version}.
-                </Text>
+                <Text style={uiTextStyle(styles.contextHelp)}>{uiText(quote.policy.cancellation)}</Text>
+                <Text style={uiTextStyle(styles.contextHelp)}>{uiText(quote.policy.payment)}</Text>
+                <Text style={uiTextStyle(styles.contextHelp)}>{uiText(quote.policy.hold)}</Text>
+                <Text style={uiTextStyle(styles.contextHelp)}>{uiText("Thời gian xét điều kiện: ")}{uiText(quote.policy.timezone)}{uiText(". Đây là điều kiện hiện hành của phiên bản ")}{uiText(quote.policy.version)}{uiText(".")}</Text>
               </>
             ) : (
-              <Text style={styles.error}>Chưa tải được chính sách từ server. Hãy quay lại phòng và lấy báo giá mới.</Text>
+              <Text style={uiTextStyle(styles.error)}>{uiText("Chưa tải được chính sách từ server. Hãy quay lại phòng và lấy báo giá mới.")}</Text>
             )}
             <Pressable
               accessibilityRole="checkbox"
               accessibilityState={{ checked: accepted, disabled: busy || bookingCreated }}
               onPress={() => setAccepted((value) => !value)}
               disabled={busy || bookingCreated}
-              style={styles.agree}
+              style={uiStyle(styles.agree)}
             >
-              <View style={[styles.checkbox, accepted && { backgroundColor: theme.colors.primary }]}>
-                <Text style={{ color: 'white' }}>{accepted ? '✓' : ''}</Text>
+              <View style={uiStyle([styles.checkbox, accepted && { backgroundColor: theme.colors.primary }])}>
+                <Text style={uiTextStyle({ color: 'white' })}>{accepted ? uiText('✓') : uiText('')}</Text>
               </View>
-              <Text style={[styles.fieldLabel, { flex: 1 }]}>Tôi đã đọc và đồng ý với điều kiện đặt phòng, thanh toán và hủy ở trên.</Text>
+              <Text style={uiTextStyle([styles.fieldLabel, { flex: 1 }])}>{uiText("Tôi đã đọc và đồng ý với điều kiện đặt phòng, thanh toán và hủy ở trên.")}</Text>
             </Pressable>
           </View>
 
-          <View style={styles.priceSection}>
-            <Text style={styles.sectionTitle}>Chi tiết giá</Text>
-            <View style={styles.priceRows}>
-              <View style={styles.priceRow}>
-                <Text style={styles.priceLabel}>{money(quote.pricePerNight)} x {quote.totalNights} đêm</Text>
-                <Text style={styles.priceValue}>{money(quote.basePriceTotal)}</Text>
+          <View style={uiStyle(styles.priceSection)}>
+            <Text style={uiTextStyle(styles.sectionTitle)}>{uiText("Chi tiết giá")}</Text>
+            <View style={uiStyle(styles.priceRows)}>
+              <View style={uiStyle(styles.priceRow)}>
+                <Text style={uiTextStyle(styles.priceLabel)}>{uiText(money(quote.pricePerNight))}{uiText(" x ")}{uiText(quote.totalNights)}{uiText(" đêm")}</Text>
+                <Text style={uiTextStyle(styles.priceValue)}>{uiText(money(quote.basePriceTotal))}</Text>
               </View>
-              <View style={styles.priceRow}>
-                <Text style={styles.priceLabel}>Phí vệ sinh</Text>
-                <Text style={styles.priceValue}>{money(quote.cleaningFee)}</Text>
+              <View style={uiStyle(styles.priceRow)}>
+                <Text style={uiTextStyle(styles.priceLabel)}>{uiText("Phí vệ sinh")}</Text>
+                <Text style={uiTextStyle(styles.priceValue)}>{uiText(money(quote.cleaningFee))}</Text>
               </View>
-              <View style={styles.priceRow}>
-                <Text style={styles.priceLabel}>Phí dịch vụ Traveling</Text>
-                <Text style={styles.priceValue}>{money(quote.serviceFee)}</Text>
+              <View style={uiStyle(styles.priceRow)}>
+                <Text style={uiTextStyle(styles.priceLabel)}>{uiText("Phí dịch vụ Traveling")}</Text>
+                <Text style={uiTextStyle(styles.priceValue)}>{uiText(money(quote.serviceFee))}</Text>
               </View>
               {Number(quote.discountAmount || 0) > 0 && (
-                <View style={styles.priceRow}>
-                  <Text style={[styles.priceLabel, { color: '#00838F', fontWeight: '600' }]}>
-                    Giảm giá ({appliedCoupon || 'Mã ưu đãi'})
-                  </Text>
-                  <Text style={styles.discount}>-{money(quote.discountAmount!)}</Text>
+                <View style={uiStyle(styles.priceRow)}>
+                  <Text style={uiTextStyle([styles.priceLabel, { color: '#00838F', fontWeight: '600' }])}>{uiText("Giảm giá (")}{uiText(appliedCoupon || 'Mã ưu đãi')}{uiText(")")}</Text>
+                  <Text style={uiTextStyle(styles.discount)}>{uiText("-")}{uiText(money(quote.discountAmount!))}</Text>
                 </View>
               )}
               {Number(quote.taxAmount || 0) > 0 && (
-                <View style={styles.priceRow}>
-                  <Text style={styles.priceLabel}>Thuế</Text>
-                  <Text style={styles.priceValue}>{money(quote.taxAmount!)}</Text>
+                <View style={uiStyle(styles.priceRow)}>
+                  <Text style={uiTextStyle(styles.priceLabel)}>{uiText("Thuế")}</Text>
+                  <Text style={uiTextStyle(styles.priceValue)}>{uiText(money(quote.taxAmount!))}</Text>
                 </View>
               )}
             </View>
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Tổng cộng ({quote.currency || 'USD'})</Text>
-              <Text style={styles.totalValue}>{money(quote.totalPrice)}</Text>
+            <View style={uiStyle(styles.totalRow)}>
+              <Text style={uiTextStyle(styles.totalLabel)}>{uiText("Tổng cộng (")}{uiText(quote.currency || 'USD')}{uiText(")")}</Text>
+              <Text style={uiTextStyle(styles.totalValue)}>{uiText(money(quote.totalPrice))}</Text>
             </View>
             {paymentPlan === 'deposit' && (
-              <View style={styles.depositSummary}>
-                <View style={styles.priceRow}>
-                  <Text style={styles.priceLabel}>Thanh toán hôm nay</Text>
-                  <Text style={styles.totalValue}>{money(partial.dueNow)}</Text>
+              <View style={uiStyle(styles.depositSummary)}>
+                <View style={uiStyle(styles.priceRow)}>
+                  <Text style={uiTextStyle(styles.priceLabel)}>{uiText("Thanh toán hôm nay")}</Text>
+                  <Text style={uiTextStyle(styles.totalValue)}>{uiText(money(partial.dueNow))}</Text>
                 </View>
-                <View style={styles.priceRow}>
-                  <Text style={styles.priceLabel}>Số tiền còn lại</Text>
-                  <Text style={styles.priceValue}>{money(partial.remaining)}</Text>
+                <View style={uiStyle(styles.priceRow)}>
+                  <Text style={uiTextStyle(styles.priceLabel)}>{uiText("Số tiền còn lại")}</Text>
+                  <Text style={uiTextStyle(styles.priceValue)}>{uiText(money(partial.remaining))}</Text>
                 </View>
               </View>
             )}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-      <View style={styles.footer}>
-        {!!error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
-        {bookingCreated && <Text style={styles.holdNote}>Đơn đã được tạo. Tiếp tục thanh toán cho đơn hiện tại, không cần đặt lại.</Text>}
+      <View style={uiStyle(styles.footer)}>
+        {!!error && <Text accessibilityRole="alert" style={uiTextStyle(styles.error)}>{uiText(error)}</Text>}
+        {bookingCreated && <Text style={uiTextStyle(styles.holdNote)}>{uiText("Đơn đã được tạo. Tiếp tục thanh toán cho đơn hiện tại, không cần đặt lại.")}</Text>}
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Đặt phòng ngay"
+          accessibilityLabel={uiText("Đặt phòng ngay")}
           disabled={busy || (!bookingCreated && !accepted)}
           onPress={bookNow}
-          style={[styles.bookButton, (busy || (!bookingCreated && !accepted)) && styles.disabled]}
+          style={uiStyle([styles.bookButton, (busy || (!bookingCreated && !accepted)) && styles.disabled])}
         >
-          {submitting && <ActivityIndicator size="small" color="#FFFFFF" />}
-          <Text style={styles.bookLabel}>
-            {submitting ? 'Đang tạo đặt phòng...' : bookingCreated ? 'Tiếp tục thanh toán' : 'Đặt phòng'}
+          {submitting && <ActivityIndicator size="small" color={uiColor("#FFFFFF")} />}
+          <Text style={uiTextStyle(styles.bookLabel)}>
+            {submitting ? uiText('Đang tạo đặt phòng...') : bookingCreated ? uiText('Tiếp tục thanh toán') : uiText('Đặt phòng')}
           </Text>
         </Pressable>
       </View>

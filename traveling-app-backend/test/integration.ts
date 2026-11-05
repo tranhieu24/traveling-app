@@ -94,8 +94,19 @@ async function main() {
       const r=(await owner.query('SELECT p.payment_status,p.provider,r.status,r.amount FROM payments p JOIN refunds r ON r.payment_id=p.id WHERE p.booking_id=$1',[legacy])).rows[0];
       assert.equal(r.payment_status,'succeeded');assert.equal(r.provider,'legacy_mock');assert.equal(r.status,'succeeded');assert.equal(Number(r.amount),100);
     });
+    await check('Fresh catalog migration resolves categories without creating ineligible reviews',async()=>{
+      const categories=(await owner.query("SELECT slug FROM categories WHERE slug IN ('beach','mountain','camping') ORDER BY slug")).rows.map((r:any)=>r.slug);
+      assert.deepEqual(categories,['beach','camping','mountain']);
+      assert.equal((await owner.query('SELECT count(*)::int n FROM reviews')).rows[0].n,0);
+      assert.equal((await owner.query("SELECT count(*)::int n FROM listings WHERE id BETWEEN '10000000-0000-0000-0000-000000000016'::uuid AND '10000000-0000-0000-0000-000000000050'::uuid AND category_id IS NOT NULL")).rows[0].n,35);
+    });
     await check('Audited listings require approved verified-property media to publish',async()=>{
       const id='10000000-0000-0000-0000-000000000016';
+      // Catalog migrations can already publish this row. Set up the unreviewed
+      // state explicitly so the guard test does not depend on catalog content.
+      await owner.query('UPDATE listings SET is_active=false WHERE id=$1',[id]);
+      await owner.query("UPDATE listing_source_audits SET media_usage_status='needs_review' WHERE listing_id=$1",[id]);
+      await owner.query('DELETE FROM listing_photos WHERE listing_id=$1',[id]);
       assert.equal((await owner.query('SELECT is_active FROM listings WHERE id=$1',[id])).rows[0].is_active,false);
       await assert.rejects(owner.query('UPDATE listings SET is_active=true WHERE id=$1',[id]),(error:any)=>error.constraint==='listing_media_publishable');
       await owner.query("UPDATE listing_source_audits SET media_usage_status='approved' WHERE listing_id=$1",[id]);
@@ -361,16 +372,54 @@ async function main() {
     await check('Notification outbox is durable, deduplicated and only marks provider-confirmed delivery',async()=>{
       const {dispatchNotifications}=await import('../src/services/notification.service');
       const id=randomUUID(),eventKey='booking:'+randomUUID()+':created';
-      await owner.query("INSERT INTO notification_outbox(id,event_key,event_type,user_id,recipient_email,payload) VALUES($1,$2,'booking_created',$3,'guest@example.test','{}')",[id,eventKey,ids.guest]);
+      // Other scenarios already populated the outbox. Give this retry fixture
+      // the earliest due time so a batch of one exercises this exact event.
+      await owner.query("INSERT INTO notification_outbox(id,event_key,event_type,user_id,recipient_email,payload,next_attempt_at) VALUES($1,$2,'booking_created',$3,'guest@example.test','{}','2000-01-01')",[id,eventKey,ids.guest]);
       assert.equal((await owner.query("INSERT INTO notification_outbox(event_key,event_type,user_id,recipient_email) VALUES($1,'booking_created',$2,'guest@example.test') ON CONFLICT DO NOTHING RETURNING id",[eventKey,ids.guest])).rowCount,0);
       const previous=ENV.EMAIL_MODE;ENV.EMAIL_MODE='webhook';
       try{
         const failed=await dispatchNotifications(1,async()=>{throw new Error('fixture unavailable')});
         assert.equal(failed.failed,1);assert.equal((await owner.query('SELECT status,provider_message_id FROM notification_outbox WHERE id=$1',[id])).rows[0].status,'failed');
-        await owner.query("UPDATE notification_outbox SET next_attempt_at=now() WHERE id=$1",[id]);
+        await owner.query("UPDATE notification_outbox SET next_attempt_at='2000-01-01' WHERE id=$1",[id]);
         const sent=await dispatchNotifications(1,async row=>({messageId:'fixture_'+row.id}));
         assert.equal(sent.sent,1);assert.equal((await owner.query('SELECT status,provider_message_id FROM notification_outbox WHERE id=$1',[id])).rows[0].status,'sent');
       }finally{ENV.EMAIL_MODE=previous;}
+    });
+    await check('In-app notifications isolate recipients, redact delivery data and preserve read timestamps',async()=>{
+      const mine=randomUUID(),foreign=randomUUID();
+      for(const [id,user] of [[mine,ids.guest],[foreign,ids.other]])await owner.query("INSERT INTO notification_outbox(id,event_key,event_type,user_id,recipient_email,payload,status,last_error) VALUES($1,$2,'payment_received',$3,'private@example.test',$4,'failed','private provider failure')",[id,'notification:'+id,user,JSON.stringify({amount:25,currency:'USD',password:'private fixture'})]);
+      assert.equal((await api('GET','/notifications')).status,401);
+      assert.equal((await api('GET','/notifications','blocked')).status,403);
+      const list=await api('GET','/notifications?limit=50','guest');
+      assert.equal(list.status,200);assert.match(list.headers.get('cache-control')||'',/private, no-store/);
+      assert.ok(list.body.data.items.some((item:any)=>item.id===mine));assert.ok(!list.body.data.items.some((item:any)=>item.id===foreign));
+      assert.doesNotMatch(JSON.stringify(list.body),/private@example|private provider|private fixture|recipient_email|event_key|last_error/);
+      assert.match(list.body.data.items.find((item:any)=>item.id===mine).body,/25.00 USD/);
+      assert.equal((await api('PATCH','/notifications/'+foreign+'/read','guest',{})).status,404);
+      assert.equal((await api('PATCH','/notifications/'+foreign+'/read','admin',{})).status,404);
+      assert.equal((await api('PATCH','/notifications/'+randomUUID()+'/read','guest',{})).status,404);
+      const first=await api('PATCH','/notifications/'+mine+'/read','guest',{});
+      const repeated=await api('PATCH','/notifications/'+mine+'/read','guest',{});
+      assert.equal(first.status,200);assert.equal(first.body.data.readAt,repeated.body.data.readAt);
+      assert.equal(first.body.data.unreadCount,list.body.data.unreadCount-1);
+      assert.equal((await owner.query('SELECT status,last_error FROM notification_outbox WHERE id=$1',[mine])).rows[0].status,'failed');
+      const unread=await api('GET','/notifications?unreadOnly=true','guest');
+      assert.ok(unread.body.data.items.every((item:any)=>item.readAt===null));assert.ok(!unread.body.data.items.some((item:any)=>item.id===mine));
+    });
+    await check('Read-all is owner-scoped, honors snapshot cutoffs and does not consume future notifications',async()=>{
+      const before=new Date(Date.now()-1000).toISOString(),older=randomUUID(),newer=randomUUID();
+      for(const [id,created] of [[older,new Date(Date.now()-2000).toISOString()],[newer,new Date().toISOString()]])await owner.query("INSERT INTO notification_outbox(id,event_key,event_type,user_id,recipient_email,created_at) VALUES($1,$2,'booking_created',$3,'guest@example.test',$4)",[id,'notification:'+id,ids.guest,created]);
+      assert.equal((await api('PATCH','/notifications/read-all','guest',{userId:ids.other})).status,400);
+      const otherBefore=(await api('GET','/notifications/unread-count','other')).body.data.unreadCount;
+      const snapshot=await api('PATCH','/notifications/read-all','guest',{before});assert.equal(snapshot.status,200);
+      const states=(await owner.query('SELECT id,read_at FROM notification_outbox WHERE id=ANY($1::uuid[])',[[older,newer]])).rows;
+      assert.ok(states.find((row:any)=>row.id===older).read_at);assert.equal(states.find((row:any)=>row.id===newer).read_at,null);
+      const all=await api('PATCH','/notifications/read-all','guest',{});assert.equal(all.body.data.unreadCount,0);
+      assert.equal((await api('PATCH','/notifications/read-all','guest',{})).body.data.updated,0);
+      assert.equal((await api('GET','/notifications/unread-count','other')).body.data.unreadCount,otherBefore);
+      const page=await api('GET','/notifications?limit=1','guest');assert.equal(page.body.data.items.length,1);assert.ok(page.body.pagination.totalPages>1);
+      assert.equal((await api('GET','/notifications?unreadOnly=wrong','guest')).status,400);
+      await owner.query('BEGIN');try{await owner.query('SET LOCAL ROLE anon');await assert.rejects(owner.query('SELECT read_at FROM notification_outbox'),(error:any)=>error.code==='42501');}finally{await owner.query('ROLLBACK');}
     });
     await check('Photo provenance remains consistent across listing, favorites, quote and booking',async()=>{
       const l=await listing('Photo provenance');
@@ -471,9 +520,9 @@ async function main() {
     await check('OpenAPI covers every actual route; Postman operation count and empty token templates',async()=>{
       const spec=JSON.parse(await fs.readFile('../docs/openapi.json','utf8'));
       const actual=new Set<string>(['GET /health','GET /api/v1/health','POST /api/v1/webhooks/mock','POST /api/v1/webhooks/stripe_test']);
-      for(const [file,prefix]of [['auth.routes','/auth'],['booking.routes',''],['discovery.routes',''],['interaction.routes',''],['admin.routes','/admin'],['support.routes','']]){
+      for(const [file,prefix]of [['auth.routes','/auth'],['booking.routes',''],['discovery.routes',''],['interaction.routes',''],['admin.routes','/admin'],['support.routes',''],['ai.routes','/ai'],['notification.routes','/notifications']]){
         const router=(await import('../src/routes/'+file)).default;
-        for(const layer of router.stack)if(layer.route)for(const [method,on]of Object.entries(layer.route.methods))if(on)actual.add(method.toUpperCase()+' /api/v1'+prefix+layer.route.path.replace(/:([A-Za-z]+)/g,'{$1}'));
+        for(const layer of router.stack)if(layer.route)for(const [method,on]of Object.entries(layer.route.methods))if(on)actual.add(method.toUpperCase()+' '+('/api/v1'+prefix+layer.route.path.replace(/:([A-Za-z]+)/g,'{$1}')).replace(/\/$/,''));
       }
       const documented=new Set<string>();
       for(const [url,methods]of Object.entries<any>(spec.paths))for(const method of Object.keys(methods))documented.add(method.toUpperCase()+' '+url);

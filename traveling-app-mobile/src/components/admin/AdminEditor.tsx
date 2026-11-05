@@ -1,3 +1,4 @@
+import { useUiPreferences, uiText, uiColor, uiTextStyle, uiStyle } from '../../preferences/ui';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
@@ -119,6 +120,7 @@ export function AdminEditor({
   onSaved,
   onAccessError,
 }: Props) {
+  useUiPreferences();
   const { user } = useAuth();
   const [values, setValues] = useState<AdminFormValues>(() => valuesFor(record, user?.id));
   const [amenityIds, setAmenityIds] = useState<string[]>([]);
@@ -189,12 +191,12 @@ export function AdminEditor({
   ) => (
     <AdminField
       key={key}
-      label={label}
+      label={uiText(label)}
       value={values[key] || ''}
       onChange={change(key)}
       disabled={busy || uploading}
       helper={options.helper}
-      placeholder={options.placeholder}
+      placeholder={uiText(options.placeholder)}
       multiline={options.multiline}
       keyboardType={options.numeric ? 'decimal-pad' : 'default'}
     />
@@ -202,7 +204,7 @@ export function AdminEditor({
   const choose = (key: string, label: string, options: { value: string; label: string }[]) => (
     <AdminSelect
       key={key}
-      label={label}
+      label={uiText(label)}
       value={values[key] || ''}
       onChange={change(key)}
       options={options}
@@ -273,7 +275,7 @@ export function AdminEditor({
   return (
     <AdminModal
       visible
-      title={`${record ? 'Chỉnh sửa' : 'Thêm'} ${labels[resource]}`}
+      title={uiText(`${record ? 'Chỉnh sửa' : 'Thêm'} ${labels[resource]}`)}
       subtitle={
         resource === 'listings'
           ? 'Thông tin được dùng trên ứng dụng đặt phòng. Giá và phí tính bằng USD.'
@@ -284,13 +286,13 @@ export function AdminEditor({
       footer={
         <>
           <AdminButton
-            title="Hủy bỏ"
+            title={uiText("Hủy bỏ")}
             variant="secondary"
             onPress={onClose}
             disabled={busy || uploading}
           />
           <AdminButton
-            title="Lưu thay đổi"
+            title={uiText("Lưu thay đổi")}
             onPress={() => void save()}
             busy={busy}
             disabled={isLoading || invalid || uploading}
@@ -300,12 +302,12 @@ export function AdminEditor({
     >
       {!!error && <AdminNotice text={error} error />}
       {isLoading ? (
-        <ActivityIndicator color={colors.primary} />
+        <ActivityIndicator color={uiColor(colors.primary)} />
       ) : invalid ? (
         <>
           <AdminNotice text={adminError(detail.error)} error />
           <AdminButton
-            title="Tải lại chi tiết"
+            title={uiText("Tải lại chi tiết")}
             variant="secondary"
             onPress={() => void detail.refetch()}
           />
@@ -314,9 +316,9 @@ export function AdminEditor({
         <>
           {resource === 'listings' && (
             <>
-              <Text style={a.sectionTitle}>Thông tin chỗ ở</Text>
+              <Text style={uiTextStyle(a.sectionTitle)}>{uiText("Thông tin chỗ ở")}</Text>
               {field('title', 'Tên chỗ ở *')}
-              <View style={a.wrap}>
+              <View style={uiStyle(a.wrap)}>
                 {choose('hostId', 'Chủ chỗ ở *', hostOptions)}
                 {choose('categoryId', 'Danh mục *', categoryOptions)}
               </View>
@@ -326,7 +328,7 @@ export function AdminEditor({
                   error
                 />
               )}
-              <View style={a.wrap}>
+              <View style={uiStyle(a.wrap)}>
                 {field('propertyType', 'Loại hình *', {
                   placeholder: 'Apartment, Villa, Homestay...',
                 })}
@@ -337,44 +339,44 @@ export function AdminEditor({
                 ])}
               </View>
               {field('address', 'Địa chỉ *')}
-              <View style={a.wrap}>
+              <View style={uiStyle(a.wrap)}>
                 {field('city', 'Thành phố *')}
                 {field('country', 'Quốc gia *')}
                 {field('region', 'Khu vực *')}
               </View>
-              <View style={a.wrap}>
+              <View style={uiStyle(a.wrap)}>
                 {field('latitude', 'Vĩ độ', { placeholder: '-90 đến 90' })}
                 {field('longitude', 'Kinh độ', { placeholder: '-180 đến 180' })}
               </View>
               {field('description', 'Mô tả', { multiline: true })}
-              <Text style={a.sectionTitle}>Sức chứa & giá</Text>
-              <View style={a.wrap}>
+              <Text style={uiTextStyle(a.sectionTitle)}>{uiText("Sức chứa & giá")}</Text>
+              <View style={uiStyle(a.wrap)}>
                 {field('maxGuests', 'Số khách tối đa *', { numeric: true })}
                 {field('bedrooms', 'Phòng ngủ *', { numeric: true })}
                 {field('beds', 'Số giường *', { numeric: true })}
                 {field('bathrooms', 'Phòng tắm *', { numeric: true })}
               </View>
-              <View style={a.wrap}>
+              <View style={uiStyle(a.wrap)}>
                 {field('pricePerNight', 'Giá mỗi đêm (USD) *', { numeric: true })}
                 {field('cleaningFee', 'Phí dọn dẹp (USD)', { numeric: true })}
                 {field('serviceFee', 'Phí dịch vụ (USD)', { numeric: true })}
               </View>
-              <View style={a.wrap}>
+              <View style={uiStyle(a.wrap)}>
                 {field('checkInTime', 'Giờ nhận phòng', { placeholder: '14:00' })}
                 {field('checkOutTime', 'Giờ trả phòng', { placeholder: '12:00' })}
               </View>
-              <Text style={a.sectionTitle}>Tiện ích</Text>
+              <Text style={uiTextStyle(a.sectionTitle)}>{uiText("Tiện ích")}</Text>
               {amenities.isLoading ? (
-                <ActivityIndicator color={colors.primary} />
+                <ActivityIndicator color={uiColor(colors.primary)} />
               ) : (
-                <View style={a.wrap}>
+                <View style={uiStyle(a.wrap)}>
                   {(amenities.data || []).map((item) => {
                     const selected = amenityIds.includes(item.id);
                     return (
                       <Pressable
                         key={item.id}
                         accessibilityRole="checkbox"
-                        accessibilityLabel={item.name}
+                        accessibilityLabel={uiText(item.name)}
                         accessibilityState={{ checked: selected }}
                         disabled={busy || uploading}
                         onPress={() =>
@@ -384,7 +386,7 @@ export function AdminEditor({
                               : [...current, item.id]
                           )
                         }
-                        style={[
+                        style={uiStyle([
                           a.row,
                           {
                             padding: 10,
@@ -393,50 +395,48 @@ export function AdminEditor({
                             borderColor: selected ? colors.primary : colors.border,
                             backgroundColor: selected ? colors.pale : '#FFF',
                           },
-                        ]}
+                        ])}
                       >
-                        <Check size={14} color={selected ? colors.primary : '#D2DCE1'} />
-                        <Text style={a.text}>{item.name}</Text>
+                        <Check size={14} color={uiColor(selected ? colors.primary : '#D2DCE1')} />
+                        <Text style={uiTextStyle(a.text)}>{uiText(item.name)}</Text>
                       </Pressable>
                     );
                   })}
                 </View>
               )}
-              <Text style={a.sectionTitle}>Bộ sưu tập ảnh *</Text>
-              <Text style={a.helper}>
-                Ảnh đầu tiên là ảnh bìa. Listing chưa hiển thị có thể lưu khi chưa có ảnh; trước khi bật phải duyệt nguồn và quyền sử dụng.
-              </Text>
-              <View style={a.wrap}>
+              <Text style={uiTextStyle(a.sectionTitle)}>{uiText("Bộ sưu tập ảnh *")}</Text>
+              <Text style={uiTextStyle(a.helper)}>{uiText("Ảnh đầu tiên là ảnh bìa. Listing chưa hiển thị có thể lưu khi chưa có ảnh; trước khi bật phải duyệt nguồn và quyền sử dụng.")}</Text>
+              <View style={uiStyle(a.wrap)}>
                 {photos.map((photo, index) => (
-                  <View key={`${photo.photoUrl}-${index}`} style={{ width: 230, gap: 7 }}>
+                  <View key={`${photo.photoUrl}-${index}`} style={uiStyle({ width: 230, gap: 7 })}>
                     <Image
                       source={{ uri: photo.photoUrl }}
-                      style={{
+                      style={uiStyle({
                         width: 230,
                         height: 150,
                         borderRadius: 8,
                         backgroundColor: colors.background,
-                      }}
+                      })}
                     />
                     <Pressable
                       accessibilityRole="button"
-                      accessibilityLabel={`Đặt ảnh ${index + 1} làm ảnh bìa`}
+                      accessibilityLabel={uiText(`Đặt ảnh ${index + 1} làm ảnh bìa`)}
                       disabled={busy || uploading}
                       onPress={() =>
                         setPhotos((current) => [{...current[index],role:'cover'},...current.filter((_, i) => i !== index).map(item=>item.role==='cover'?{...item,role:'other'}:item)])
                       }
                     >
                       <Text
-                        style={[a.helper, { color: index === 0 ? colors.primary : colors.muted }]}
+                        style={uiTextStyle([a.helper, { color: index === 0 ? colors.primary : colors.muted }])}
                       >
-                        {index === 0 ? '✓ Ảnh bìa' : 'Đặt làm ảnh bìa'}
+                        {index === 0 ? uiText('✓ Ảnh bìa') : uiText('Đặt làm ảnh bìa')}
                       </Text>
                     </Pressable>
-                    <AdminField label="Chú thích" value={photo.caption||''} disabled={busy||uploading}
+                    <AdminField label={uiText("Chú thích")} value={photo.caption||''} disabled={busy||uploading}
                       onChange={value=>setPhotos(current=>current.map((item,i)=>i===index?{...item,caption:value}:item))}/>
-                    <AdminField label="Văn bản thay thế" value={photo.altText||''} disabled={busy||uploading}
+                    <AdminField label={uiText("Văn bản thay thế")} value={photo.altText||''} disabled={busy||uploading}
                       onChange={value=>setPhotos(current=>current.map((item,i)=>i===index?{...item,altText:value}:item))}/>
-                    <AdminSelect label="Vai trò ảnh" value={index===0?'cover':photo.role||'other'} disabled={busy||uploading||index===0}
+                    <AdminSelect label={uiText("Vai trò ảnh")} value={index===0?'cover':photo.role||'other'} disabled={busy||uploading||index===0}
                       onChange={value=>setPhotos(current=>current.map((item,i)=>i===index?{...item,role:value}:item))}
                       options={[
                         {value:'cover',label:'Ảnh bìa'},{value:'bedroom',label:'Phòng ngủ'},{value:'bathroom',label:'Phòng tắm'},
@@ -444,8 +444,8 @@ export function AdminEditor({
                         {value:'amenity',label:'Tiện nghi'},{value:'other',label:'Khác'},
                       ]}/>
                     <AdminButton
-                      title="Xóa ảnh"
-                      label={`Xóa ảnh ${index + 1}`}
+                      title={uiText("Xóa ảnh")}
+                      label={uiText(`Xóa ảnh ${index + 1}`)}
                       small
                       variant="danger"
                       disabled={busy || uploading}
@@ -455,26 +455,26 @@ export function AdminEditor({
                 ))}
               </View>
               <AdminButton
-                title="Tải ảnh lên"
+                title={uiText("Tải ảnh lên")}
                 variant="secondary"
-                icon={<ImagePlus size={17} color={colors.primary} />}
+                icon={<ImagePlus size={17} color={uiColor(colors.primary)} />}
                 onPress={() => void upload()}
                 busy={uploading}
                 disabled={busy || photos.length >= 30}
               />
-              <View style={[a.wrap, { alignItems: 'flex-end' }]}>
+              <View style={uiStyle([a.wrap, { alignItems: 'flex-end' }])}>
                 <AdminField
-                  label="Hoặc dùng đường dẫn ảnh"
+                  label={uiText("Hoặc dùng đường dẫn ảnh")}
                   value={photoUrl}
                   onChange={setPhotoUrl}
-                  placeholder="https://..."
+                  placeholder={uiText("https://...")}
                   disabled={busy || uploading}
                 />
                 <AdminButton
-                  title="Thêm ảnh"
+                  title={uiText("Thêm ảnh")}
                   variant="secondary"
                   disabled={busy || uploading || photos.length >= 30}
-                  icon={<Plus size={15} color={colors.primary} />}
+                  icon={<Plus size={15} color={uiColor(colors.primary)} />}
                   onPress={() => {
                     try {
                       const url = new URL(photoUrl.trim());
@@ -491,8 +491,8 @@ export function AdminEditor({
                   }}
                 />
               </View>
-              <Text style={a.sectionTitle}>Nguồn và quyền sử dụng ảnh</Text>
-              <Text style={a.helper}>Để trống trang nguồn cho listing demo cũ. Với 35 homestay có provenance, chỉ chọn “Đã duyệt” khi có bằng chứng quyền sử dụng rõ ràng.</Text>
+              <Text style={uiTextStyle(a.sectionTitle)}>{uiText("Nguồn và quyền sử dụng ảnh")}</Text>
+              <Text style={uiTextStyle(a.helper)}>{uiText("Để trống trang nguồn cho listing demo cũ. Với 35 homestay có provenance, chỉ chọn “Đã duyệt” khi có bằng chứng quyền sử dụng rõ ràng.")}</Text>
               {field('sourcePageUrl','Trang nguồn chính thức',{placeholder:'https://...'})}
               {choose('mediaUsageStatus','Trạng thái duyệt media',[
                 {value:'needs_review',label:'Cần duyệt thêm'},{value:'blocked',label:'Đang bị chặn'},{value:'approved',label:'Đã duyệt'},
@@ -500,7 +500,7 @@ export function AdminEditor({
               {field('contextEvidence','Bằng chứng ảnh đúng cơ sở',{multiline:true})}
               {field('reviewNotes','Ghi chú duyệt',{multiline:true})}
               {values.mediaUsageStatus==='approved'&&<>
-                <View style={a.wrap}>
+                <View style={uiStyle(a.wrap)}>
                   {field('mediaProvider','Nhà cung cấp ảnh *')}
                   {field('mediaCreator','Tác giả/chủ ảnh *')}
                   {field('licenseName','Tên giấy phép/văn bản đồng ý *')}
@@ -536,16 +536,16 @@ export function AdminEditor({
               {categoryImage(values.iconName) && (
                 <Image
                   source={{ uri: categoryImage(values.iconName) }}
-                  style={{ width: 64, height: 64, borderRadius: 10 }}
+                  style={uiStyle({ width: 64, height: 64, borderRadius: 10 })}
                 />
               )}
               <AdminButton
-                title="Tải biểu tượng lên"
+                title={uiText("Tải biểu tượng lên")}
                 variant="secondary"
                 onPress={() => void upload(true)}
                 busy={uploading}
                 disabled={busy}
-                icon={<ImagePlus size={16} color={colors.primary} />}
+                icon={<ImagePlus size={16} color={uiColor(colors.primary)} />}
               />
               {field('description', 'Mô tả danh mục', { multiline: true })}
             </>
@@ -555,16 +555,13 @@ export function AdminEditor({
               {field('fullName', 'Họ tên *')}
               {field('email', 'Email *')}
               {field('phoneNumber', 'Số điện thoại')}
-              <Text style={a.helper}>
-                Email sẽ được đồng bộ với hệ thống xác thực. Vai trò tài khoản không được thay đổi
-                tại đây.
-              </Text>
+              <Text style={uiTextStyle(a.helper)}>{uiText("Email sẽ được đồng bộ với hệ thống xác thực. Vai trò tài khoản không được thay đổi tại đây.")}</Text>
             </>
           )}
           {resource === 'coupons' && (
             <>
               {field('code', 'Mã coupon *', { placeholder: 'SUMMERSALE' })}
-              <View style={a.wrap}>
+              <View style={uiStyle(a.wrap)}>
                 {field('discountPercent', 'Giảm giá (%) *', { numeric: true })}
                 {field('maxDiscount', 'Giảm tối đa (USD)', {
                   numeric: true,
@@ -577,14 +574,11 @@ export function AdminEditor({
                 helper: 'Định dạng ISO có múi giờ. Z là UTC, +07:00 là giờ Việt Nam.',
               })}
               {field('endsAt', 'Thời điểm kết thúc *', { placeholder: '2026-12-01T00:00:00Z' })}
-              <View style={a.wrap}>
+              <View style={uiStyle(a.wrap)}>
                 {field('maxUses', 'Số lượt phát hành *', { numeric: true })}
                 {field('perUserLimit', 'Lượt tối đa mỗi khách *', { numeric: true })}
               </View>
-              <Text style={a.helper}>
-                Đã sử dụng: {detail.data?.used_count || record?.used_count || 0} lượt. Số lượng phát
-                hành không được thấp hơn số này.
-              </Text>
+              <Text style={uiTextStyle(a.helper)}>{uiText("Đã sử dụng: ")}{uiText(detail.data?.used_count || record?.used_count || 0)}{uiText(" lượt. Số lượng phát hành không được thấp hơn số này.")}</Text>
               {choose('categoryId', 'Giới hạn danh mục', [
                 { value: '', label: 'Tất cả danh mục' },
                 ...categoryOptions,

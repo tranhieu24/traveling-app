@@ -1,3 +1,4 @@
+import { useUiPreferences } from '../preferences/ui';
 import { ForgotPasswordScreen,ResetPasswordScreen } from '../screens/PasswordRecoveryScreen';
 import React from 'react';
 import { SupportScreen,AdminSupportScreen } from '../screens/SupportScreen';
@@ -22,15 +23,17 @@ import { BookingDetailScreen } from '../screens/BookingDetailScreen';
 import { AllReviewsScreen } from '../screens/AllReviewsScreen';
 import { WriteReviewScreen } from '../screens/WriteReviewScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
+import { NotificationsScreen } from '../screens/NotificationsScreen';
 import { HelpCenterScreen } from '../screens/HelpCenterScreen';
 import { PaymentsPayoutsScreen } from '../screens/PaymentsPayoutsScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export const AppNavigator: React.FC = () => {
+  useUiPreferences();
   return (
     <Stack.Navigator
-      initialRouteName="Splash"
+      initialRouteName="MainTabs"
       screenOptions={{
         headerShown: false,
         animation: 'slide_from_right',
@@ -50,6 +53,7 @@ export const AppNavigator: React.FC = () => {
       <Stack.Screen name="MainTabs" component={TabNavigator} />
       <Stack.Screen name="PaymentsPayouts" component={PaymentsPayoutsScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen name="Notifications" component={NotificationsScreen} />
       <Stack.Screen name="HelpCenter" component={HelpCenterScreen} />
       <Stack.Screen name="ListingDetail" component={ListingDetailScreen} />
       <Stack.Screen

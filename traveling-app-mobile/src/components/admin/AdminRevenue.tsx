@@ -1,3 +1,4 @@
+import { useUiPreferences, uiStyle, uiTextStyle, uiText, uiColor } from '../../preferences/ui';
 import React, { useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
@@ -37,46 +38,48 @@ export function AdminStat({
   icon?: React.ReactNode;
   tone?: string;
 }) {
+  useUiPreferences();
   return (
-    <View style={[a.card, { padding: 20, flex: 1, minWidth: 180, gap: 13 }]}>
-      <View style={[a.row, { justifyContent: 'space-between' }]}>
-        <Text style={[a.muted, { flex: 1 }]}>{label}</Text>
-        <View style={{ backgroundColor: tone, padding: 8, borderRadius: 9 }}>
-          {icon || <TrendingUp size={17} color={colors.primary} />}
+    <View style={uiStyle([a.card, { padding: 20, flex: 1, minWidth: 180, gap: 13 }])}>
+      <View style={uiStyle([a.row, { justifyContent: 'space-between' }])}>
+        <Text style={uiTextStyle([a.muted, { flex: 1 }])}>{uiText(label)}</Text>
+        <View style={uiStyle({ backgroundColor: tone, padding: 8, borderRadius: 9 })}>
+          {icon || <TrendingUp size={17} color={uiColor(colors.primary)} />}
         </View>
       </View>
-      <Text style={{ fontSize: 27, fontWeight: '700', color: colors.ink }}>{value}</Text>
-      {!!detail && <Text style={a.helper}>{detail}</Text>}
+      <Text style={uiTextStyle({ fontSize: 27, fontWeight: '700', color: colors.ink })}>{uiText(value)}</Text>
+      {!!detail && <Text style={uiTextStyle(a.helper)}>{uiText(detail)}</Text>}
     </View>
   );
 }
 
 export function RevenueChart({ report, compact }: { report: RevenueReport; compact?: boolean }) {
+  useUiPreferences();
   const series = revenueSeries(report.items, report.from, report.to, compact ? 8 : 12);
   const [selected, setSelected] = useState<number | null>(null);
   const maximum = Math.max(1, ...series.flatMap((point) => [point.gross, point.refunds]));
   const picked = selected !== null ? series[selected] : null;
   return (
-    <View style={[a.card, { padding: 22, gap: 18 }]}>
-      <View style={[a.row, { justifyContent: 'space-between', flexWrap: 'wrap' }]}>
+    <View style={uiStyle([a.card, { padding: 22, gap: 18 }])}>
+      <View style={uiStyle([a.row, { justifyContent: 'space-between', flexWrap: 'wrap' }])}>
         <View>
-          <Text style={a.sectionTitle}>Thu & hoàn tiền</Text>
-          <Text style={a.muted}>
-            {adminDate(report.from)} – {adminDate(report.to)} · USD · {report.timezone}
+          <Text style={uiTextStyle(a.sectionTitle)}>{uiText("Thu & hoàn tiền")}</Text>
+          <Text style={uiTextStyle(a.muted)}>
+            {uiText(adminDate(report.from))}{uiText(" – ")}{uiText(adminDate(report.to))}{uiText(" · USD · ")}{uiText(report.timezone)}
           </Text>
         </View>
-        <View style={a.row}>
-          <View style={[a.dot, { backgroundColor: colors.primary }]} />
-          <Text style={a.helper}>Đã thu</Text>
-          <View style={[a.dot, { backgroundColor: '#EFB56C', marginLeft: 10 }]} />
-          <Text style={a.helper}>Đã hoàn</Text>
+        <View style={uiStyle(a.row)}>
+          <View style={uiStyle([a.dot, { backgroundColor: colors.primary }])} />
+          <Text style={uiTextStyle(a.helper)}>{uiText("Đã thu")}</Text>
+          <View style={uiStyle([a.dot, { backgroundColor: '#EFB56C', marginLeft: 10 }])} />
+          <Text style={uiTextStyle(a.helper)}>{uiText("Đã hoàn")}</Text>
         </View>
       </View>
       {report.scope === 'test_and_mock_only' && (
-        <AdminBadge status="upcoming" label="Dữ liệu thanh toán thử nghiệm" />
+        <AdminBadge status="upcoming" label={uiText("Dữ liệu thanh toán thử nghiệm")} />
       )}
       <View
-        style={{
+        style={uiStyle({
           flexDirection: 'row',
           height: compact ? 170 : 220,
           gap: 9,
@@ -84,65 +87,61 @@ export function RevenueChart({ report, compact }: { report: RevenueReport; compa
           paddingTop: 20,
           borderBottomWidth: 1,
           borderBottomColor: colors.border,
-        }}
+        })}
       >
         {series.map((point, i) => (
           <Pressable
             key={point.day}
             accessibilityRole="button"
-            accessibilityLabel={`${point.day}: đã thu ${adminMoney(point.gross)}, đã hoàn ${adminMoney(point.refunds)}`}
+            accessibilityLabel={uiText(`${point.day}: đã thu ${adminMoney(point.gross)}, đã hoàn ${adminMoney(point.refunds)}`)}
             onPress={() => setSelected(i)}
-            style={{ flex: 1, height: '100%', justifyContent: 'flex-end', gap: 7 }}
+            style={uiStyle({ flex: 1, height: '100%', justifyContent: 'flex-end', gap: 7 })}
           >
             <View
-              style={{
+              style={uiStyle({
                 flex: 1,
                 flexDirection: 'row',
                 justifyContent: 'center',
                 alignItems: 'flex-end',
                 gap: 3,
                 paddingHorizontal: 2,
-              }}
+              })}
             >
               <View
-                style={{
+                style={uiStyle({
                   flex: 1,
                   maxWidth: 26,
                   height: point.gross ? `${Math.max(1, (point.gross / maximum) * 100)}%` : 2,
                   backgroundColor: selected === i ? '#087C90' : '#32BDCE',
                   borderTopLeftRadius: 4,
                   borderTopRightRadius: 4,
-                }}
+                })}
               />
               <View
-                style={{
+                style={uiStyle({
                   flex: 1,
                   maxWidth: 26,
                   height: point.refunds ? `${Math.max(1, (point.refunds / maximum) * 100)}%` : 2,
                   backgroundColor: '#EFB56C',
                   borderTopLeftRadius: 4,
                   borderTopRightRadius: 4,
-                }}
+                })}
               />
             </View>
             <Text
               numberOfLines={1}
-              style={[a.helper, { textAlign: 'center', fontSize: 9, paddingBottom: 7 }]}
+              style={uiTextStyle([a.helper, { textAlign: 'center', fontSize: 9, paddingBottom: 7 }])}
             >
-              {point.day.slice(5).split('-').reverse().join('/')}
+              {uiText(point.day.slice(5).split('-').reverse().join('/'))}
             </Text>
           </Pressable>
         ))}
       </View>
-      <Text style={a.helper}>
-        {picked
-          ? `Từ ${adminDate(picked.day)}: đã thu ${adminMoney(picked.gross)} · đã hoàn ${adminMoney(picked.refunds)} · thuần ${adminMoney(picked.gross - picked.refunds)}`
-          : 'Chọn một cột để xem số tiền trong kỳ. Các ngày được gộp khi chọn khoảng thời gian dài.'}
+      <Text style={uiTextStyle(a.helper)}>
+        {picked ? uiText(`Từ ${adminDate(picked.day)}: đã thu ${adminMoney(picked.gross)} · đã hoàn ${adminMoney(picked.refunds)} · thuần ${adminMoney(picked.gross - picked.refunds)}`) : uiText('Chọn một cột để xem số tiền trong kỳ. Các ngày được gộp khi chọn khoảng thời gian dài.')}
       </Text>
       {!report.items.length && (
-        <Text style={[a.muted, { textAlign: 'center' }]}>
-          Chưa có giao dịch thành công trong khoảng thời gian này.
-        </Text>
+        <Text style={uiTextStyle([a.muted, { textAlign: 'center' }])}>{uiText("Chưa có giao dịch thành công trong khoảng thời gian này.")}</Text>
       )}
     </View>
   );
@@ -155,6 +154,7 @@ export function AdminRevenue({
   userId: string;
   onAccessError: () => void;
 }) {
+  useUiPreferences();
   const [draft, setDraft] = useState(monthRange),
     [range, setRange] = useState(monthRange);
   const [error, setError] = useState(''),
@@ -194,62 +194,59 @@ export function AdminRevenue({
     }
   };
   return (
-    <View style={{ gap: 20 }}>
-      <View style={[a.card, { padding: 20, gap: 16 }]}>
-        <View style={[a.wrap, { alignItems: 'flex-end' }]}>
+    <View style={uiStyle({ gap: 20 })}>
+      <View style={uiStyle([a.card, { padding: 20, gap: 16 }])}>
+        <View style={uiStyle([a.wrap, { alignItems: 'flex-end' }])}>
           <AdminField
-            label="Từ ngày (YYYY-MM-DD)"
+            label={uiText("Từ ngày (YYYY-MM-DD)")}
             value={draft.from}
             onChange={(from) => setDraft((current) => ({ ...current, from }))}
           />
           <AdminField
-            label="Đến ngày (YYYY-MM-DD)"
+            label={uiText("Đến ngày (YYYY-MM-DD)")}
             value={draft.to}
             onChange={(to) => setDraft((current) => ({ ...current, to }))}
           />
-          <AdminButton title="Xem báo cáo" onPress={apply} busy={query.isFetching} />
+          <AdminButton title={uiText("Xem báo cáo")} onPress={apply} busy={query.isFetching} />
           <AdminButton
-            title="Xuất Excel"
+            title={uiText("Xuất Excel")}
             variant="secondary"
             onPress={() => void download()}
             busy={exporting}
             disabled={!report || query.isFetching || draft.from !== range.from || draft.to !== range.to || !!validateReportRange(draft.from, draft.to)}
-            icon={<Download size={16} color={colors.primary} />}
+            icon={<Download size={16} color={uiColor(colors.primary)} />}
           />
         </View>
-        <Text style={a.helper}>
-          Chỉ tính giao dịch đã thanh toán và hoàn tiền đã thành công. Ngày báo cáo dùng UTC; khoảng
-          xem tối đa 367 ngày. Nhấn “Xem báo cáo” để áp dụng khoảng ngày trước khi xuất Excel.
-        </Text>
+        <Text style={uiTextStyle(a.helper)}>{uiText("Chỉ tính giao dịch đã thanh toán và hoàn tiền đã thành công. Ngày báo cáo dùng UTC; khoảng xem tối đa 367 ngày. Nhấn “Xem báo cáo” để áp dụng khoảng ngày trước khi xuất Excel.")}</Text>
         {!!error && <AdminNotice text={error} error />}
         {!!notice && <AdminNotice text={notice} onClose={() => setNotice('')} />}
       </View>
       {query.isLoading ? (
-        <ActivityIndicator color={colors.primary} />
+        <ActivityIndicator color={uiColor(colors.primary)} />
       ) : query.error ? (
         <AdminEmpty error={adminError(query.error)} onRetry={() => void query.refetch()} />
       ) : (
         report && (
           <>
-            <View style={a.wrap}>
+            <View style={uiStyle(a.wrap)}>
               <AdminStat
-                label="Tổng tiền đã thu"
+                label={uiText("Tổng tiền đã thu")}
                 value={adminMoney(report.gross_payments)}
                 detail="Giao dịch thanh toán thành công"
               />
               <AdminStat
-                label="Tổng tiền đã hoàn"
+                label={uiText("Tổng tiền đã hoàn")}
                 value={adminMoney(report.refunds)}
                 detail="Yêu cầu hoàn tiền thành công"
                 tone="#FFF2E3"
               />
               <AdminStat
-                label="Doanh thu thuần"
+                label={uiText("Doanh thu thuần")}
                 value={adminMoney(report.net_revenue)}
                 detail="Đã thu trừ đã hoàn"
               />
               <AdminStat
-                label="Giao dịch thành công"
+                label={uiText("Giao dịch thành công")}
                 value={String(
                   report.items.reduce((n, item) => n + Number(item.successful_transactions), 0)
                 )}
@@ -257,12 +254,10 @@ export function AdminRevenue({
               />
             </View>
             <RevenueChart report={report} />
-            <View style={a.card}>
-              <View style={{ padding: 20 }}>
-                <Text style={a.sectionTitle}>Chi tiết giao dịch theo ngày</Text>
-                <Text style={a.helper}>
-                  Mỗi dòng được tách theo nhà cung cấp và loại giao dịch thử nghiệm.
-                </Text>
+            <View style={uiStyle(a.card)}>
+              <View style={uiStyle({ padding: 20 })}>
+                <Text style={uiTextStyle(a.sectionTitle)}>{uiText("Chi tiết giao dịch theo ngày")}</Text>
+                <Text style={uiTextStyle(a.helper)}>{uiText("Mỗi dòng được tách theo nhà cung cấp và loại giao dịch thử nghiệm.")}</Text>
               </View>
               <AdminTable
                 rows={report.items.map((item, index) => ({
@@ -274,7 +269,7 @@ export function AdminRevenue({
                     key: 'day',
                     title: 'NGÀY (UTC)',
                     width: 135,
-                    render: (r) => <Text style={a.text}>{adminDate(r.day)}</Text>,
+                    render: (r) => <Text style={uiTextStyle(a.text)}>{uiText(adminDate(r.day))}</Text>,
                   },
                   {
                     key: 'provider',
@@ -282,13 +277,9 @@ export function AdminRevenue({
                     width: 155,
                     render: (r) => (
                       <View>
-                        <Text style={a.text}>{r.provider}</Text>
-                        <Text style={a.helper}>
-                          {r.is_simulated
-                            ? 'Mô phỏng'
-                            : report.scope === 'test_and_mock_only'
-                              ? 'Thử nghiệm'
-                              : 'Giao dịch thực'}
+                        <Text style={uiTextStyle(a.text)}>{uiText(r.provider)}</Text>
+                        <Text style={uiTextStyle(a.helper)}>
+                          {r.is_simulated ? uiText('Mô phỏng') : report.scope === 'test_and_mock_only' ? uiText('Thử nghiệm') : uiText('Giao dịch thực')}
                         </Text>
                       </View>
                     ),
@@ -297,21 +288,21 @@ export function AdminRevenue({
                     key: 'gross',
                     title: 'ĐÃ THU',
                     width: 140,
-                    render: (r) => <Text style={a.text}>{adminMoney(r.gross_payments)}</Text>,
+                    render: (r) => <Text style={uiTextStyle(a.text)}>{uiText(adminMoney(r.gross_payments))}</Text>,
                   },
                   {
                     key: 'refunds',
                     title: 'ĐÃ HOÀN',
                     width: 140,
-                    render: (r) => <Text style={a.text}>{adminMoney(r.refunds)}</Text>,
+                    render: (r) => <Text style={uiTextStyle(a.text)}>{uiText(adminMoney(r.refunds))}</Text>,
                   },
                   {
                     key: 'net',
                     title: 'DOANH THU THUẦN',
                     width: 155,
                     render: (r) => (
-                      <Text style={[a.text, { fontWeight: '700', color: colors.primary }]}>
-                        {adminMoney(r.net_revenue)}
+                      <Text style={uiTextStyle([a.text, { fontWeight: '700', color: colors.primary }])}>
+                        {uiText(adminMoney(r.net_revenue))}
                       </Text>
                     ),
                   },
@@ -320,8 +311,8 @@ export function AdminRevenue({
                     title: 'GIAO DỊCH / HOÀN',
                     width: 150,
                     render: (r) => (
-                      <Text style={a.text}>
-                        {r.successful_transactions} / {r.successful_refunds}
+                      <Text style={uiTextStyle(a.text)}>
+                        {uiText(r.successful_transactions)}{uiText(" / ")}{uiText(r.successful_refunds)}
                       </Text>
                     ),
                   },
@@ -329,8 +320,8 @@ export function AdminRevenue({
               />
               {!report.items.length && (
                 <AdminEmpty
-                  title="Chưa có giao dịch"
-                  description="Chọn khoảng thời gian khác để xem báo cáo."
+                  title={uiText("Chưa có giao dịch")}
+                  description={uiText("Chọn khoảng thời gian khác để xem báo cáo.")}
                 />
               )}
             </View>

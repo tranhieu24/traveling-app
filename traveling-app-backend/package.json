@@ -13,8 +13,10 @@
     "expire-bookings": "tsx src/scripts/expire-bookings.ts",
     "docs:generate": "tsx src/scripts/generate-api-docs.ts",
     "test:isolated": "node test/run-isolated.cjs",
-    "test:ai": "node --test test/ai.test.cjs",
+    "test:ai": "node --test test/ai.test.cjs test/ai-chat.test.cjs",
+    "test:notifications": "npm run build && node test/notifications-integration.cjs",
     "test:ai:integration": "npm run build && node test/ai-integration.cjs",
+    "test:ai:integration:gemini": "npm run build && node test/ai-integration.cjs --gemini",
     "media:catalog": "tsx src/scripts/apply-media-catalog.ts",
     "notifications:dispatch": "tsx src/scripts/dispatch-notifications.ts"
   },

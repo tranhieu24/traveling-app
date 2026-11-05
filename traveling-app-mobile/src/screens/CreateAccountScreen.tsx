@@ -1,3 +1,4 @@
+import { useUiPreferences, uiStyle, uiTextStyle, uiText, uiColor } from '../preferences/ui';
 import React, { useState } from 'react';
 import {
   Keyboard,
@@ -31,6 +32,7 @@ const COUNTRIES = [
 type Notice = { title: string; message: string; offerEmail?: boolean };
 
 export const CreateAccountScreen: React.FC = () => {
+  useUiPreferences();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { isLoading } = useAuth();
   const [country, setCountry] = useState<(typeof COUNTRIES)[number]>(COUNTRIES[0]);
@@ -44,44 +46,44 @@ export const CreateAccountScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <SafeAreaView style={uiStyle(styles.screen)}>
       <KeyboardAvoidingView
-        style={styles.screen}
+        style={uiStyle(styles.screen)}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView
-          contentContainerStyle={styles.content}
+          contentContainerStyle={uiStyle(styles.content)}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <Text accessibilityRole="header" style={styles.title}>Tạo tài khoản</Text>
+          <Text accessibilityRole="header" style={uiTextStyle(styles.title)}>{uiText("Tạo tài khoản")}</Text>
 
-          <View style={styles.form}>
-            <Text style={styles.label} nativeID="mobile-number-label">Số điện thoại của bạn:</Text>
-            <View style={styles.phoneRow}>
+          <View style={uiStyle(styles.form)}>
+            <Text style={uiTextStyle(styles.label)} nativeID="mobile-number-label">{uiText("Số điện thoại của bạn:")}</Text>
+            <View style={uiStyle(styles.phoneRow)}>
               <Pressable
                 cssInterop={false}
                 accessibilityRole="button"
-                accessibilityLabel={`Country code: ${country.name}, ${country.dialCode}`}
-                accessibilityHint="Chọn quốc gia của bạn"
+                accessibilityLabel={uiText(`Country code: ${country.name}, ${country.dialCode}`)}
+                accessibilityHint={uiText("Chọn quốc gia của bạn")}
                 onPress={() => {
                   Keyboard.dismiss();
                   setCountryPickerVisible(true);
                 }}
-                style={({ pressed }) => [styles.countryButton, pressed && styles.pressed]}
+                style={uiStyle(({ pressed }) => [styles.countryButton, pressed && styles.pressed])}
               >
-                <Text style={styles.flag}>{country.flag}</Text>
-                <ChevronDown size={19} color="#292C30" strokeWidth={2.2} />
+                <Text style={uiTextStyle(styles.flag)}>{uiText(country.flag)}</Text>
+                <ChevronDown size={19} color={uiColor("#292C30")} strokeWidth={2.2} />
               </Pressable>
               <TextInput
-                accessibilityLabel={`Mobile number, country code ${country.dialCode}`}
+                accessibilityLabel={uiText(`Mobile number, country code ${country.dialCode}`)}
                 value={phone}
                 onChangeText={(value) => {
                   setPhone(value.replace(/[^\d\s()-]/g, ''));
                   setPhoneError('');
                 }}
-                placeholder={`${country.dialCode} Mobile number`}
-                placeholderTextColor="#BFC2C8"
+                placeholder={uiText(`${country.dialCode} Mobile number`)}
+                placeholderTextColor={uiColor("#BFC2C8")}
                 keyboardType="phone-pad"
                 textContentType="telephoneNumber"
                 autoComplete="tel-national"
@@ -89,10 +91,10 @@ export const CreateAccountScreen: React.FC = () => {
                 maxLength={20}
                 returnKeyType="done"
                 editable={false}
-                style={[styles.phoneInput, !!phoneError && styles.invalidInput]}
+                style={uiStyle([styles.phoneInput, !!phoneError && styles.invalidInput])}
               />
             </View>
-            {!!phoneError && <Text accessibilityRole="alert" style={styles.error}>{phoneError}</Text>}
+            {!!phoneError && <Text accessibilityRole="alert" style={uiTextStyle(styles.error)}>{uiText(phoneError)}</Text>}
 
             <Pressable
 
@@ -100,50 +102,46 @@ export const CreateAccountScreen: React.FC = () => {
               accessibilityRole="button"
               disabled
               accessibilityState={{ disabled: true }}
-              style={({ pressed }) => [styles.continueButton, { opacity: 0.5 }, pressed && styles.pressed]}
+              style={uiStyle(({ pressed }) => [styles.continueButton, { opacity: 0.5 }, pressed && styles.pressed])}
             >
-              <Text style={styles.continueText}>Đăng ký qua điện thoại - Sắp ra mắt</Text>
+              <Text style={uiTextStyle(styles.continueText)}>{uiText("Đăng ký qua điện thoại - Sắp ra mắt")}</Text>
             </Pressable>
 
-            <Text style={styles.separator}>or</Text>
+            <Text style={uiTextStyle(styles.separator)}>{uiText("or")}</Text>
 
-            <View style={styles.socialButtons}>
+            <View style={uiStyle(styles.socialButtons)}>
               <Pressable
                 cssInterop={false}
                 accessibilityRole="button"
                 disabled={isLoading}
                 onPress={() => navigation.navigate('Register')}
-                style={({ pressed }) => [styles.socialButton, styles.emailButton, pressed && styles.pressed]}
+                style={uiStyle(({ pressed }) => [styles.socialButton, styles.emailButton, pressed && styles.pressed])}
               >
-                <Mail size={21} color="#292C30" />
-                <Text style={[styles.socialText, styles.emailText]}>Tiếp tục với email</Text>
+                <Mail size={21} color={uiColor("#292C30")} />
+                <Text style={uiTextStyle([styles.socialText, styles.emailText])}>{uiText("Tiếp tục với email")}</Text>
               </Pressable>
               <SocialSignInButtons />
             </View>
 
-            <View style={styles.legal}>
-              <Text style={styles.legalText}>Khi đăng ký, bạn đồng ý với</Text>
-              <Text style={styles.legalText}>
-                <Text accessibilityRole="link" onPress={() => showLegalNotice('Điều khoản dịch vụ')} style={styles.legalLink}>
-                  Điều khoản dịch vụ
-                </Text>
-                {' và '}
-                <Text accessibilityRole="link" onPress={() => showLegalNotice('Chính sách quyền riêng tư')} style={styles.legalLink}>
-                  Chính sách quyền riêng tư.
-                </Text>
+            <View style={uiStyle(styles.legal)}>
+              <Text style={uiTextStyle(styles.legalText)}>{uiText("Khi đăng ký, bạn đồng ý với")}</Text>
+              <Text style={uiTextStyle(styles.legalText)}>
+                <Text accessibilityRole="link" onPress={() => showLegalNotice('Điều khoản dịch vụ')} style={uiTextStyle(styles.legalLink)}>{uiText("Điều khoản dịch vụ")}</Text>
+                {uiText(' và ')}
+                <Text accessibilityRole="link" onPress={() => showLegalNotice('Chính sách quyền riêng tư')} style={uiTextStyle(styles.legalLink)}>{uiText("Chính sách quyền riêng tư.")}</Text>
               </Text>
             </View>
           </View>
 
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Đã có tài khoản?</Text>
+          <View style={uiStyle(styles.footer)}>
+            <Text style={uiTextStyle(styles.footerText)}>{uiText("Đã có tài khoản?")}</Text>
             <Pressable
               accessibilityRole="link"
               hitSlop={8}
               disabled={isLoading}
               onPress={() => navigation.navigate('Login')}
             >
-              <Text style={styles.loginLink}>Đăng nhập</Text>
+              <Text style={uiTextStyle(styles.loginLink)}>{uiText("Đăng nhập")}</Text>
             </Pressable>
           </View>
         </ScrollView>
@@ -155,13 +153,13 @@ export const CreateAccountScreen: React.FC = () => {
         animationType="fade"
         onRequestClose={() => setCountryPickerVisible(false)}
       >
-        <View style={styles.modalOverlay}>
-          <Pressable style={StyleSheet.absoluteFill} accessibilityLabel="Đóng danh sách quốc gia" accessibilityRole="button" onPress={() => setCountryPickerVisible(false)} />
-          <View style={styles.modalCard} accessibilityViewIsModal>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle} accessibilityRole="header">Chọn quốc gia</Text>
-              <Pressable accessibilityRole="button" accessibilityLabel="Đóng" hitSlop={12} onPress={() => setCountryPickerVisible(false)}>
-                <X size={22} color="#292C30" />
+        <View style={uiStyle(styles.modalOverlay)}>
+          <Pressable style={uiStyle(StyleSheet.absoluteFill)} accessibilityLabel={uiText("Đóng danh sách quốc gia")} accessibilityRole="button" onPress={() => setCountryPickerVisible(false)} />
+          <View style={uiStyle(styles.modalCard)} accessibilityViewIsModal>
+            <View style={uiStyle(styles.modalHeader)}>
+              <Text style={uiTextStyle(styles.modalTitle)} accessibilityRole="header">{uiText("Chọn quốc gia")}</Text>
+              <Pressable accessibilityRole="button" accessibilityLabel={uiText("Đóng")} hitSlop={12} onPress={() => setCountryPickerVisible(false)}>
+                <X size={22} color={uiColor("#292C30")} />
               </Pressable>
             </View>
             <ScrollView>
@@ -171,18 +169,18 @@ export const CreateAccountScreen: React.FC = () => {
                   key={item.code}
                   accessibilityRole="radio"
                   accessibilityState={{ checked: country.code === item.code }}
-                  accessibilityLabel={`${item.name}, ${item.dialCode}`}
+                  accessibilityLabel={uiText(`${item.name}, ${item.dialCode}`)}
                   onPress={() => {
                     setCountry(item);
                     setPhoneError('');
                     setCountryPickerVisible(false);
                   }}
-                  style={({ pressed }) => [styles.countryOption, pressed && styles.pressed]}
+                  style={uiStyle(({ pressed }) => [styles.countryOption, pressed && styles.pressed])}
                 >
-                  <Text style={styles.optionFlag}>{item.flag}</Text>
-                  <Text style={styles.countryName}>{item.name}</Text>
-                  <Text style={styles.dialCode}>{item.dialCode}</Text>
-                  {country.code === item.code && <Check size={19} color="#00B8CE" />}
+                  <Text style={uiTextStyle(styles.optionFlag)}>{uiText(item.flag)}</Text>
+                  <Text style={uiTextStyle(styles.countryName)}>{uiText(item.name)}</Text>
+                  <Text style={uiTextStyle(styles.dialCode)}>{uiText(item.dialCode)}</Text>
+                  {country.code === item.code && <Check size={19} color={uiColor("#00B8CE")} />}
                 </Pressable>
               ))}
             </ScrollView>
@@ -191,24 +189,24 @@ export const CreateAccountScreen: React.FC = () => {
       </Modal>
 
       <Modal visible={!!notice} transparent animationType="fade" onRequestClose={() => setNotice(null)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard} accessibilityViewIsModal>
-            <Text style={styles.modalTitle} accessibilityRole="header">{notice?.title}</Text>
-            <Text style={styles.noticeMessage}>{notice?.message}</Text>
+        <View style={uiStyle(styles.modalOverlay)}>
+          <View style={uiStyle(styles.modalCard)} accessibilityViewIsModal>
+            <Text style={uiTextStyle(styles.modalTitle)} accessibilityRole="header">{uiText(notice?.title)}</Text>
+            <Text style={uiTextStyle(styles.noticeMessage)}>{uiText(notice?.message)}</Text>
             {notice?.offerEmail && (
               <Pressable
                 accessibilityRole="button"
-                style={styles.continueButton}
+                style={uiStyle(styles.continueButton)}
                 onPress={() => {
                   setNotice(null);
                   navigation.navigate('Register');
                 }}
               >
-                <Text style={styles.continueText}>Tiếp tục với email</Text>
+                <Text style={uiTextStyle(styles.continueText)}>{uiText("Tiếp tục với email")}</Text>
               </Pressable>
             )}
-            <Pressable accessibilityRole="button" onPress={() => setNotice(null)} style={styles.dismissButton}>
-              <Text style={styles.dismissText}>Đóng</Text>
+            <Pressable accessibilityRole="button" onPress={() => setNotice(null)} style={uiStyle(styles.dismissButton)}>
+              <Text style={uiTextStyle(styles.dismissText)}>{uiText("Đóng")}</Text>
             </Pressable>
           </View>
         </View>

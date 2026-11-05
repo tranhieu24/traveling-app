@@ -1,3 +1,4 @@
+import { useUiPreferences, uiClasses, uiText, uiColor } from '../../preferences/ui';
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { ChevronLeft } from 'lucide-react-native';
@@ -16,6 +17,7 @@ export const Header: React.FC<HeaderProps> = ({
   onBack,
   rightComponent,
 }) => {
+  useUiPreferences();
   const navigation = useNavigation();
 
   const handleBack = () => {
@@ -27,26 +29,26 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <View className="flex-row items-center justify-between px-4 py-3 bg-white border-b border-dark-border">
-      <View className="w-10 items-start">
+    <View className={uiClasses("flex-row items-center justify-between px-4 py-3 bg-white border-b border-dark-border")}>
+      <View className={uiClasses("w-10 items-start")}>
         {showBack && (
           <TouchableOpacity
             onPress={handleBack}
             accessibilityRole="button"
-            accessibilityLabel="Go back"
-            className="w-10 h-10 rounded-full items-center justify-center bg-gray-50 active:bg-gray-200"
+            accessibilityLabel={uiText("Go back")}
+            className={uiClasses("w-10 h-10 rounded-full items-center justify-center bg-gray-50 active:bg-gray-200")}
             activeOpacity={0.7}
           >
-            <ChevronLeft size={24} color="#222222" />
+            <ChevronLeft size={24} color={uiColor("#222222")} />
           </TouchableOpacity>
         )}
       </View>
 
-      <Text className="text-base font-bold text-dark flex-1 text-center" numberOfLines={1}>
-        {title || ''}
+      <Text className={uiClasses("text-base font-bold text-dark flex-1 text-center")} numberOfLines={1}>
+        {uiText(title || '')}
       </Text>
 
-      <View className="w-10 items-end">{rightComponent}</View>
+      <View className={uiClasses("w-10 items-end")}>{rightComponent}</View>
     </View>
   );
 };

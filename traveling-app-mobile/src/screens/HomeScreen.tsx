@@ -1,3 +1,4 @@
+import { useUiPreferences, uiStyle, uiText, uiColor, uiTextStyle } from '../preferences/ui';
 import React, { useEffect, useRef } from 'react';
 import {
   ActivityIndicator,
@@ -23,14 +24,17 @@ import { CategoryBar } from '../components/common/CategoryBar';
 import { ListingCard } from '../components/common/ListingCard';
 import { SkeletonListingList } from '../components/common/SkeletonLoader';
 import { EmptyState } from '../components/common/EmptyState';
+import { NotificationBell } from '../components/common/NotificationBell';
 import { useAuth } from '../context/AuthContext';
 
 export const HomeScreen: React.FC = () => {
+  useUiPreferences();
   const hasSearch = useFilterStore((value) => value.hasSearch);
   return hasSearch ? <SearchResultsScreen /> : <ExploreScreen />;
 };
 
 const ExploreScreen: React.FC = () => {
+  useUiPreferences();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user } = useAuth();
   const state = useFilterStore();
@@ -92,55 +96,56 @@ const ExploreScreen: React.FC = () => {
   ];
 
   const renderSearchHeader = () => (
-    <View style={styles.searchRow}>
-      <View style={styles.searchField}>
+    <View style={uiStyle(styles.searchRow)}>
+      <View style={uiStyle(styles.searchField)}>
         <TouchableOpacity
           accessibilityRole="button"
-          accessibilityLabel="Bạn muốn ở đâu?"
-          accessibilityHint="Chọn điểm đến, ngày đi và số khách"
+          accessibilityLabel={uiText("Bạn muốn ở đâu?")}
+          accessibilityHint={uiText("Chọn điểm đến, ngày đi và số khách")}
           onPress={() => navigation.navigate('SearchSheet')}
           activeOpacity={0.8}
-          style={styles.searchButton}
+          style={uiStyle(styles.searchButton)}
         >
-          <Search size={21} color="#292C30" strokeWidth={2} />
-          <View style={styles.searchCopy}>
+          <Search size={21} color={uiColor("#292C30")} strokeWidth={2} />
+          <View style={uiStyle(styles.searchCopy)}>
             <Text
-              style={[
+              style={uiTextStyle([
                 styles.searchPlaceholder,
                 destination.kind !== 'anywhere' && styles.searchValue,
-              ]}
+              ])}
               numberOfLines={1}
             >
-              {destination.kind !== 'anywhere' ? destination.label : "Bạn muốn ở đâu?"}
+              {destination.kind !== 'anywhere' ? uiText(destination.label) : uiText("Bạn muốn ở đâu?")}
             </Text>
             {!!checkInDate && (
-              <Text style={styles.searchDetails} numberOfLines={1}>
-                {checkInDate} · {guests} {guests === 1 ? 'guest' : 'guests'}
+              <Text style={uiTextStyle(styles.searchDetails)} numberOfLines={1}>
+                {uiText(checkInDate)}{uiText(" · ")}{uiText(guests)} {guests === 1 ? uiText('guest') : uiText('guests')}
               </Text>
             )}
           </View>
         </TouchableOpacity>
         <TouchableOpacity
           accessibilityRole="button"
-          accessibilityLabel={filterCount > 0 ? `Filters, ${filterCount} active` : "Bộ lọc"}
+          accessibilityLabel={filterCount > 0 ? uiText(`Filters, ${filterCount} active`) : uiText("Bộ lọc")}
           onPress={() => navigation.navigate('FilterSheet')}
           activeOpacity={0.8}
-          style={styles.filterButton}
+          style={uiStyle(styles.filterButton)}
         >
-          <SlidersHorizontal size={18} color={filterCount > 0 ? '#00BCD4' : '#808892'} />
+          <SlidersHorizontal size={18} color={uiColor(filterCount > 0 ? '#00BCD4' : '#808892')} />
           {filterCount > 0 && (
-            <View style={styles.filterBadge}>
-              <Text style={styles.filterCount}>{filterCount}</Text>
+            <View style={uiStyle(styles.filterBadge)}>
+              <Text style={uiTextStyle(styles.filterCount)}>{uiText(filterCount)}</Text>
             </View>
           )}
         </TouchableOpacity>
       </View>
+      <NotificationBell />
     </View>
   );
 
   return (
-    <SafeAreaView edges={['top', 'left', 'right']} style={styles.screen}>
-      <View style={styles.header}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={uiStyle(styles.screen)}>
+      <View style={uiStyle(styles.header)}>
         {renderSearchHeader()}
 
         <CategoryBar
@@ -150,15 +155,15 @@ const ExploreScreen: React.FC = () => {
         />
       </View>
 
-      <View style={styles.listArea}>
+      <View style={uiStyle(styles.listArea)}>
         {isLoading || categoriesLoading ? (
           <SkeletonListingList count={3} />
         ) : invalid || (isError && !listings.length) || categoriesError ? (
           <EmptyState
-            icon={<MapPin size={44} color="#00BCD4" />}
-            title="Chưa tải được chỗ ở"
-            description={invalid || "Vui lòng kiểm tra kết nối rồi thử lại."}
-            actionTitle="Thử lại"
+            icon={<MapPin size={44} color={uiColor("#00BCD4")} />}
+            title={uiText("Chưa tải được chỗ ở")}
+            description={uiText(invalid || "Vui lòng kiểm tra kết nối rồi thử lại.")}
+            actionTitle={uiText("Thử lại")}
             onAction={() => {
               if (invalid) state.resetFilters();
               else void Promise.all([refetch(), refetchCategories()]);
@@ -166,10 +171,10 @@ const ExploreScreen: React.FC = () => {
           />
         ) : listings.length === 0 ? (
           <EmptyState
-            icon={<MapPin size={48} color="#00BCD4" />}
-            title="Chưa tìm thấy chỗ ở phù hợp"
-            description="Thử điều chỉnh bộ lọc hoặc chọn danh mục khác để khám phá thêm chỗ ở."
-            actionTitle="Xóa bộ lọc"
+            icon={<MapPin size={48} color={uiColor("#00BCD4")} />}
+            title={uiText("Chưa tìm thấy chỗ ở phù hợp")}
+            description={uiText("Thử điều chỉnh bộ lọc hoặc chọn danh mục khác để khám phá thêm chỗ ở.")}
+            actionTitle={uiText("Xóa bộ lọc")}
             onAction={() => useFilterStore.getState().resetFilters()}
           />
         ) : (
@@ -182,26 +187,24 @@ const ExploreScreen: React.FC = () => {
             }}
             ListFooterComponent={
               isFetchingNextPage ? (
-                <ActivityIndicator color="#00BCD4" style={{ padding: 20 }} />
+                <ActivityIndicator color={uiColor("#00BCD4")} style={uiStyle({ padding: 20 })} />
               ) : isFetchNextPageError ? (
                 <TouchableOpacity
                   accessibilityRole="button"
                   onPress={() => void fetchNextPage()}
-                  style={{ padding: 20 }}
+                  style={uiStyle({ padding: 20 })}
                 >
-                  <Text style={{ color: '#00BCD4', textAlign: 'center' }}>
-                    Không thể tải thêm chỗ ở. Thử lại
-                  </Text>
+                  <Text style={uiTextStyle({ color: '#00BCD4', textAlign: 'center' })}>{uiText("Không thể tải thêm chỗ ở. Thử lại")}</Text>
                 </TouchableOpacity>
               ) : undefined
             }
-            contentContainerStyle={styles.listContent}
+            contentContainerStyle={uiStyle(styles.listContent)}
             showsVerticalScrollIndicator={false}
             refreshControl={
               <RefreshControl
                 refreshing={isRefetching && !isFetchingNextPage}
                 onRefresh={() => void refetch()}
-                tintColor="#00BCD4"
+                tintColor={uiColor("#00BCD4")}
               />
             }
             renderItem={({ item }) => (
@@ -220,8 +223,9 @@ const ExploreScreen: React.FC = () => {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#ECFCFE' },
   header: { backgroundColor: '#ECFCFE' },
-  searchRow: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
+  searchRow: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 10 },
   searchField: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,

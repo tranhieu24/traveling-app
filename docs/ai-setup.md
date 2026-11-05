@@ -1,191 +1,116 @@
-# Hướng dẫn cài đặt AI — Traveling App Phase 3
+# Cấu hình AI cho Traveling App
 
-## Tổng quan
+Backend hỗ trợ hai provider: **Gemini** và **OpenAI**. Frontend dùng cùng
+`POST /api/v1/ai/search` và `POST /api/v1/ai/help` với cả hai provider.
+Bong bóng chat dùng `POST /api/v1/ai/chat` để phối hợp tra dữ liệu công khai
+và trợ giúp bằng FAQ.
 
-Phase 3 bổ sung hai tính năng AI vào ứng dụng:
+## Gemini
 
-| Tính năng | Endpoint | Mô tả |
-|-----------|----------|-------|
-| **AI-01 Tìm kiếm bằng ngôn ngữ tự nhiên** | `POST /api/v1/ai/search` | Người dùng mô tả nhu cầu bằng tiếng Việt → AI trích xuất bộ lọc → trả về danh sách chỗ ở thực từ DB |
-| **AI-02 Trợ lý trợ giúp** | `POST /api/v1/ai/help` | Trả lời câu hỏi về đơn đặt chỗ, chính sách, tiện nghi — chỉ từ dữ liệu DB và bài FAQ đã được kiểm duyệt |
-
----
-
-## Yêu cầu biến môi trường
-
-Thêm vào file `traveling-app-backend/.env` (không commit lên Git):
+Tạo key trong [Google AI Studio](https://aistudio.google.com/apikey), rồi cấu hình
+`traveling-app-backend/.env`:
 
 ```env
-# ── AI Feature Flag ─────────────────────────────────────────────────
-AI_ENABLED=false          # Đặt thành true để bật AI; false = fallback thủ công
-AI_PROVIDER=openai        # Chỉ hỗ trợ openai
-
-# ── Model & Key ──────────────────────────────────────────────────────
-AI_MODEL=gpt-4o-mini      # Khuyến nghị: gpt-4o-mini (tiết kiệm) hoặc gpt-4o
-OPENAI_API_KEY=sk-...     # Lấy tại platform.openai.com/api-keys — KHÔNG để vào mobile
-
-# ── Giới hạn hiệu suất ───────────────────────────────────────────────
-AI_TIMEOUT_MS=12000             # Timeout mỗi request (ms), 1000–30000
-AI_MAX_OUTPUT_TOKENS=1200       # Token output tối đa, 256–4000
-AI_DAILY_REQUESTS_PER_USER=20   # Số request AI tối đa mỗi user mỗi ngày
-AI_DAILY_TOKEN_BUDGET=100000    # Tổng token tối đa toàn hệ thống mỗi ngày
-```
-
-> **CẢNH BÁO:** `OPENAI_API_KEY` và `AI_ENABLED=true` chỉ được đặt trong backend `.env`.
-> Tuyệt đối không dùng biến `EXPO_PUBLIC_*` cho bất kỳ secret AI nào.
-
----
-
-## Lấy API Key
-
-1. Đăng nhập tại [platform.openai.com](https://platform.openai.com)
-2. Vào **API Keys** → **Create new secret key**
-3. Copy key (chỉ hiện 1 lần), dán vào `OPENAI_API_KEY=` trong `.env`
-4. Đặt Usage Limit tại **Settings → Limits** để kiểm soát chi phí
-
-**Chi phí ước tính (gpt-4o-mini):** ~\$0.00015/1K input tokens · ~\$0.0006/1K output tokens.
-Với `AI_DAILY_TOKEN_BUDGET=100000` và 100 user/ngày: **~\$0.08/ngày**.
-
----
-
-## Bật / Tắt AI
-
-```env
-# Bật AI
 AI_ENABLED=true
-AI_MODEL=gpt-4o-mini
-OPENAI_API_KEY=sk-your-real-key
-
-# Tắt AI (fallback thủ công)
-AI_ENABLED=false
+AI_PROVIDER=gemini
+AI_MODEL=gemini-3.6-flash
+GEMINI_API_KEY=
+OPENAI_API_KEY=
+AI_TIMEOUT_MS=12000
+AI_MAX_OUTPUT_TOKENS=1200
+AI_DAILY_REQUESTS_PER_USER=20
+AI_DAILY_TOKEN_BUDGET=100000
 ```
 
-Khi `AI_ENABLED=false` hoặc key trống:
-- Mobile nhận `mode: "fallback"` với thông báo tiếng Việt hướng dẫn tìm thủ công
-- Không có lỗi; trải nghiệm vẫn hoàn chỉnh qua bộ lọc thông thường
+Điền key Google vào `GEMINI_API_KEY`. Backend gửi key qua header
+`x-goog-api-key` đến Gemini API. Khóa authorization mới của Google AI Studio
+cũng được hỗ trợ. Không đặt khóa Google vào `OPENAI_API_KEY`.
 
----
+Gemini có free tier với hạn mức tùy model/project. Kiểm tra
+[bảng giá](https://ai.google.dev/gemini-api/docs/pricing) và quota của project
+trước khi sử dụng. Một model xuất hiện trong danh sách chưa bảo đảm project mới
+gọi được model đó: nếu `gemini-2.5-flash` trả 404 khi sinh nội dung, chọn model
+Flash còn được cấp quyền. Không tự chuyển sang model khác trong một yêu cầu.
 
-## Kiến trúc bảo mật
+## OpenAI
 
-```
-Mobile App
-   │  POST /api/v1/ai/search  { message, timeZone }
-   │  POST /api/v1/ai/help    { message, bookingId? }
-   ▼
-Backend (Express)
-   ├── Rate limit: 10 req/min toàn cục · 6 req/min/user
-   ├── Zod validate: message max 800 ký tự
-   ├── redactAiInput(): xoá email, JWT, số điện thoại, API key trước khi gửi AI
-   ├── reserveAiBudget(): kiểm tra quota trước khi gọi AI
-   ├── OpenAiProvider → openai.com API (key chỉ ở backend)
-   └── normalizeIntent() → validate destination/amenity với DB thực
+```env
+AI_ENABLED=true
+AI_PROVIDER=openai
+AI_MODEL=gpt-6-luna
+OPENAI_API_KEY=
+GEMINI_API_KEY=
 ```
 
-**Nguyên tắc không thể thương lượng:**
-- Key AI chỉ ở backend, không bao giờ trong mobile bundle
-- AI không được bịa listing ID, giá, số điện thoại, URL bên ngoài
-- Mọi `sourceRefs` phải là ID tồn tại trong DB hoặc danh sách FAQ cứng
-- PII (email, số ĐT) bị redact trước khi gửi AI
-- Booking của user khác: yêu cầu xác thực, không tiết lộ nếu không phải chủ đơn
+Điền key OpenAI vào `OPENAI_API_KEY`. Model phải hỗ trợ Responses API và
+Structured Outputs, đồng thời được cấp quyền cho project của key.
+Ví dụ trên dùng một model đang có trong
+[danh mục OpenAI](https://developers.openai.com/api/docs/models).
+Tài khoản cần có credit API để sinh nội dung; thay tên model không khắc phục
+lỗi hết credit.
 
----
+Sau khi chỉnh `.env`, khởi động lại backend bằng `npm run dev`.
 
-## Migration cần thiết
+## Luồng sử dụng
 
-Bảng `ai_usage_daily` được tạo bởi migration. Nếu chưa chạy, chạy:
+- **Bong bóng chat:** hỗ trợ chào hỏi, hỏi rõ tên phòng và tra chỗ ở theo tên,
+  thành phố hoặc danh mục như Camping. Tên, giá niêm yết, sức chứa, tiện nghi
+  và liên kết chi tiết lấy từ các chỗ ở đang hoạt động, không do model tạo ra.
+  Câu hỏi tiếp theo có thể gửi `listingId` công khai; backend đọc lại dữ liệu
+  và kiểm tra trạng thái hiển thị. Không nhận lịch sử hội thoại hay dữ liệu đơn.
+  Các nhánh này và FAQ theo chủ đề xác định không gọi model, vẫn dùng được khi
+  hết hạn mức. Câu hỏi khác dùng tra cứu FAQ và hiển thị rõ khi chuyển dự phòng.
+  Giá trong chat là giá niêm yết mỗi đêm; chọn ngày và số khách để báo giá và
+  kiểm tra phòng trống. Chat không tự đặt, hủy, thanh toán hay hoàn tiền.
+- **Tìm kiếm:** mở mục tìm kiếm trong app → **Tìm chỗ ở với AI**.
+  AI trích xuất bộ lọc; backend xác minh thành phố, tiện nghi, ngày, số khách
+  và ngân sách trước khi truy vấn các chỗ ở thật trong database.
+- **Trợ giúp:** mở Help Center → **Trợ giúp với AI**.
+  Model chỉ chọn bài FAQ đã duyệt; backend trả nội dung và nguồn thật.
+- **Chi tiết đơn:** chủ đơn có thể xem giải thích trạng thái và số tiền.
+  Số liệu lấy trực tiếp từ database, không gửi thông tin đặt phòng cho model.
+- **Gợi ý phòng trong chat:** yêu cầu như “tôi muốn đặt phòng camping” mở luồng
+  hỏi điểm đến, ngày nhận/trả và số khách. Các câu trả lời tiếp theo được giữ
+  trong `searchContext` có schema giới hạn, không gửi lịch sử chat tự do.
+  Nhận ngày ISO hoặc ngày/tháng/năm; ngày đã qua, thiếu năm hay không hợp lệ
+  phải được sửa, không tự đổi năm hoặc mặc định một đêm. Khi đủ điều kiện,
+  truy vấn lại loại chỗ ở, thành phố, sức chứa và phòng trống trong database.
+  Ngân sách tùy chọn phải là USD mỗi đêm; không tự quy đổi hay nới điều kiện.
+  Các yêu cầu chưa hỗ trợ được hỏi rõ thay vì bỏ qua. Nút **Tìm mới** xóa điều
+  kiện cũ. Luồng này chỉ đọc, chưa tạo đơn và chưa thanh toán.
+- Thiếu thông tin, điều kiện chưa hỗ trợ hoặc không có phòng phù hợp được
+  thông báo rõ. AI không tự nới bộ lọc, tạo đơn, hủy đơn hoặc thanh toán.
 
-```sql
--- Chạy trên Supabase SQL Editor nếu bảng chưa tồn tại
-CREATE TABLE IF NOT EXISTS ai_usage_daily (
-  day            date        NOT NULL,
-  scope_key      text        NOT NULL,
-  requests       integer     NOT NULL DEFAULT 0,
-  reserved_tokens bigint     NOT NULL DEFAULT 0,
-  input_tokens   bigint      NOT NULL DEFAULT 0,
-  output_tokens  bigint      NOT NULL DEFAULT 0,
-  failures       integer     NOT NULL DEFAULT 0,
-  PRIMARY KEY (day, scope_key)
-);
+## Database và giới hạn
+
+Chạy các migration nền tảng trước, sau đó
+[014_ai_usage_budget.sql](../database/migrations/014_ai_usage_budget.sql).
+Bảng `ai_usage_daily` lưu số lượt/token; không lưu câu hỏi, API key, IP thô
+hoặc nội dung đặt phòng. Hai provider dùng chung giới hạn hiện có.
+
+`AI_ENABLED=false`, thiếu key/model, provider lỗi hoặc hết quota đều trả trạng
+thái dự phòng để người dùng tiếp tục tìm kiếm thủ công và đọc FAQ.
+
+Key chỉ nằm trong backend `.env`; không đưa vào `EXPO_PUBLIC_*`, mobile hoặc
+Git. Không bật ghi log nội dung header xác thực.
+
+## Kiểm tra
+
+Trong `traveling-app-backend`:
+
+```sh
+npm run typecheck
+npm run test:ai
+npm run test:ai:integration
+npm run test:ai:integration:gemini
 ```
 
----
+Hai bộ kiểm tra integration tạo PostgreSQL tạm và giả lập provider,
+không dùng key hay dữ liệu Supabase thật. Kiểm tra provider bao gồm schema,
+timeout, phản hồi bị chặn/cắt ngắn, giới hạn kích thước, phân tách key và
+việc chọn đúng provider.
 
-## Kiểm thử
-
-### Chạy test AI (không cần network, không cần key thật)
-
-```bash
-cd traveling-app-mobile
-node --test scripts/ai.test.cjs
-# → 30 tests pass
-```
-
-### Chạy toàn bộ test suite
-
-```bash
-node --test scripts/*.test.cjs
-# → 99 tests pass (69 cũ + 30 AI)
-```
-
-### Test thủ công với backend đang chạy
-
-```bash
-# Với AI_ENABLED=false (fallback)
-curl -X POST http://localhost:3000/api/v1/ai/search \
-  -H "Content-Type: application/json" \
-  -d '{"message":"Homestay Đà Lạt cho 2 người","timeZone":"Asia/Ho_Chi_Minh"}'
-# Kết quả: { mode: "fallback", ready: false, message: "AI chưa được bật..." }
-
-# Với AI_ENABLED=true và key thật
-curl -X POST http://localhost:3000/api/v1/ai/search \
-  -H "Content-Type: application/json" \
-  -d '{"message":"Tìm homestay Đà Lạt cho 2 người có wifi dưới 100 USD/đêm cuối tuần này","timeZone":"Asia/Ho_Chi_Minh"}'
-```
-
----
-
-## 10 Test cases NLP tiếng Việt
-
-| # | Input | Kỳ vọng |
-|---|-------|---------|
-| 1 | `"Homestay Đà Lạt cho 2 người"` | city=Đà Lạt, guests=2, hỏi ngày & ngân sách |
-| 2 | `"Tìm chỗ ở Hội An cuối tuần này dưới 80 USD"` | dateKind=this_weekend, maxPrice=80, hỏi số khách |
-| 3 | `"Villa Đà Nẵng 3 khách 15/01 - 18/01/2027 có hồ bơi"` | checkIn=2027-01-15, amenities=[Pool] |
-| 4 | `"Phòng Nha Trang 500 nghìn/đêm"` | Hỏi lại: app dùng USD, không tự quy đổi VND |
-| 5 | `"Cần chỗ ở Sapa 2 phòng ngủ"` | propertyType/rooms không phải filter trực tiếp → unsupported |
-| 6 | `"Homestay có wifi gần biển cho pets"` | amenities=[Wifi], "gần biển"/"pets" → unsupported |
-| 7 | `"cho thuê nhà nguyên căn Hà Nội tháng 12"` | destination=Hà Nội (không có trong catalog) → hỏi lại điểm đến |
-| 8 | `"Tìm chỗ bất kỳ miễn rẻ"` | Hỏi: thành phố, ngày, số khách, ngân sách |
-| 9 | `"Da Lat homestay 2 people next weekend under $60"` | Tiếng Anh cũng được xử lý: city=Đà Lạt, maxPrice=60 USD |
-| 10 | `"Đặt phòng ngay cho tôi"` | ready=false, hỏi đầy đủ thông tin; không tự đặt |
-
----
-
-## Giám sát chi phí
-
-Xem usage thực tế:
-
-```sql
--- Supabase SQL Editor
-SELECT day, scope_key, requests, input_tokens, output_tokens, failures
-FROM ai_usage_daily
-WHERE day >= CURRENT_DATE - 7
-ORDER BY day DESC, scope_key;
-```
-
-Đặt alert tại OpenAI Platform khi chi phí vượt ngưỡng định trước (Settings → Limits → Set budget alert).
-
----
-
-## Troubleshooting
-
-| Lỗi | Nguyên nhân | Giải pháp |
-|-----|-------------|-----------|
-| `mode: "fallback", reason: "disabled"` | `AI_ENABLED` không phải `true` | Kiểm tra `.env` và restart server |
-| `mode: "fallback", reason: "provider_error"` | Key sai hoặc hết quota OpenAI | Kiểm tra key tại platform.openai.com |
-| `mode: "fallback", reason: "quota"` | Vượt `AI_DAILY_REQUESTS_PER_USER` | Tăng limit hoặc đợi sang ngày mới |
-| `mode: "fallback", reason: "invalid_output"` | Model trả schema sai | Thử lại; nếu thường xuyên → kiểm tra AI_MODEL |
-| Rate limit 429 | Quá 6 req/min/user hoặc 10 req/min toàn cục | Đợi 1 phút |
-| `ai_usage_daily` không tồn tại | Migration chưa chạy | Chạy SQL tạo bảng ở mục Migration phía trên |
-
+Tài liệu chính thức:
+[Gemini API](https://ai.google.dev/api),
+[Gemini Structured Outputs](https://ai.google.dev/gemini-api/docs/structured-output),
+[OpenAI Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs).

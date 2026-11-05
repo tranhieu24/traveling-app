@@ -1,3 +1,5 @@
+import { uiLocale, useUiPreferences, uiStyle, uiTextStyle, uiText } from '../preferences/ui';
+
 import React,{useEffect,useRef,useState} from 'react';
 import { ActivityIndicator,KeyboardAvoidingView,Platform,Pressable,ScrollView,StyleSheet,Text,TextInput,View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,6 +14,7 @@ import { RootStackParamList } from '../types';
 import { theme } from '../theme/tokens';
 
 export function SupportCenter({admin=false,bookingId,embedded=false}:{admin?:boolean;bookingId?:string;embedded?:boolean}) {
+  useUiPreferences();
   const {user,isLoading:authLoading}=useAuth(),nav=useNavigation<NativeStackNavigationProp<RootStackParamList>>(),cache=useQueryClient();
   const [selected,setSelected]=useState<string|null>(null),[page,setPage]=useState(1),[messagePage,setMessagePage]=useState(1),[subject,setSubject]=useState(''),[body,setBody]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false);
   const lock=useRef(false);const base=admin?'/admin/support-tickets':'/support-tickets';
@@ -34,33 +37,35 @@ export function SupportCenter({admin=false,bookingId,embedded=false}:{admin?:boo
       setNotice('Đã lưu yêu cầu trên hệ thống.');await refresh();
     }catch(e){setNotice(paymentErrorMessage(e));}finally{lock.current=false;setBusy(false);}
   };
-  const button=(title:string,onPress:()=>void,disabled=false)=><Pressable accessibilityRole="button" disabled={disabled||busy} onPress={onPress} style={[s.button,(disabled||busy)&&{opacity:0.5}]}><Text style={s.buttonText}>{title}</Text></Pressable>;
-  return <SafeAreaView style={s.screen} edges={['top','left','right']}><KeyboardAvoidingView style={{flex:1}} behavior={Platform.OS==='ios'?'padding':undefined}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={s.content}>
+  const button=(title:string,onPress:()=>void,disabled=false)=><Pressable accessibilityRole="button" disabled={disabled||busy} onPress={onPress} style={uiStyle([s.button,(disabled||busy)&&{opacity:0.5}])}><Text style={uiTextStyle(s.buttonText)}>{uiText(title)}</Text></Pressable>;
+  return <SafeAreaView style={uiStyle(s.screen)} edges={embedded?[]:['top','left','right']}><KeyboardAvoidingView style={uiStyle({flex:1})} behavior={Platform.OS==='ios'?'padding':undefined}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={uiStyle(s.content)}>
     {!embedded&&button('Quay lại',()=>{if(nav.canGoBack())nav.goBack();else if(admin)nav.navigate('AdminPortal');else nav.navigate('MainTabs');})}
-    <Text accessibilityRole="header" style={s.title}>{admin?'Quản lý yêu cầu hỗ trợ':'Hỗ trợ chuyến đi'}</Text>
-    <Text style={s.muted}>Yêu cầu gắn với đơn đặt phòng. Đây là hộp thư hỗ trợ, không phải chat trực tiếp.</Text>
-    {authLoading?<ActivityIndicator/>:!allowed?<><Text>{admin?'Bạn cần tài khoản quản trị.':'Đăng nhập để xem yêu cầu của bạn.'}</Text>{button('Đăng nhập',()=>{if(admin)nav.navigate('AdminLogin');else nav.navigate('Login');})}</>:<>
+    <Text accessibilityRole="header" style={uiTextStyle(s.title)}>{admin ? uiText('Quản lý yêu cầu hỗ trợ') : uiText('Hỗ trợ chuyến đi')}</Text>
+    <Text style={uiTextStyle(s.muted)}>{uiText("Yêu cầu gắn với đơn đặt phòng. Đây là hộp thư hỗ trợ, không phải chat trực tiếp.")}</Text>
+    {authLoading?<ActivityIndicator/>:!allowed?<><Text style={uiTextStyle(undefined)}>{admin ? uiText('Bạn cần tài khoản quản trị.') : uiText('Đăng nhập để xem yêu cầu của bạn.')}</Text>{button('Đăng nhập',()=>{if(admin)nav.navigate('AdminLogin');else nav.navigate('Login');})}</>:<>
       {selected?<>
         {button('Danh sách yêu cầu',()=>{setSelected(null);setMessagePage(1);setBody('');setNotice('');})}
-        {detail.isLoading?<ActivityIndicator/>:detail.isError?<><Text>Chưa tải được yêu cầu hoặc bạn không còn quyền xem.</Text>{button('Thử lại',()=>void detail.refetch())}</>:detail.data&&<>
-          <Text style={s.heading}>{detail.data.ticket.subject}</Text><Text>{detail.data.ticket.booking_code} · {supportLabels[detail.data.ticket.status]}</Text>
-          {detail.data.messages.map(m=><View key={m.id} style={[s.card,m.author_role==='admin'&&{backgroundColor:theme.colors.primarySoft}]}><Text style={{fontWeight:'700'}}>{m.author_role==='admin'?'Bộ phận hỗ trợ':'Khách đặt phòng'}</Text><Text selectable>{m.body}</Text><Text style={s.muted}>{new Date(m.created_at).toLocaleString('vi-VN')}</Text></View>)}
-          <View style={s.row}>{button('Tin trước',()=>setMessagePage(p=>p-1),messagePage<=1)}<Text>Trang {messagePage}/{Math.max(1,detail.data.pagination.totalPages)}</Text>{button('Tin sau',()=>setMessagePage(p=>p+1),messagePage>=detail.data.pagination.totalPages)}</View>
-          {admin&&<View style={s.row}>{button('Đánh dấu đã xử lý',()=>void submit('resolved'))}{button('Mở lại',()=>void submit('open'))}</View>}
-          <Text style={s.heading}>Phản hồi</Text><TextInput accessibilityLabel="Nội dung phản hồi" multiline maxLength={3000} style={[s.input,s.body]} value={body} onChangeText={setBody} editable={!busy}/>{button('Gửi phản hồi',()=>void submit(),!body.trim())}
+        {detail.isLoading?<ActivityIndicator/>:detail.isError?<><Text style={uiTextStyle(undefined)}>{uiText("Chưa tải được yêu cầu hoặc bạn không còn quyền xem.")}</Text>{button('Thử lại',()=>void detail.refetch())}</>:detail.data&&<>
+          <Text style={uiTextStyle(s.heading)}>{uiText(detail.data.ticket.subject)}</Text><Text style={uiTextStyle(undefined)}>{uiText(detail.data.ticket.booking_code)}{uiText(" · ")}{uiText(supportLabels[detail.data.ticket.status])}</Text>
+          {detail.data.messages.map(m=><View key={m.id} style={uiStyle([s.card,m.author_role==='admin'&&{backgroundColor:theme.colors.primarySoft}])}><Text style={uiTextStyle({fontWeight:'700'})}>{m.author_role==='admin' ? uiText('Bộ phận hỗ trợ') : uiText('Khách đặt phòng')}</Text><Text selectable style={uiTextStyle(undefined)}>{m.body}</Text><Text style={uiTextStyle(s.muted)}>{uiText(new Date(m.created_at).toLocaleString(uiLocale()))}</Text></View>)}
+          <View style={uiStyle(s.row)}>{button('Tin trước',()=>setMessagePage(p=>p-1),messagePage<=1)}<Text style={uiTextStyle(undefined)}>{uiText("Trang ")}{uiText(messagePage)}{uiText("/")}{uiText(Math.max(1,detail.data.pagination.totalPages))}</Text>{button('Tin sau',()=>setMessagePage(p=>p+1),messagePage>=detail.data.pagination.totalPages)}</View>
+          {admin&&<View style={uiStyle(s.row)}>{button('Đánh dấu đã xử lý',()=>void submit('resolved'))}{button('Mở lại',()=>void submit('open'))}</View>}
+          <Text style={uiTextStyle(s.heading)}>{uiText("Phản hồi")}</Text><TextInput accessibilityLabel={uiText("Nội dung phản hồi")} multiline maxLength={3000} style={uiStyle([s.input,s.body])} value={body} onChangeText={setBody} editable={!busy}/>{button('Gửi phản hồi',()=>void submit(),!body.trim())}
         </>}
       </>:<>
-        {list.isLoading?<ActivityIndicator/>:list.isError?<><Text>Chưa tải được danh sách yêu cầu.</Text>{button('Thử lại',()=>void list.refetch())}</>:<>
-          {!list.data?.items.length&&<Text>Chưa có yêu cầu hỗ trợ.</Text>}
-          {list.data?.items.map(t=><Pressable key={t.id} style={s.card} onPress={()=>{setSelected(t.id);setMessagePage(1);setBody('');setNotice('');}}><Text style={s.heading}>{t.subject}</Text><Text>{t.booking_code} · {t.listing_title}</Text><Text>{supportLabels[t.status]}</Text></Pressable>)}
-          <View style={s.row}>{button('Trang trước',()=>setPage(p=>p-1),page<=1)}<Text>Trang {page}</Text>{button('Trang sau',()=>setPage(p=>p+1),page>=(list.data?.pagination.totalPages||1))}</View>
+        {list.isLoading?<ActivityIndicator/>:list.isError?<><Text style={uiTextStyle(undefined)}>{uiText("Chưa tải được danh sách yêu cầu.")}</Text>{button('Thử lại',()=>void list.refetch())}</>:<>
+          {!list.data?.items.length&&<Text style={uiTextStyle(undefined)}>{uiText("Chưa có yêu cầu hỗ trợ.")}</Text>}
+          {list.data?.items.map(t=><Pressable key={t.id} style={uiStyle(s.card)} onPress={()=>{setSelected(t.id);setMessagePage(1);setBody('');setNotice('');}}><Text style={uiTextStyle(s.heading)}>{uiText(t.subject)}</Text><Text style={uiTextStyle(undefined)}>{uiText(t.booking_code)}{uiText(" · ")}{uiText(t.listing_title)}</Text><Text style={uiTextStyle(undefined)}>{uiText(supportLabels[t.status])}</Text></Pressable>)}
+          <View style={uiStyle(s.row)}>{button('Trang trước',()=>setPage(p=>p-1),page<=1)}<Text style={uiTextStyle(undefined)}>{uiText("Trang ")}{uiText(page)}</Text>{button('Trang sau',()=>setPage(p=>p+1),page>=(list.data?.pagination.totalPages||1))}</View>
         </>}
-        {!admin&&(bookingId?<><Text style={s.heading}>Tạo yêu cầu cho đơn này</Text><TextInput accessibilityLabel="Tiêu đề yêu cầu" placeholder="Ví dụ: Cần hướng dẫn nhận phòng" maxLength={150} style={s.input} value={subject} onChangeText={setSubject} editable={!busy}/><TextInput accessibilityLabel="Nội dung yêu cầu" placeholder="Mô tả vấn đề cần hỗ trợ" multiline maxLength={3000} style={[s.input,s.body]} value={body} onChangeText={setBody} editable={!busy}/>{button('Gửi yêu cầu',()=>void submit(),subject.trim().length<3||!body.trim())}</>:button('Chọn đơn cần hỗ trợ',()=>nav.navigate('MainTabs',{screen:'BookingsTab'})))}
+        {!admin&&(bookingId?<><Text style={uiTextStyle(s.heading)}>{uiText("Tạo yêu cầu cho đơn này")}</Text><TextInput accessibilityLabel={uiText("Tiêu đề yêu cầu")} placeholder={uiText("Ví dụ: Cần hướng dẫn nhận phòng")} maxLength={150} style={uiStyle(s.input)} value={subject} onChangeText={setSubject} editable={!busy}/><TextInput accessibilityLabel={uiText("Nội dung yêu cầu")} placeholder={uiText("Mô tả vấn đề cần hỗ trợ")} multiline maxLength={3000} style={uiStyle([s.input,s.body])} value={body} onChangeText={setBody} editable={!busy}/>{button('Gửi yêu cầu',()=>void submit(),subject.trim().length<3||!body.trim())}</>:button('Chọn đơn cần hỗ trợ',()=>nav.navigate('MainTabs',{screen:'BookingsTab'})))}
       </>}
-      {busy&&<ActivityIndicator/>}{!!notice&&<Text accessibilityRole="alert">{notice}</Text>}{button('Cập nhật hộp thư',()=>void refresh())}
+      {busy&&<ActivityIndicator/>}{!!notice&&<Text accessibilityRole="alert" style={uiTextStyle(undefined)}>{uiText(notice)}</Text>}{button('Cập nhật hộp thư',()=>void refresh())}
     </>}
   </ScrollView></KeyboardAvoidingView></SafeAreaView>;
 }
-export function SupportScreen(){const route=useRoute<RouteProp<RootStackParamList,'Support'>>();return <SupportCenter bookingId={route.params?.bookingId}/>;}
-export function AdminSupportScreen(){return <SupportCenter admin/>;}
+export function SupportScreen(){
+  useUiPreferences();const route=useRoute<RouteProp<RootStackParamList,'Support'>>();return <SupportCenter bookingId={route.params?.bookingId}/>;}
+export function AdminSupportScreen(){
+  useUiPreferences();return <SupportCenter admin/>;}
 const s=StyleSheet.create({screen:{flex:1,backgroundColor:'#fff'},content:{width:'100%',maxWidth:800,alignSelf:'center',padding:20,gap:14,paddingBottom:40},title:{fontSize:24,fontWeight:'700',color:theme.colors.ink},heading:{fontSize:16,fontWeight:'600'},muted:{fontSize:12,lineHeight:19,color:theme.colors.muted},card:{padding:16,borderRadius:12,backgroundColor:theme.colors.background,gap:8},input:{borderWidth:1,borderColor:theme.colors.border,borderRadius:10,padding:12,minHeight:48,fontSize:16},body:{minHeight:120,textAlignVertical:'top'},button:{minHeight:44,justifyContent:'center',paddingHorizontal:12,borderRadius:8,backgroundColor:theme.colors.primarySoft},buttonText:{color:theme.colors.primary,fontWeight:'600'},row:{flexDirection:'row',flexWrap:'wrap',gap:12,alignItems:'center'}});

@@ -7,7 +7,11 @@ const ts=require('typescript');
 function load(relative,stubs={}) {
   const file=path.resolve(__dirname,'..',relative),mod=new Module(file,module);
   mod.filename=file;mod.paths=Module._nodeModulePaths(path.dirname(file));
-  const original=mod.require.bind(mod);mod.require=name=>Object.hasOwn(stubs,name)?stubs[name]:original(name);
+  const original=mod.require.bind(mod);mod.require=name=>{
+    if(name.endsWith('/preferences/ui'))return {useUiPreferences(){},uiText:value=>value,uiStyle:value=>value,uiTextStyle:value=>value,uiClasses:value=>value,uiColor:value=>value,uiLocale:()=>'vi-VN'};
+    if(name.endsWith('/navigation/authReturn'))return load('src/navigation/authReturn.ts',{'react-native':{Platform:{OS:'android'}}});
+    return Object.hasOwn(stubs,name)?stubs[name]:original(name);
+  };
   mod._compile(ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020,jsx:ts.JsxEmit.React,esModuleInterop:true}}).outputText,file);
   return mod.exports;
 }

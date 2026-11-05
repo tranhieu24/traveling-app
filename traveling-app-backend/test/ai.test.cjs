@@ -110,3 +110,117 @@ test('backend extracts match live offline FAQ source text and IDs',()=>{
   const mobile=load('../traveling-app-mobile/src/data/helpArticles.ts');
   for(const article of articles.AI_HELP_ARTICLES)assert.equal(article.text,mobile.HELP_ARTICLES.find(a=>a.id===article.id)?.answer);
 });
+
+const geminiConfig={...config.AI_CONFIG,provider:'gemini',model:'gemini-3.6-flash'};
+const geminiResult=(overrides={})=>({
+  candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify({articleIds:['booking-payment']})}]}}],
+  usageMetadata:{promptTokenCount:80,candidatesTokenCount:20,thoughtsTokenCount:3},...overrides,
+});
+const jsonResponse=(body,status=200)=>new Response(JSON.stringify(body),{status});
+
+test('Gemini sends JSON schema and instructions to Google only; includes thinking tokens in usage',async()=>{
+  let request;
+  const provider=new adapter.GeminiProvider(geminiConfig,async(url,options)=>{
+    request={url,options,body:JSON.parse(options.body)};return jsonResponse(geminiResult());
+  });
+  const result=await provider.complete('Select approved article IDs',{message:'help'},domain.helpSelectionSchema);
+  assert.deepEqual(result.value,{articleIds:['booking-payment']});
+  assert.equal(result.inputTokens,80);assert.equal(result.outputTokens,23);
+  assert.equal(request.url,'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent');
+  assert.equal(request.options.headers['x-goog-api-key'],geminiConfig.key);
+  assert.equal(request.options.headers.Authorization,undefined);
+  assert.ok(!request.url.includes(geminiConfig.key));
+  assert.equal(request.body.systemInstruction.parts[0].text,'Select approved article IDs');
+  assert.deepEqual(JSON.parse(request.body.contents[0].parts[0].text),{message:'help'});
+  assert.equal(request.body.generationConfig.responseMimeType,'application/json');
+  assert.equal(request.body.generationConfig.responseJsonSchema.additionalProperties,false);
+  assert.deepEqual(request.body.generationConfig.thinkingConfig,{thinkingLevel:'minimal'});
+  assert.equal(request.body.generationConfig.maxOutputTokens,geminiConfig.maxOutputTokens);
+  assert.equal(request.body.tools,undefined);
+});
+
+test('provider factory selects Gemini or OpenAI without changing the service contract',()=>{
+  assert.ok(adapter.createAiProvider(geminiConfig) instanceof adapter.GeminiProvider);
+  assert.ok(adapter.createAiProvider({...geminiConfig,provider:'openai'}) instanceof adapter.OpenAiProvider);
+});
+
+test('Gemini keeps version-specific thinking configuration and accepts an empty article selection',async()=>{
+  for(const [model,thinking] of [['gemini-2.5-flash',{thinkingBudget:0}],['gemini-3.6-flash',{thinkingLevel:'minimal'}],['gemini-3.1-pro-preview',undefined]]) {
+    const provider=new adapter.GeminiProvider({...geminiConfig,model},async(_url,options)=>{
+      assert.deepEqual(JSON.parse(options.body).generationConfig.thinkingConfig,thinking);
+      return jsonResponse({candidates:[{finishReason:'STOP',content:{parts:[{text:'{"articleIds":[]}' }]}}]});
+    });
+    assert.deepEqual((await provider.complete('i',{},domain.helpSelectionSchema)).value,{articleIds:[]});
+  }
+});
+
+test('Gemini rejects blocked, incomplete, malformed and non-schema output instead of using it',async()=>{
+  const cases=[
+    {candidates:[]},
+    {promptFeedback:{blockReason:'SAFETY'}},
+    {candidates:[{finishReason:'MAX_TOKENS',content:{parts:[{text:'{"articleIds":[]}' }]}}]},
+    {candidates:[{finishReason:'SAFETY',content:{parts:[{text:'{"articleIds":[]}' }]}}]},
+    {candidates:[{finishReason:'STOP',content:{parts:[{text:'not JSON'}]}}]},
+    {candidates:[{finishReason:'STOP',content:{parts:[{text:'{"unexpected":true}'}]}}]},
+    {candidates:[{finishReason:'STOP',content:{parts:[{thought:true,text:'{"articleIds":[]}'}]}}]},
+    {candidates:[{finishReason:'STOP',content:{parts:[{functionCall:{name:'charge'}}]}}]},
+  ];
+  for(const body of cases) {
+    const provider=new adapter.GeminiProvider(geminiConfig,async()=>jsonResponse(body));
+    await assert.rejects(provider.complete('i',{},domain.helpSelectionSchema),e=>e instanceof adapter.AiUnavailable&&e.reason==='invalid_output');
+  }
+});
+
+test('Gemini ignores private thought text and validates only the final structured response',async()=>{
+  const provider=new adapter.GeminiProvider(geminiConfig,async()=>jsonResponse({candidates:[{finishReason:'STOP',content:{parts:[{thought:true,text:'untrusted internal text'},{text:'{"articleIds":[]}'}]}}]}));
+  assert.deepEqual((await provider.complete('i',{},domain.helpSelectionSchema)).value,{articleIds:[]});
+});
+
+test('Gemini errors never expose a provider response or credential and are not retried',async()=>{
+  for(const status of [400,401,403,404,429,500]) {
+    let calls=0;
+    const provider=new adapter.GeminiProvider(geminiConfig,async()=>{
+      calls++;return jsonResponse({error:{message:geminiConfig.key+' private error'}},status);
+    });
+    await assert.rejects(provider.complete('i',{},domain.helpSelectionSchema),e=>e instanceof adapter.AiUnavailable&&e.reason==='provider_error'&&!e.message.includes(geminiConfig.key));
+    assert.equal(calls,1);
+  }
+});
+
+test('Gemini timeout aborts one request; response limits reject oversized provider output',async()=>{
+  let calls=0;
+  const waiting=new adapter.GeminiProvider(geminiConfig,(_url,options)=>new Promise((_resolve,reject)=>{
+    calls++;options.signal.addEventListener('abort',()=>reject(new Error('timeout')));
+  }));
+  await assert.rejects(waiting.complete('i',{},domain.helpSelectionSchema),adapter.AiUnavailable);
+  assert.equal(calls,1);
+  const huge=new adapter.GeminiProvider(geminiConfig,async()=>new Response('x'.repeat(65537)));
+  await assert.rejects(huge.complete('i',{},domain.helpSelectionSchema),e=>e.reason==='invalid_output');
+});
+
+test('Gemini rejects invalid model paths before sending any request',async()=>{
+  let calls=0;
+  const provider=new adapter.GeminiProvider({...geminiConfig,model:'../../outside'},async()=>{calls++;return jsonResponse(geminiResult());});
+  await assert.rejects(provider.complete('i',{},domain.helpSelectionSchema),adapter.AiUnavailable);
+  assert.equal(calls,0);
+});
+
+test('AI config keeps Gemini and OpenAI credentials separate and rejects unsupported providers',()=>{
+  const vm=require('node:vm');
+  const source=ts.transpileModule(fs.readFileSync(path.resolve(__dirname,'../src/config/ai.ts'),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText;
+  const read=env=>{
+    const exports={};vm.runInNewContext(source,{exports,process:{env},require:()=>({})});return exports;
+  };
+  assert.equal(read({AI_PROVIDER:'gemini',GEMINI_API_KEY:'google-fixture',OPENAI_API_KEY:'openai-fixture'}).AI_CONFIG.key,'google-fixture');
+  assert.equal(read({AI_PROVIDER:'openai',GEMINI_API_KEY:'google-fixture',OPENAI_API_KEY:'openai-fixture'}).AI_CONFIG.key,'openai-fixture');
+  assert.equal(read({AI_ENABLED:'true',AI_PROVIDER:'gemini',AI_MODEL:'gemini-3.6-flash',OPENAI_API_KEY:'wrong-provider'}).aiAvailable(),false);
+  assert.throws(()=>read({AI_PROVIDER:'unsupported'}),/AI_PROVIDER/);
+});
+
+test('AI input redaction also removes Google standard and authorization keys',()=>{
+  const standard='AIza'+'fakeGoogleKey'.repeat(3);
+  const authorization='AQ.'+'fakeAuthorizationKey'.repeat(3);
+  const result=domain.redactAiInput('help '+standard+' '+authorization);
+  assert.ok(!result.includes(standard)&&!result.includes(authorization));
+  assert.equal((result.match(/\[key removed\]/g)||[]).length,2);
+});

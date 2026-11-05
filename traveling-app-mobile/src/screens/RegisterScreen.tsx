@@ -1,3 +1,5 @@
+import { useUiPreferences, uiStyle, uiColor, uiTextStyle, uiText } from '../preferences/ui';
+import { finishAuthNavigation } from '../navigation/authReturn';
 import React, { useRef, useState } from 'react';
 import {
   ActivityIndicator, Keyboard, KeyboardAvoidingView, Platform, Pressable,
@@ -20,6 +22,7 @@ type FieldName = (typeof FIELDS)[number]['key'];
 type FormErrors = Partial<Record<FieldName | 'form', string>>;
 
 export const RegisterScreen: React.FC = () => {
+  useUiPreferences();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { signUp, isLoading } = useAuth();
   const fieldRefs = {
@@ -63,7 +66,7 @@ export const RegisterScreen: React.FC = () => {
         setConfirmationEmail(values.email.trim());
         setValues((current) => ({ ...current, password: '' }));
       } else {
-        navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
+        finishAuthNavigation(navigation);
       }
     } catch (error: unknown) {
       setErrors({ form: error instanceof Error ? error.message : 'Không thể tạo tài khoản. Vui lòng thử lại.' });
@@ -75,18 +78,18 @@ export const RegisterScreen: React.FC = () => {
 
   if (confirmationEmail) {
     return (
-      <SafeAreaView style={styles.screen}>
-        <ScrollView contentContainerStyle={styles.confirmationContent}>
-          <View style={styles.emailBadge}><Mail size={30} color="#00B8CE" /></View>
-          <Text accessibilityRole="header" style={styles.confirmationTitle}>Kiểm tra email của bạn</Text>
-          <Text style={styles.confirmationMessage}>Hãy mở hộp thư {confirmationEmail} và nhấn liên kết xác nhận. Sau đó quay lại để đăng nhập.</Text>
+      <SafeAreaView style={uiStyle(styles.screen)}>
+        <ScrollView contentContainerStyle={uiStyle(styles.confirmationContent)}>
+          <View style={uiStyle(styles.emailBadge)}><Mail size={30} color={uiColor("#00B8CE")} /></View>
+          <Text accessibilityRole="header" style={uiTextStyle(styles.confirmationTitle)}>{uiText("Kiểm tra email của bạn")}</Text>
+          <Text style={uiTextStyle(styles.confirmationMessage)}>{uiText("Hãy mở hộp thư ")}{uiText(confirmationEmail)}{uiText(" và nhấn liên kết xác nhận. Sau đó quay lại để đăng nhập.")}</Text>
           <Pressable
             cssInterop={false}
             accessibilityRole="button"
             onPress={() => navigation.replace('Login')}
-            style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}
+            style={uiStyle(({ pressed }) => [styles.primaryButton, pressed && styles.pressed])}
           >
-            <Text style={styles.primaryText}>Quay lại đăng nhập</Text>
+            <Text style={uiTextStyle(styles.primaryText)}>{uiText("Quay lại đăng nhập")}</Text>
           </Pressable>
         </ScrollView>
       </SafeAreaView>
@@ -94,43 +97,43 @@ export const RegisterScreen: React.FC = () => {
   }
 
   return (
-    <SafeAreaView style={styles.screen}>
-      <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-          <View style={styles.header}>
+    <SafeAreaView style={uiStyle(styles.screen)}>
+      <KeyboardAvoidingView style={uiStyle(styles.screen)} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView contentContainerStyle={uiStyle(styles.content)} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <View style={uiStyle(styles.header)}>
             <Pressable
               cssInterop={false}
               accessibilityRole="button"
-              accessibilityLabel="Quay lại"
+              accessibilityLabel={uiText("Quay lại")}
               disabled={busy}
               onPress={() => navigation.canGoBack() ? navigation.goBack() : navigation.replace('CreateAccount')}
-              style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
+              style={uiStyle(({ pressed }) => [styles.backButton, pressed && styles.pressed])}
             >
-              <ArrowLeft size={23} color="#292C30" />
+              <ArrowLeft size={23} color={uiColor("#292C30")} />
             </Pressable>
-            <Text accessibilityRole="header" style={styles.title}>Tiếp tục với email</Text>
+            <Text accessibilityRole="header" style={uiTextStyle(styles.title)}>{uiText("Tiếp tục với email")}</Text>
           </View>
 
-          <View style={styles.form}>
-            <View style={styles.emailBadge}><Mail size={28} color="#00B8CE" /></View>
-            <Text style={styles.heading}>Tạo tài khoản</Text>
-            <Text style={styles.subtitle}>Điền một vài thông tin để bắt đầu hành trình tiếp theo.</Text>
+          <View style={uiStyle(styles.form)}>
+            <View style={uiStyle(styles.emailBadge)}><Mail size={28} color={uiColor("#00B8CE")} /></View>
+            <Text style={uiTextStyle(styles.heading)}>{uiText("Tạo tài khoản")}</Text>
+            <Text style={uiTextStyle(styles.subtitle)}>{uiText("Điền một vài thông tin để bắt đầu hành trình tiếp theo.")}</Text>
 
             {FIELDS.map((field, index) => {
               const Icon = field.icon;
               const isPassword = field.key === 'password';
               return (
-                <View key={field.key} style={styles.field}>
-                  <Text style={styles.label}>{field.label}</Text>
-                  <View style={[
+                <View key={field.key} style={uiStyle(styles.field)}>
+                  <Text style={uiTextStyle(styles.label)}>{uiText(field.label)}</Text>
+                  <View style={uiStyle([
                     styles.inputContainer,
                     focusedField === field.key && styles.focusedInput,
                     !!errors[field.key] && styles.invalidInput,
-                  ]}>
-                    <Icon size={19} color="#93979F" />
+                  ])}>
+                    <Icon size={19} color={uiColor("#93979F")} />
                     <TextInput
                       ref={fieldRefs[field.key]}
-                      accessibilityLabel={field.label}
+                      accessibilityLabel={uiText(field.label)}
                       value={values[field.key]}
                       onChangeText={(value) => {
                         setValues((current) => ({ ...current, [field.key]: value }));
@@ -138,8 +141,8 @@ export const RegisterScreen: React.FC = () => {
                       }}
                       onFocus={() => setFocusedField(field.key)}
                       onBlur={() => setFocusedField(null)}
-                      placeholder={field.placeholder}
-                      placeholderTextColor="#BFC2C8"
+                      placeholder={uiText(field.placeholder)}
+                      placeholderTextColor={uiColor("#BFC2C8")}
                       keyboardType={field.key === 'email' ? 'email-address' : 'default'}
                       autoCapitalize={field.key === 'fullName' ? 'words' : 'none'}
                       autoCorrect={false}
@@ -153,29 +156,29 @@ export const RegisterScreen: React.FC = () => {
                         else fieldRefs[FIELDS[index + 1].key].current?.focus();
                       }}
                       editable={!busy}
-                      style={styles.input}
+                      style={uiStyle(styles.input)}
                     />
                     {isPassword && (
                       <Pressable
                         accessibilityRole="button"
-                        accessibilityLabel={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                        accessibilityLabel={showPassword ? uiText('Ẩn mật khẩu') : uiText('Hiện mật khẩu')}
                         disabled={busy}
                         onPress={() => setShowPassword((current) => !current)}
-                        style={styles.passwordToggle}
+                        style={uiStyle(styles.passwordToggle)}
                       >
-                        {showPassword ? <EyeOff size={20} color="#797C81" /> : <Eye size={20} color="#797C81" />}
+                        {showPassword ? <EyeOff size={20} color={uiColor("#797C81")} /> : <Eye size={20} color={uiColor("#797C81")} />}
                       </Pressable>
                     )}
                   </View>
-                  {!!errors[field.key] && <Text accessibilityRole="alert" style={styles.error}>{errors[field.key]}</Text>}
-                  {isPassword && !errors.password && <Text style={styles.hint}>Sử dụng ít nhất 6 ký tự.</Text>}
+                  {!!errors[field.key] && <Text accessibilityRole="alert" style={uiTextStyle(styles.error)}>{uiText(errors[field.key])}</Text>}
+                  {isPassword && !errors.password && <Text style={uiTextStyle(styles.hint)}>{uiText("Sử dụng ít nhất 6 ký tự.")}</Text>}
                 </View>
               );
             })}
 
             {!!errors.form && (
-              <View style={styles.errorBanner}>
-                <Text accessibilityRole="alert" style={styles.formError}>{errors.form}</Text>
+              <View style={uiStyle(styles.errorBanner)}>
+                <Text accessibilityRole="alert" style={uiTextStyle(styles.formError)}>{uiText(errors.form)}</Text>
               </View>
             )}
             <Pressable
@@ -184,17 +187,17 @@ export const RegisterScreen: React.FC = () => {
               accessibilityState={{ disabled: busy, busy }}
               disabled={busy}
               onPress={handleRegister}
-              style={({ pressed }) => [styles.primaryButton, (pressed || busy) && styles.pressed]}
+              style={uiStyle(({ pressed }) => [styles.primaryButton, (pressed || busy) && styles.pressed])}
             >
-              {busy && <ActivityIndicator size="small" color="#FFFFFF" />}
-              <Text style={styles.primaryText}>{busy ? 'Đang tạo tài khoản...' : 'Tạo tài khoản'}</Text>
+              {busy && <ActivityIndicator size="small" color={uiColor("#FFFFFF")} />}
+              <Text style={uiTextStyle(styles.primaryText)}>{busy ? uiText('Đang tạo tài khoản...') : uiText('Tạo tài khoản')}</Text>
             </Pressable>
           </View>
 
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Đã có tài khoản?</Text>
+          <View style={uiStyle(styles.footer)}>
+            <Text style={uiTextStyle(styles.footerText)}>{uiText("Đã có tài khoản?")}</Text>
             <Pressable accessibilityRole="link" hitSlop={8} disabled={busy} onPress={() => navigation.navigate('Login')}>
-              <Text style={styles.loginLink}>Đăng nhập</Text>
+              <Text style={uiTextStyle(styles.loginLink)}>{uiText("Đăng nhập")}</Text>
             </Pressable>
           </View>
         </ScrollView>

@@ -1,3 +1,4 @@
+import { useUiPreferences, uiStyle, uiText, uiColor, uiTextStyle } from '../../preferences/ui';
 import React from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, Text, View, Image, useWindowDimensions } from 'react-native';
 import { Mountain, Tent, Trees, Building2, Compass, Home, Flame, Sun, Palmtree, Waves } from 'lucide-react-native';
@@ -25,6 +26,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 export const CategoryBar: React.FC<CategoryBarProps> = ({ categories, selectedCategoryId, onSelectCategory }) => {
+  useUiPreferences();
   const { width } = useWindowDimensions();
   const priority = ['beach', 'mountain', 'camping', 'homestay'];
   const orderedCategories = [...categories].sort((first, second) => {
@@ -36,22 +38,20 @@ export const CategoryBar: React.FC<CategoryBarProps> = ({ categories, selectedCa
   const isAllActive = selectedCategoryId === null;
 
   return (
-    <View style={styles.container}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categories}>
+    <View style={uiStyle(styles.container)}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={uiStyle(styles.categories)}>
         <TouchableOpacity
           key="all"
           accessibilityRole="tab"
           accessibilityState={{ selected: isAllActive }}
-          accessibilityLabel="Tất cả chỗ ở"
-          accessibilityHint="Hiển thị tất cả chỗ ở"
+          accessibilityLabel={uiText("Tất cả chỗ ở")}
+          accessibilityHint={uiText("Hiển thị tất cả chỗ ở")}
           onPress={() => onSelectCategory(null)}
           activeOpacity={0.7}
-          style={[styles.category, { width: categoryWidth }, isAllActive && styles.activeCategory]}
+          style={uiStyle([styles.category, { width: categoryWidth }, isAllActive && styles.activeCategory])}
         >
-          <Compass size={23} color={isAllActive ? '#00BCD4' : '#808892'} strokeWidth={1.9} />
-          <Text numberOfLines={1} style={[styles.label, { color: isAllActive ? '#00BCD4' : '#808892' }, isAllActive && styles.activeLabel]}>
-            Tất cả
-          </Text>
+          <Compass size={23} color={uiColor(isAllActive ? '#00BCD4' : '#808892')} strokeWidth={1.9} />
+          <Text numberOfLines={1} style={uiTextStyle([styles.label, { color: isAllActive ? '#00BCD4' : '#808892' }, isAllActive && styles.activeLabel])}>{uiText("Tất cả")}</Text>
         </TouchableOpacity>
         {orderedCategories.map((category) => {
           const active = selectedCategoryId === category.id;
@@ -64,14 +64,14 @@ export const CategoryBar: React.FC<CategoryBarProps> = ({ categories, selectedCa
               key={category.id}
               accessibilityRole="tab"
               accessibilityState={{ selected: active }}
-              accessibilityLabel={displayName}
-              accessibilityHint={active ? 'Chạm lại để hiển thị tất cả chỗ ở' : `Hiển thị chỗ ở thuộc ${displayName.toLowerCase()}`}
+              accessibilityLabel={uiText(displayName)}
+              accessibilityHint={active ? uiText('Chạm lại để hiển thị tất cả chỗ ở') : uiText(`Hiển thị chỗ ở thuộc ${displayName.toLowerCase()}`)}
               onPress={() => onSelectCategory(active ? null : category.id)}
               activeOpacity={0.7}
-              style={[styles.category, { width: categoryWidth }, active && styles.activeCategory]}
+              style={uiStyle([styles.category, { width: categoryWidth }, active && styles.activeCategory])}
             >
-              {image ? <Image source={{ uri: image }} style={{ width: 23, height: 23, borderRadius: 4 }} /> : <Icon size={23} color={color} strokeWidth={1.9} />}
-              <Text numberOfLines={1} style={[styles.label, { color }, active && styles.activeLabel]}>{displayName}</Text>
+              {image ? <Image source={{ uri: image }} style={uiStyle({ width: 23, height: 23, borderRadius: 4 })} /> : <Icon size={23} color={uiColor(color)} strokeWidth={1.9} />}
+              <Text numberOfLines={1} style={uiTextStyle([styles.label, { color }, active && styles.activeLabel])}>{uiText(displayName)}</Text>
             </TouchableOpacity>
           );
         })}

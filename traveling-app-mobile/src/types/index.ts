@@ -213,10 +213,15 @@ export type RootStackParamList = {
   AdminPortal: { section?: import('./admin').AdminSection } | undefined;
   Register: undefined;
   Settings: undefined;
+  Notifications: undefined;
   HelpCenter: { articleId?:string } | undefined;
   PaymentsPayouts: { tab?: 'payments' | 'payouts' } | undefined;
   MainTabs: NavigatorScreenParams<BottomTabParamList> | undefined;
-  ListingDetail: { listingId: string };
+  ListingDetail: {
+    listingId: string;
+    openBooking?: boolean;
+    trip?: { checkInDate: string; checkOutDate: string; adults: number; children: number };
+  };
   SearchSheet: { step?: 'where' | 'when' | 'who' } | undefined;
   FilterSheet: undefined;
   SearchResults: undefined;

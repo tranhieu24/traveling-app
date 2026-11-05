@@ -1,3 +1,5 @@
+import { useUiPreferences, uiStyle, uiText, uiColor, uiTextStyle } from '../../preferences/ui';
+import { finishAuthNavigation } from '../../navigation/authReturn';
 import React, { useRef, useState } from 'react';
 import { ActivityIndicator, Keyboard, Pressable, StyleSheet, Text, View } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -18,6 +20,7 @@ const providers = [
 ] as const;
 
 export function SocialSignInButtons({ disabled = false }: { disabled?: boolean }) {
+  useUiPreferences();
   const { signInWithSocialProvider, isLoading } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const pending = useRef(false);
@@ -37,7 +40,7 @@ export function SocialSignInButtons({ disabled = false }: { disabled?: boolean }
       const profile = await signInWithSocialProvider(id);
       if (profile && !navigated.current) {
         navigated.current = true;
-        navigation.reset({ index: 0, routes: [{ name: profile.role === 'admin' ? 'AdminPortal' : 'MainTabs' }] });
+        finishAuthNavigation(navigation, profile.role);
       } else if (!profile)
         setMessage('Bạn đã hủy đăng nhập. Có thể thử lại hoặc dùng email.');
     } catch (e) {
@@ -49,41 +52,39 @@ export function SocialSignInButtons({ disabled = false }: { disabled?: boolean }
     }
   };
   return (
-    <View style={styles.group}>
+    <View style={uiStyle(styles.group)}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Đăng nhập bằng Apple sắp ra mắt"
+        accessibilityLabel={uiText("Đăng nhập bằng Apple sắp ra mắt")}
         accessibilityState={{ disabled: true }}
         disabled
-        style={[styles.button, { borderColor: '#BFC1C5', opacity: 0.55 }]}
+        style={uiStyle([styles.button, { borderColor: '#BFC1C5', opacity: 0.55 }])}
       >
-        <FontAwesome name="apple" size={21} color="#292C30" />
-        <Text style={[styles.text, { color: '#292C30' }]}>Apple - Sắp ra mắt</Text>
+        <FontAwesome name="apple" size={21} color={uiColor("#292C30")} />
+        <Text style={uiTextStyle([styles.text, { color: '#292C30' }])}>{uiText("Apple - Sắp ra mắt")}</Text>
       </Pressable>
       {providers.map((item) => (
         <Pressable
           cssInterop={false}
           key={item.id}
           accessibilityRole="button"
-          accessibilityLabel={
-            provider === item.id ? `Đang kết nối ${item.name}` : `Tiếp tục với ${item.name}`
-          }
+          accessibilityLabel={provider === item.id ? uiText(`Đang kết nối ${item.name}`) : uiText(`Tiếp tục với ${item.name}`)}
           accessibilityState={{ disabled: busy, busy: provider === item.id }}
           disabled={busy}
           onPress={() => void start(item.id)}
-          style={({ pressed }) => [
+          style={uiStyle(({ pressed }) => [
             styles.button,
             { borderColor: item.color },
             (pressed || busy) && { opacity: 0.65 },
-          ]}
+          ])}
         >
           {provider === item.id ? (
-            <ActivityIndicator size="small" color={item.color} />
+            <ActivityIndicator size="small" color={uiColor(item.color)} />
           ) : (
-            <FontAwesome name={item.icon} size={21} color={item.color} />
+            <FontAwesome name={item.icon} size={21} color={uiColor(item.color)} />
           )}
-          <Text style={[styles.text, { color: item.color }]}>
-            {provider === item.id ? `Đang kết nối ${item.name}...` : `Tiếp tục với ${item.name}`}
+          <Text style={uiTextStyle([styles.text, { color: item.color }])}>
+            {provider === item.id ? uiText(`Đang kết nối ${item.name}...`) : uiText(`Tiếp tục với ${item.name}`)}
           </Text>
         </Pressable>
       ))}
@@ -91,9 +92,9 @@ export function SocialSignInButtons({ disabled = false }: { disabled?: boolean }
         <Text
           accessibilityRole={failed ? 'alert' : undefined}
           accessibilityLiveRegion="polite"
-          style={[styles.message, failed && { color: '#C93D48' }]}
+          style={uiTextStyle([styles.message, failed && { color: '#C93D48' }])}
         >
-          {message}
+          {uiText(message)}
         </Text>
       )}
     </View>

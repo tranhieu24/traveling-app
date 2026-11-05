@@ -1,3 +1,4 @@
+import { useUiPreferences, uiStyle, uiText, uiTextStyle, uiColor } from '../preferences/ui';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
@@ -30,6 +31,7 @@ import {
 import { PriceRangeSlider } from '../components/search/PriceRangeSlider';
 
 export const FilterSheetScreen: React.FC = () => {
+  useUiPreferences();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const dismiss = () =>
     navigation.canGoBack()
@@ -81,42 +83,40 @@ export const FilterSheetScreen: React.FC = () => {
     }
   };
   return (
-    <View style={s.overlay}>
+    <View style={uiStyle(s.overlay)}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Dismiss filters"
+        accessibilityLabel={uiText("Dismiss filters")}
         onPress={dismiss}
-        style={StyleSheet.absoluteFill}
+        style={uiStyle(StyleSheet.absoluteFill)}
       />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={s.sheet}
+        style={uiStyle(s.sheet)}
       >
-        <View style={s.header}>
-          <Text style={s.headerTitle}>Bộ lọc</Text>
+        <View style={uiStyle(s.header)}>
+          <Text style={uiTextStyle(s.headerTitle)}>{uiText("Bộ lọc")}</Text>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Đóng bộ lọc"
+            accessibilityLabel={uiText("Đóng bộ lọc")}
             onPress={dismiss}
-            style={s.close}
+            style={uiStyle(s.close)}
           >
-            <X size={20} color="#8D949D" />
+            <X size={20} color={uiColor("#8D949D")} />
           </Pressable>
         </View>
         <ScrollView
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={s.content}
+          contentContainerStyle={uiStyle(s.content)}
         >
-          {!!draft.propertyType&&<View style={s.section}>
-            <Text style={shared.heading}>Loại chỗ ở: {draft.propertyType}</Text>
-            <Pressable accessibilityRole="button" onPress={()=>setDraft(current=>({...current,propertyType:null}))}><Text style={shared.clear}>Bỏ điều kiện loại chỗ ở</Text></Pressable>
+          {!!draft.propertyType&&<View style={uiStyle(s.section)}>
+            <Text style={uiTextStyle(shared.heading)}>{uiText("Loại chỗ ở: ")}{uiText(draft.propertyType)}</Text>
+            <Pressable accessibilityRole="button" onPress={()=>setDraft(current=>({...current,propertyType:null}))}><Text style={uiTextStyle(shared.clear)}>{uiText("Bỏ điều kiện loại chỗ ở")}</Text></Pressable>
           </View>}
-          <View style={s.section}>
-            <Text style={shared.heading}>Khoảng giá</Text>
-            <Text style={[shared.muted, { fontSize: 12, marginTop: -8, marginBottom: 15 }]}>
-              Nightly price in USD, before taxes and fees
-            </Text>
+          <View style={uiStyle(s.section)}>
+            <Text style={uiTextStyle(shared.heading)}>{uiText("Khoảng giá")}</Text>
+            <Text style={uiTextStyle([shared.muted, { fontSize: 12, marginTop: -8, marginBottom: 15 }])}>{uiText("Nightly price in USD, before taxes and fees")}</Text>
             <PriceRangeSlider
               minimum={prices.minPrice}
               maximum={prices.maxPrice}
@@ -126,22 +126,22 @@ export const FilterSheetScreen: React.FC = () => {
                 setError('');
               }}
             />
-            <View style={s.priceRow}>
+            <View style={uiStyle(s.priceRow)}>
               {(['Minimum', 'Maximum'] as const).map((label, index) => (
                 <React.Fragment key={label}>
-                  {index === 1 && <Text style={shared.muted}>{'\u2014'}</Text>}
-                  <View style={s.priceBox}>
-                    <Text style={s.priceLabel}>{label}</Text>
-                    <View style={s.inputRow}>
-                      <Text style={shared.text}>US$</Text>
+                  {index === 1 && <Text style={uiTextStyle(shared.muted)}>{uiText('\u2014')}</Text>}
+                  <View style={uiStyle(s.priceBox)}>
+                    <Text style={uiTextStyle(s.priceLabel)}>{uiText(label)}</Text>
+                    <View style={uiStyle(s.inputRow)}>
+                      <Text style={uiTextStyle(shared.text)}>{uiText("US$")}</Text>
                       <TextInput
-                        accessibilityLabel={`${label} nightly price`}
+                        accessibilityLabel={uiText(`${label} nightly price`)}
                         keyboardType="decimal-pad"
                         value={index ? maximum : minimum}
                         onChangeText={index ? setMaximum : setMinimum}
-                        placeholder={index ? '250' : '10'}
-                        placeholderTextColor="#A2A8B0"
-                        style={s.input}
+                        placeholder={index ? uiText('250') : uiText('10')}
+                        placeholderTextColor={uiColor("#A2A8B0")}
+                        style={uiStyle(s.input)}
                       />
                     </View>
                   </View>
@@ -149,13 +149,13 @@ export const FilterSheetScreen: React.FC = () => {
               ))}
             </View>
           </View>
-          <View style={s.section}>
-            <Text style={shared.heading}>Loại chỗ ở</Text>
+          <View style={uiStyle(s.section)}>
+            <Text style={uiTextStyle(shared.heading)}>{uiText("Loại chỗ ở")}</Text>
             {ROOM_TYPES.map((type) => (
               <Checkbox
                 key={type.value}
-                label={type.title}
-                description={type.description}
+                label={uiText(type.title)}
+                description={uiText(type.description)}
                 checked={draft.roomTypes.includes(type.value)}
                 onPress={() =>
                   setDraft((value) => ({
@@ -168,13 +168,13 @@ export const FilterSheetScreen: React.FC = () => {
               />
             ))}
           </View>
-          <View style={s.section}>
-            <Text style={shared.heading}>Phòng và giường</Text>
+          <View style={uiStyle(s.section)}>
+            <Text style={uiTextStyle(shared.heading)}>{uiText("Phòng và giường")}</Text>
             {(['bedrooms', 'beds', 'bathrooms'] as const).map((key) => (
-              <View key={key} style={s.countRow}>
-                <Text style={shared.text}>{key[0].toUpperCase() + key.slice(1)}</Text>
+              <View key={key} style={uiStyle(s.countRow)}>
+                <Text style={uiTextStyle(shared.text)}>{uiText(key[0].toUpperCase() + key.slice(1))}</Text>
                 <Counter
-                  label={key}
+                  label={uiText(key)}
                   value={draft[key] ?? 0}
                   any
                   onChange={(value) => setDraft((old) => ({ ...old, [key]: value || null }))}
@@ -182,22 +182,20 @@ export const FilterSheetScreen: React.FC = () => {
               </View>
             ))}
           </View>
-          <View style={[s.section, { borderBottomWidth: 0 }]}>
-            <Text style={shared.heading}>Tiện nghi</Text>
-            <Text style={[shared.muted, { fontSize: 12 }]}>
-              Chỗ ở phải có đầy đủ các tiện nghi được chọn.
-            </Text>
+          <View style={uiStyle([s.section, { borderBottomWidth: 0 }])}>
+            <Text style={uiTextStyle(shared.heading)}>{uiText("Tiện nghi")}</Text>
+            <Text style={uiTextStyle([shared.muted, { fontSize: 12 }])}>{uiText("Chỗ ở phải có đầy đủ các tiện nghi được chọn.")}</Text>
             {amenities.isLoading ? (
-              <ActivityIndicator color={CYAN} style={{ padding: 24 }} />
+              <ActivityIndicator color={uiColor(CYAN)} style={uiStyle({ padding: 24 })} />
             ) : amenities.isError ? (
               <Pressable accessibilityRole="button" onPress={() => amenities.refetch()}>
-                <Text style={shared.error}>Không thể tải tiện nghi. Chạm để thử lại.</Text>
+                <Text style={uiTextStyle(shared.error)}>{uiText("Không thể tải tiện nghi. Chạm để thử lại.")}</Text>
               </Pressable>
             ) : (
               amenities.data?.map((amenity) => (
                 <Checkbox
                   key={amenity.id}
-                  label={formatAmenityName(amenity.name)}
+                  label={uiText(formatAmenityName(amenity.name))}
                   checked={draft.selectedAmenities.includes(amenity.id)}
                   onPress={() =>
                     setDraft((old) => ({
@@ -212,22 +210,22 @@ export const FilterSheetScreen: React.FC = () => {
             )}
           </View>
           {!!error && (
-            <Text accessibilityRole="alert" style={shared.error}>
-              {error}
+            <Text accessibilityRole="alert" style={uiTextStyle(shared.error)}>
+              {uiText(error)}
             </Text>
           )}
         </ScrollView>
         <SafeAreaView edges={['bottom']}>
-          <View style={shared.footer}>
+          <View style={uiStyle(shared.footer)}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Clear advanced filters"
+              accessibilityLabel={uiText("Clear advanced filters")}
               onPress={clear}
             >
-              <Text style={shared.clear}>Xóa tất cả</Text>
+              <Text style={uiTextStyle(shared.clear)}>{uiText("Xóa tất cả")}</Text>
             </Pressable>
-            <Pressable accessibilityRole="button" onPress={apply} style={shared.action}>
-              <Text style={shared.actionText}>Xem kết quả</Text>
+            <Pressable accessibilityRole="button" onPress={apply} style={uiStyle(shared.action)}>
+              <Text style={uiTextStyle(shared.actionText)}>{uiText("Xem kết quả")}</Text>
             </Pressable>
           </View>
         </SafeAreaView>

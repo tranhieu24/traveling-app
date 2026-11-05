@@ -39,3 +39,4 @@ yarn-error.log*
 .test-runs/
 .env.*
 !.env.example
+.env *

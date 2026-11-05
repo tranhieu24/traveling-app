@@ -1,3 +1,4 @@
+import { useUiPreferences, uiStyle, uiText, uiColor, uiTextStyle } from '../preferences/ui';
 import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,6 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import { findHelpArticles, HELP_CATEGORIES, HelpAction, HelpCategory } from '../data/helpArticles';
 
 export const HelpCenterScreen: React.FC = () => {
+  useUiPreferences();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route=useRoute<RouteProp<RootStackParamList,'HelpCenter'>>();
   const { user } = useAuth();
@@ -36,79 +38,79 @@ export const HelpCenterScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.screen}>
-      <View style={styles.header}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Quay lại hồ sơ" style={styles.backButton} onPress={() => navigation.canGoBack() ? navigation.goBack() : navigation.replace('MainTabs', { screen: 'ProfileTab' })}>
-          <ArrowLeft size={22} color="#292C30" />
+    <SafeAreaView style={uiStyle(styles.screen)}>
+      <View style={uiStyle(styles.header)}>
+        <Pressable accessibilityRole="button" accessibilityLabel={uiText("Quay lại hồ sơ")} style={uiStyle(styles.backButton)} onPress={() => navigation.canGoBack() ? navigation.goBack() : navigation.replace('MainTabs', { screen: 'ProfileTab' })}>
+          <ArrowLeft size={22} color={uiColor("#292C30")} />
         </Pressable>
-        <Text accessibilityRole="header" style={styles.headerTitle}>Trợ giúp</Text>
-        <View style={styles.backButton} />
+        <Text accessibilityRole="header" style={uiTextStyle(styles.headerTitle)}>{uiText("Trợ giúp")}</Text>
+        <View style={uiStyle(styles.backButton)} />
       </View>
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={uiStyle(styles.content)}>
         <AiHelpPanel onArticle={openArticle}/>
-        <View style={styles.hero}>
-          <View style={styles.heroIcon}><HelpCircle size={28} color="#008C9E" /></View>
-          <Text accessibilityRole="header" style={styles.heroTitle}>Bạn cần hỗ trợ điều gì?</Text>
-          <Text style={styles.heroDescription}>Tìm câu trả lời để tiếp tục lên kế hoạch cho kỳ lưu trú tiếp theo.</Text>
-          <View style={styles.searchField}>
-            <Search size={20} color="#6B7280" />
+        <View style={uiStyle(styles.hero)}>
+          <View style={uiStyle(styles.heroIcon)}><HelpCircle size={28} color={uiColor("#008C9E")} /></View>
+          <Text accessibilityRole="header" style={uiTextStyle(styles.heroTitle)}>{uiText("Bạn cần hỗ trợ điều gì?")}</Text>
+          <Text style={uiTextStyle(styles.heroDescription)}>{uiText("Tìm câu trả lời để tiếp tục lên kế hoạch cho kỳ lưu trú tiếp theo.")}</Text>
+          <View style={uiStyle(styles.searchField)}>
+            <Search size={20} color={uiColor("#6B7280")} />
             <TextInput
-              accessibilityLabel="Tìm bài viết trợ giúp"
-              placeholder="Tìm về đặt chỗ, thanh toán, tài khoản..." placeholderTextColor="#9CA3AF"
+              accessibilityLabel={uiText("Tìm bài viết trợ giúp")}
+              placeholder={uiText("Tìm về đặt chỗ, thanh toán, tài khoản...")} placeholderTextColor={uiColor("#9CA3AF")}
               value={query} onChangeText={(value) => { setQuery(value); setExpandedId(null); }}
-              autoCapitalize="none" autoCorrect={false} style={styles.searchInput}
+              autoCapitalize="none" autoCorrect={false} style={uiStyle(styles.searchInput)}
             />
-            {!!query && <Pressable accessibilityRole="button" accessibilityLabel="Xóa nội dung tìm kiếm trợ giúp" onPress={() => setQuery('')} style={styles.clearButton}><X size={18} color="#6B7280" /></Pressable>}
+            {!!query && <Pressable accessibilityRole="button" accessibilityLabel={uiText("Xóa nội dung tìm kiếm trợ giúp")} onPress={() => setQuery('')} style={uiStyle(styles.clearButton)}><X size={18} color={uiColor("#6B7280")} /></Pressable>}
           </View>
         </View>
 
-        <View style={styles.quickActions}>
-          <Pressable accessibilityRole="button" accessibilityLabel="Help with my bookings" style={styles.quickCard} onPress={() => openAction('bookings')}>
-            <CalendarCheck size={23} color="#00A3B8" />
-            <Text style={styles.quickTitle}>Đơn đặt chỗ của tôi</Text>
-            <Text style={styles.quickDescription}>{user ? 'Kiểm tra trạng thái đặt chỗ' : 'Đăng nhập để xem đơn đặt chỗ'}</Text>
+        <View style={uiStyle(styles.quickActions)}>
+          <Pressable accessibilityRole="button" accessibilityLabel={uiText("Help with my bookings")} style={uiStyle(styles.quickCard)} onPress={() => openAction('bookings')}>
+            <CalendarCheck size={23} color={uiColor("#00A3B8")} />
+            <Text style={uiTextStyle(styles.quickTitle)}>{uiText("Đơn đặt chỗ của tôi")}</Text>
+            <Text style={uiTextStyle(styles.quickDescription)}>{user ? uiText('Kiểm tra trạng thái đặt chỗ') : uiText('Đăng nhập để xem đơn đặt chỗ')}</Text>
           </Pressable>
-          <Pressable accessibilityRole="button" accessibilityLabel="Mở cài đặt tài khoản" style={styles.quickCard} onPress={() => openAction('settings')}>
-            <Settings size={23} color="#00A3B8" />
-            <Text style={styles.quickTitle}>Cài đặt tài khoản</Text>
-            <Text style={styles.quickDescription}>Mật khẩu và quyền thông báo</Text>
+          <Pressable accessibilityRole="button" accessibilityLabel={uiText("Mở cài đặt tài khoản")} style={uiStyle(styles.quickCard)} onPress={() => openAction('settings')}>
+            <Settings size={23} color={uiColor("#00A3B8")} />
+            <Text style={uiTextStyle(styles.quickTitle)}>{uiText("Cài đặt tài khoản")}</Text>
+            <Text style={uiTextStyle(styles.quickDescription)}>{uiText("Mật khẩu và quyền thông báo")}</Text>
           </Pressable>
         </View>
 
-        <Text accessibilityRole="header" style={styles.sectionTitle}>Câu hỏi thường gặp</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categories}>
+        <Text accessibilityRole="header" style={uiTextStyle(styles.sectionTitle)}>{uiText("Câu hỏi thường gặp")}</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={uiStyle(styles.categories)}>
           {HELP_CATEGORIES.map((item) => (
             <Pressable
-              key={item.id} accessibilityRole="button" accessibilityLabel={`Help topic: ${item.label}`}
+              key={item.id} accessibilityRole="button" accessibilityLabel={uiText(`Help topic: ${item.label}`)}
               accessibilityState={{ selected: category === item.id }}
               onPress={() => { setCategory(item.id); setExpandedId(null); }}
-              style={[styles.category, category === item.id && styles.selectedCategory]}
+              style={uiStyle([styles.category, category === item.id && styles.selectedCategory])}
             >
-              <Text style={[styles.categoryLabel, category === item.id && styles.selectedCategoryLabel]}>{item.label}</Text>
+              <Text style={uiTextStyle([styles.categoryLabel, category === item.id && styles.selectedCategoryLabel])}>{uiText(item.label)}</Text>
             </Pressable>
           ))}
         </ScrollView>
-        <Text accessibilityLiveRegion="polite" style={styles.resultCount}>{articles.length} {articles.length === 1 ? 'article' : 'articles'}</Text>
+        <Text accessibilityLiveRegion="polite" style={uiTextStyle(styles.resultCount)}>{uiText(articles.length)} {articles.length === 1 ? uiText('article') : uiText('articles')}</Text>
 
         {articles.length > 0 ? (
-          <View style={styles.articleList}>
+          <View style={uiStyle(styles.articleList)}>
             {articles.map((article, index) => {
               const expanded = expandedId === article.id;
               const action = article.action;
               return (
-                <View key={article.id} style={index > 0 && styles.articleBorder}>
+                <View key={article.id} style={uiStyle(index > 0 && styles.articleBorder)}>
                   <Pressable
                     accessibilityRole="button" accessibilityLabel={article.question}
                     accessibilityState={{ expanded }}
-                    onPress={() => setExpandedId(expanded ? null : article.id)} style={styles.questionButton}
+                    onPress={() => setExpandedId(expanded ? null : article.id)} style={uiStyle(styles.questionButton)}
                   >
-                    <Text style={styles.question}>{article.question}</Text>
-                    {expanded ? <ChevronDown size={20} color="#00A3B8" /> : <ChevronRight size={20} color="#9CA3AF" />}
+                    <Text style={uiTextStyle(styles.question)}>{article.question}</Text>
+                    {expanded ? <ChevronDown size={20} color={uiColor("#00A3B8")} /> : <ChevronRight size={20} color={uiColor("#9CA3AF")} />}
                   </Pressable>
                   {expanded && (
-                    <View style={styles.answerBlock}>
-                      <Text style={styles.answer}>{article.answer}</Text>
-                      {action && <Pressable accessibilityRole="button" accessibilityLabel={action.label} onPress={() => openAction(action.type)} style={styles.articleAction}><Text style={styles.actionLabel}>{action.label}</Text><ArrowUpRight size={17} color="#008C9E" /></Pressable>}
+                    <View style={uiStyle(styles.answerBlock)}>
+                      <Text style={uiTextStyle(styles.answer)}>{article.answer}</Text>
+                      {action && <Pressable accessibilityRole="button" accessibilityLabel={uiText(action.label)} onPress={() => openAction(action.type)} style={uiStyle(styles.articleAction)}><Text style={uiTextStyle(styles.actionLabel)}>{uiText(action.label)}</Text><ArrowUpRight size={17} color={uiColor("#008C9E")} /></Pressable>}
                     </View>
                   )}
                 </View>
@@ -116,16 +118,16 @@ export const HelpCenterScreen: React.FC = () => {
             })}
           </View>
         ) : (
-          <View style={styles.empty}>
-            <Search size={30} color="#00A3B8" />
-            <Text style={styles.emptyTitle}>Không tìm thấy bài viết trợ giúp</Text>
-            <Text style={styles.quickDescription}>Thử từ khóa khác hoặc xem tất cả chủ đề.</Text>
-            <Pressable accessibilityRole="button" accessibilityLabel="Đặt lại tìm kiếm trợ giúp" onPress={resetSearch} style={styles.resetButton}><Text style={styles.actionLabel}>Xem tất cả chủ đề</Text></Pressable>
+          <View style={uiStyle(styles.empty)}>
+            <Search size={30} color={uiColor("#00A3B8")} />
+            <Text style={uiTextStyle(styles.emptyTitle)}>{uiText("Không tìm thấy bài viết trợ giúp")}</Text>
+            <Text style={uiTextStyle(styles.quickDescription)}>{uiText("Thử từ khóa khác hoặc xem tất cả chủ đề.")}</Text>
+            <Pressable accessibilityRole="button" accessibilityLabel={uiText("Đặt lại tìm kiếm trợ giúp")} onPress={resetSearch} style={uiStyle(styles.resetButton)}><Text style={uiTextStyle(styles.actionLabel)}>{uiText("Xem tất cả chủ đề")}</Text></Pressable>
           </View>
         )}
-        <View style={styles.tip}>
-          <HelpCircle size={20} color="#008C9E" />
-          <Text style={styles.tipText}>Khi gặp vấn đề với đơn đặt chỗ, hãy chuẩn bị mã đặt chỗ và thông báo lỗi để mô tả rõ sự cố.</Text>
+        <View style={uiStyle(styles.tip)}>
+          <HelpCircle size={20} color={uiColor("#008C9E")} />
+          <Text style={uiTextStyle(styles.tipText)}>{uiText("Khi gặp vấn đề với đơn đặt chỗ, hãy chuẩn bị mã đặt chỗ và thông báo lỗi để mô tả rõ sự cố.")}</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

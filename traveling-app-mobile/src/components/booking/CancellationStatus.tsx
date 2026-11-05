@@ -1,3 +1,5 @@
+import { uiLocale, useUiPreferences, uiStyle, uiColor, uiTextStyle, uiText } from '../../preferences/ui';
+
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { CheckCircle2, ChevronRight } from 'lucide-react-native';
@@ -16,73 +18,67 @@ export const CancellationStatus = ({
   refreshFailed: boolean;
   onRefresh: () => void;
   onTrack: () => void;
-}) => (
-  <View style={s.section}>
-    <View style={s.notice}>
-      <CheckCircle2 color="#45916D" size={22} />
-      <View style={{ flex: 1 }}>
-        <Text style={s.title}>Đã hủy đặt chỗ</Text>
-        <Text style={s.copy}>
-          {paidCents(booking) > 0
-            ? 'Yêu cầu hoàn tiền cần quản trị viên phê duyệt và dịch vụ thanh toán xác nhận.'
-            : 'Hiện chưa ghi nhận khoản thanh toán cho đơn này.'}
+}) => { useUiPreferences(); return ((
+  <View style={uiStyle(s.section)}>
+    <View style={uiStyle(s.notice)}>
+      <CheckCircle2 color={uiColor("#45916D")} size={22} />
+      <View style={uiStyle({ flex: 1 })}>
+        <Text style={uiTextStyle(s.title)}>{uiText("Đã hủy đặt chỗ")}</Text>
+        <Text style={uiTextStyle(s.copy)}>
+          {paidCents(booking) > 0 ? uiText('Yêu cầu hoàn tiền cần quản trị viên phê duyệt và dịch vụ thanh toán xác nhận.') : uiText('Hiện chưa ghi nhận khoản thanh toán cho đơn này.')}
         </Text>
       </View>
     </View>
     {!!booking.cancellation_reason && (
-      <View style={s.reason}>
-        <Text style={s.label}>Lý do hủy</Text>
-        <Text style={s.reasonValue}>{booking.cancellation_reason}</Text>
-        {!!booking.cancelled_at && <Text style={s.date}>{accountDate(booking.cancelled_at)}</Text>}
+      <View style={uiStyle(s.reason)}>
+        <Text style={uiTextStyle(s.label)}>{uiText("Lý do hủy")}</Text>
+        <Text style={uiTextStyle(s.reasonValue)}>{uiText(booking.cancellation_reason)}</Text>
+        {!!booking.cancelled_at && <Text style={uiTextStyle(s.date)}>{uiText(accountDate(booking.cancelled_at))}</Text>}
       </View>
     )}
     {booking.refunds?.map((refund) => {
       const status = refundStatus[refund.status];
       return (
-        <View key={refund.id} style={s.refund}>
-          <View style={s.row}>
-            <Text style={s.amount}>{formatPaymentMoney(refund.amount)}</Text>
+        <View key={refund.id} style={uiStyle(s.refund)}>
+          <View style={uiStyle(s.row)}>
+            <Text style={uiTextStyle(s.amount)}>{uiText(formatPaymentMoney(refund.amount, 'USD', uiLocale()))}</Text>
             <PaymentBadge {...status} />
           </View>
-          <Text style={s.copy}>{status.description}</Text>
+          <Text style={uiTextStyle(s.copy)}>{uiText(status.description)}</Text>
           {!!refund.decision_reason && (
-            <Text style={s.reasonValue}>Phản hồi của quản trị viên: {refund.decision_reason}</Text>
+            <Text style={uiTextStyle(s.reasonValue)}>{uiText("Phản hồi của quản trị viên: ")}{uiText(refund.decision_reason)}</Text>
           )}
         </View>
       );
     })}
     {paidCents(booking) > 0 && !booking.refunds?.length && (
-      <Text style={s.copy}>
-        Chưa có yêu cầu hoàn tiền. Hãy kiểm tra mục Thanh toán và nhận tiền hoặc liên hệ hỗ trợ.
-      </Text>
+      <Text style={uiTextStyle(s.copy)}>{uiText("Chưa có yêu cầu hoàn tiền. Hãy kiểm tra mục Thanh toán và nhận tiền hoặc liên hệ hỗ trợ.")}</Text>
     )}
     {refreshFailed && (
-      <View style={s.refresh}>
-        <Text accessibilityRole="alert" style={s.copy}>
-          Yêu cầu hủy đã được ghi nhận nhưng chưa thể cập nhật thông tin thanh toán mới nhất.
-        </Text>
+      <View style={uiStyle(s.refresh)}>
+        <Text accessibilityRole="alert" style={uiTextStyle(s.copy)}>{uiText("Yêu cầu hủy đã được ghi nhận nhưng chưa thể cập nhật thông tin thanh toán mới nhất.")}</Text>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Cập nhật chi tiết hủy"
+          accessibilityLabel={uiText("Cập nhật chi tiết hủy")}
           onPress={onRefresh}
         >
-          <Text style={s.link}>Cập nhật chi tiết</Text>
+          <Text style={uiTextStyle(s.link)}>{uiText("Cập nhật chi tiết")}</Text>
         </Pressable>
       </View>
     )}
     {paidCents(booking) > 0 && (
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Theo dõi trạng thái hoàn tiền"
+        accessibilityLabel={uiText("Theo dõi trạng thái hoàn tiền")}
         onPress={onTrack}
-        style={s.track}
+        style={uiStyle(s.track)}
       >
-        <Text style={s.link}>Theo dõi trạng thái hoàn tiền</Text>
-        <ChevronRight size={17} color="#00A5B9" />
+        <Text style={uiTextStyle(s.link)}>{uiText("Theo dõi trạng thái hoàn tiền")}</Text>
+        <ChevronRight size={17} color={uiColor("#00A5B9")} />
       </Pressable>
     )}
   </View>
-);
+)); };
 const s = StyleSheet.create({
   section: { marginBottom: 22 },
   notice: {

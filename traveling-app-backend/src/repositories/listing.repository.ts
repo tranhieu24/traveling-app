@@ -3,12 +3,14 @@ import { priceStay } from '../domain/booking';
 import { ENV } from '../config/env';
 
 export interface ListingFilterParams {
+  listingId?: string;
   categoryId?: string;
   q?: string;
   country?: string;
   roomType?: string;
   roomTypes?: string[];
   cityExact?: boolean;
+  cityAliases?: string[];
   propertyType?: string;
   region?: string;
   city?: string;
@@ -33,6 +35,11 @@ export class ListingRepository {
     const values: any[] = [];
     let paramIndex = 1;
 
+    if (filters.listingId) {
+      conditions.push(`l.id = $${paramIndex++}`);
+      values.push(filters.listingId);
+    }
+
     if (filters.q) {
       values.push('%'+filters.q+'%');
       const i=paramIndex++;
@@ -51,7 +58,10 @@ export class ListingRepository {
       values.push(filters.region);
     }
 
-    if (filters.city) {
+    if (filters.cityAliases?.length) {
+      conditions.push(`LOWER(l.city) = ANY($${paramIndex++}::text[])`);
+      values.push(filters.cityAliases.map(city => city.toLowerCase()));
+    } else if (filters.city) {
       conditions.push(filters.cityExact ? `LOWER(l.city) = LOWER($${paramIndex++})` : `LOWER(l.city) LIKE LOWER($${paramIndex++})`);
       values.push(filters.cityExact ? filters.city : `%${filters.city}%`);
     }

@@ -1,3 +1,5 @@
+import { uiLocale, useUiPreferences, uiText, uiStyle, uiTextStyle, uiColor } from '../preferences/ui';
+
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -45,6 +47,7 @@ const regions: { destination: SearchDestination; image?: number }[] = [
   { destination: { kind: 'region', label: 'Bắc Mỹ', value: 'North America' } },
 ];
 export const SearchSheetScreen: React.FC = () => {
+  useUiPreferences();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, 'SearchSheet'>>();
   const state = useFilterStore();
@@ -137,40 +140,40 @@ export const SearchSheetScreen: React.FC = () => {
   const summary = (label: string, value: string, target: 'where' | 'when' | 'who') => (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Edit ${label}`}
+      accessibilityLabel={uiText(`Edit ${label}`)}
       onPress={() => {
         setStep(target);
         setError('');
       }}
-      style={s.summary}
+      style={uiStyle(s.summary)}
     >
-      <Text style={shared.muted}>{label}</Text>
-      <Text numberOfLines={1} style={s.summaryValue}>
-        {value}
+      <Text style={uiTextStyle(shared.muted)}>{uiText(label)}</Text>
+      <Text numberOfLines={1} style={uiTextStyle(s.summaryValue)}>
+        {uiText(value)}
       </Text>
     </Pressable>
   );
   const nights =
     checkIn && checkOut ? Math.round((Date.parse(checkOut) - Date.parse(checkIn)) / 86400000) : 1;
   return (
-    <SafeAreaView edges={['top', 'bottom']} style={s.screen}>
+    <SafeAreaView edges={['top', 'bottom']} style={uiStyle(s.screen)}>
       <KeyboardAvoidingView
-        style={s.screen}
+        style={uiStyle(s.screen)}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={s.top}>
+        <View style={uiStyle(s.top)}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Đóng tìm kiếm"
+            accessibilityLabel={uiText("Đóng tìm kiếm")}
             onPress={close}
-            style={s.close}
+            style={uiStyle(s.close)}
           >
-            <X size={21} color="#7F8790" />
+            <X size={21} color={uiColor("#7F8790")} />
           </Pressable>
         </View>
         <ScrollView
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={s.content}
+          contentContainerStyle={uiStyle(s.content)}
           showsVerticalScrollIndicator={false}
         >
           <AiSearchPanel onApply={filters=>{
@@ -184,85 +187,83 @@ export const SearchSheetScreen: React.FC = () => {
           {step !== 'where' ? (
             summary('Địa điểm', destination?.label || 'Chọn điểm đến', 'where')
           ) : (
-            <View style={s.card}>
-              <Text style={shared.title}>Bạn muốn đến đâu?</Text>
-              <View style={s.inputRow}>
-                <Search size={21} color="#30343A" />
+            <View style={uiStyle(s.card)}>
+              <Text style={uiTextStyle(shared.title)}>{uiText("Bạn muốn đến đâu?")}</Text>
+              <View style={uiStyle(s.inputRow)}>
+                <Search size={21} color={uiColor("#30343A")} />
                 <TextInput
-                  accessibilityLabel="Tìm thành phố hoặc quốc gia"
-                  placeholder="Tìm thành phố hoặc quốc gia"
-                  placeholderTextColor="#A6ADB6"
+                  accessibilityLabel={uiText("Tìm thành phố hoặc quốc gia")}
+                  placeholder={uiText("Tìm thành phố hoặc quốc gia")}
+                  placeholderTextColor={uiColor("#A6ADB6")}
                   value={query}
                   onChangeText={(value) => {
                     setQuery(value);
                     setDestination(null);
                     setError('');
                   }}
-                  style={s.input}
+                  style={uiStyle(s.input)}
                   maxLength={100}
                   autoCorrect={false}
                   returnKeyType="search"
                 />
               </View>
               {!destination && !!query.trim() && (
-                <View style={s.suggestions}>
+                <View style={uiStyle(s.suggestions)}>
                   {debounced !== query.trim() || suggestions.isFetching ? (
-                    <ActivityIndicator color={CYAN} style={{ padding: 16 }} />
+                    <ActivityIndicator color={uiColor(CYAN)} style={uiStyle({ padding: 16 })} />
                   ) : suggestions.isError ? (
                     <Pressable accessibilityRole="button" onPress={() => suggestions.refetch()}>
-                      <Text style={shared.error}>Không thể tải điểm đến. Chạm để thử lại.</Text>
+                      <Text style={uiTextStyle(shared.error)}>{uiText("Không thể tải điểm đến. Chạm để thử lại.")}</Text>
                     </Pressable>
                   ) : suggestions.data?.length ? (
                     suggestions.data.map((choice) => (
                       <Pressable
                         key={`${choice.kind}:${choice.label}`}
                         accessibilityRole="button"
-                        accessibilityLabel={`Chọn ${choice.label}`}
+                        accessibilityLabel={uiText(`Chọn ${choice.label}`)}
                         onPress={() => choose(choice)}
-                        style={s.suggestion}
+                        style={uiStyle(s.suggestion)}
                       >
-                        <MapPin size={18} color={CYAN} />
-                        <Text style={[shared.text, { flex: 1 }]}>{choice.label}</Text>
+                        <MapPin size={18} color={uiColor(CYAN)} />
+                        <Text style={uiTextStyle([shared.text, { flex: 1 }])}>{uiText(choice.label)}</Text>
                       </Pressable>
                     ))
                   ) : (
-                    <Text style={shared.muted}>
-                      Không tìm thấy điểm đến. Hãy thử thành phố, quốc gia khác hoặc chọn khu vực bên dưới.
-                    </Text>
+                    <Text style={uiTextStyle(shared.muted)}>{uiText("Không tìm thấy điểm đến. Hãy thử thành phố, quốc gia khác hoặc chọn khu vực bên dưới.")}</Text>
                   )}
                 </View>
               )}
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={s.regions}
+                contentContainerStyle={uiStyle(s.regions)}
               >
                 {regions.map(({ destination: choice, image }) => (
                   <Pressable
                     key={choice.label}
                     accessibilityRole="button"
-                    accessibilityLabel={`Chọn ${choice.label}`}
+                    accessibilityLabel={uiText(`Chọn ${choice.label}`)}
                     accessibilityState={{ selected: destination?.label === choice.label }}
                     aria-selected={destination?.label === choice.label}
                     onPress={() => choose(choice)}
-                    style={s.region}
+                    style={uiStyle(s.region)}
                   >
                     <View
-                      style={[
+                      style={uiStyle([
                         s.regionImage,
                         destination?.label === choice.label && {
                           borderColor: CYAN,
                           borderWidth: 2,
                         },
-                      ]}
+                      ])}
                     >
                       {image ? (
-                        <Image source={image} style={s.image} />
+                        <Image source={image} style={uiStyle(s.image)} />
                       ) : (
-                        <Globe size={42} color={CYAN} />
+                        <Globe size={42} color={uiColor(CYAN)} />
                       )}
                     </View>
-                    <Text style={s.regionLabel}>{choice.label}</Text>
+                    <Text style={uiTextStyle(s.regionLabel)}>{uiText(choice.label)}</Text>
                   </Pressable>
                 ))}
               </ScrollView>
@@ -271,13 +272,13 @@ export const SearchSheetScreen: React.FC = () => {
           {step !== 'when' ? (
             summary(
               step === 'where' ? "Thời gian" : "Ngày lưu trú",
-              checkIn && checkOut ? searchDateLabel(checkIn, checkOut) : 'Thêm thời gian',
+              checkIn && checkOut ? searchDateLabel(checkIn, checkOut, uiLocale()) : 'Thêm thời gian',
               'when'
             )
           ) : (
-            <View style={s.card}>
-              <Text style={shared.title}>Thời gian lưu trú</Text>
-              <View style={s.segment}>
+            <View style={uiStyle(s.card)}>
+              <Text style={uiTextStyle(shared.title)}>{uiText("Thời gian lưu trú")}</Text>
+              <View style={uiStyle(s.segment)}>
                 {['Chọn ngày', 'Linh hoạt ngày'].map((label, index) => (
                   <Pressable
                     key={label}
@@ -292,23 +293,21 @@ export const SearchSheetScreen: React.FC = () => {
                         setCheckOut(null);
                       }
                     }}
-                    style={[s.segmentButton, anytime === !!index && { backgroundColor: CYAN }]}
+                    style={uiStyle([s.segmentButton, anytime === !!index && { backgroundColor: CYAN }])}
                   >
                     <Text
-                      style={[
+                      style={uiTextStyle([
                         shared.text,
                         anytime === !!index && { color: 'white', fontWeight: '600' },
-                      ]}
+                      ])}
                     >
-                      {label}
+                      {uiText(label)}
                     </Text>
                   </Pressable>
                 ))}
               </View>
               {anytime ? (
-                <Text style={[shared.muted, { paddingVertical: 24 }]}>
-                  Chưa chốt lịch? Bạn có thể xem các chỗ ở và chọn ngày trước khi đặt.
-                </Text>
+                <Text style={uiTextStyle([shared.muted, { paddingVertical: 24 }])}>{uiText("Chưa chốt lịch? Bạn có thể xem các chỗ ở và chọn ngày trước khi đặt.")}</Text>
               ) : (
                 <>
                   <DateRangeCalendar
@@ -320,12 +319,12 @@ export const SearchSheetScreen: React.FC = () => {
                     }}
                     onError={setError}
                   />
-                  <View style={s.duration}>
-                    <Text style={shared.text}>
-                      {nights} {nights === 1 ? 'night' : 'nights'}
+                  <View style={uiStyle(s.duration)}>
+                    <Text style={uiTextStyle(shared.text)}>
+                      {uiText(nights)} {nights === 1 ? uiText('night') : uiText('nights')}
                     </Text>
                     <Counter
-                      label="nights"
+                      label={uiText("nights")}
                       value={nights}
                       minimum={1}
                       maximum={365}
@@ -339,7 +338,7 @@ export const SearchSheetScreen: React.FC = () => {
                   </View>
                 </>
               )}
-              <View style={s.nextRow}>
+              <View style={uiStyle(s.nextRow)}>
                 <Pressable
                   accessibilityRole="button"
                   onPress={() => {
@@ -350,10 +349,10 @@ export const SearchSheetScreen: React.FC = () => {
                     setStep('who');
                   }}
                 >
-                  <Text style={shared.clear}>Skip</Text>
+                  <Text style={uiTextStyle(shared.clear)}>{uiText("Skip")}</Text>
                 </Pressable>
-                <Pressable accessibilityRole="button" onPress={next} style={shared.action}>
-                  <Text style={shared.actionText}>Next</Text>
+                <Pressable accessibilityRole="button" onPress={next} style={uiStyle(shared.action)}>
+                  <Text style={uiTextStyle(shared.actionText)}>{uiText("Next")}</Text>
                 </Pressable>
               </View>
             </View>
@@ -365,58 +364,56 @@ export const SearchSheetScreen: React.FC = () => {
               'who'
             )
           ) : (
-            <View style={s.card}>
-              <Text style={shared.title}>Có bao nhiêu khách?</Text>
-              <View style={s.guestRow}>
-                <Text style={shared.text}>Người lớn</Text>
+            <View style={uiStyle(s.card)}>
+              <Text style={uiTextStyle(shared.title)}>{uiText("Có bao nhiêu khách?")}</Text>
+              <View style={uiStyle(s.guestRow)}>
+                <Text style={uiTextStyle(shared.text)}>{uiText("Người lớn")}</Text>
                 <Counter
-                  label="adults"
+                  label={uiText("adults")}
                   value={adults}
                   maximum={1000 - children}
                   onChange={setAdults}
                 />
               </View>
-              <View style={s.guestRow}>
-                <Text style={shared.text}>Trẻ em</Text>
+              <View style={uiStyle(s.guestRow)}>
+                <Text style={uiTextStyle(shared.text)}>{uiText("Trẻ em")}</Text>
                 <Counter
-                  label="children"
+                  label={uiText("children")}
                   value={children}
                   maximum={1000 - adults}
                   onChange={setChildren}
                 />
               </View>
               {adults === 0 && (
-                <Text style={[shared.muted, { fontSize: 12, marginTop: 8 }]}>
-                  Cần có ít nhất một người lớn để tìm kiếm.
-                </Text>
+                <Text style={uiTextStyle([shared.muted, { fontSize: 12, marginTop: 8 }])}>{uiText("Cần có ít nhất một người lớn để tìm kiếm.")}</Text>
               )}
             </View>
           )}
           {!!error && (
-            <Text accessibilityRole="alert" style={shared.error}>
-              {error}
+            <Text accessibilityRole="alert" style={uiTextStyle(shared.error)}>
+              {uiText(error)}
             </Text>
           )}
         </ScrollView>
-        <View style={s.footerOuter}>
-          <View style={[shared.footer, s.footer]}>
+        <View style={uiStyle(s.footerOuter)}>
+          <View style={uiStyle([shared.footer, s.footer])}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Xóa lựa chọn tìm kiếm"
+              accessibilityLabel={uiText("Xóa lựa chọn tìm kiếm")}
               onPress={clear}
             >
-              <Text style={shared.clear}>Xóa tất cả</Text>
+              <Text style={uiTextStyle(shared.clear)}>{uiText("Xóa tất cả")}</Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Tìm chỗ ở"
+              accessibilityLabel={uiText("Tìm chỗ ở")}
               disabled={disabled}
               accessibilityState={{ disabled }}
               onPress={search}
-              style={[shared.action, disabled && { opacity: 0.45 }]}
+              style={uiStyle([shared.action, disabled && { opacity: 0.45 }])}
             >
-              <Search size={20} color="white" />
-              <Text style={shared.actionText}>Tìm kiếm</Text>
+              <Search size={20} color={uiColor("white")} />
+              <Text style={uiTextStyle(shared.actionText)}>{uiText("Tìm kiếm")}</Text>
             </Pressable>
           </View>
         </View>

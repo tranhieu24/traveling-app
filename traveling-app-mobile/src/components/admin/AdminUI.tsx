@@ -1,3 +1,4 @@
+import { useUiPreferences, uiText, uiStyle, uiColor, uiTextStyle } from '../../preferences/ui';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
@@ -41,15 +42,16 @@ export function AdminButton({
   small?: boolean;
   label?: string;
 }) {
+  useUiPreferences();
   return (
     <Pressable
       cssInterop={false}
       accessibilityRole="button"
-      accessibilityLabel={label || title}
+      accessibilityLabel={uiText(label || title)}
       accessibilityState={{ disabled: !!disabled || !!busy, busy }}
       disabled={disabled || busy}
       onPress={onPress}
-      style={({ pressed }) => [
+      style={uiStyle(({ pressed }) => [
         a.button,
         variant === 'primary'
           ? a.primary
@@ -60,15 +62,15 @@ export function AdminButton({
               : a.secondary,
         small && a.smallButton,
         (pressed || disabled || busy) && a.dim,
-      ]}
+      ])}
     >
       {busy ? (
-        <ActivityIndicator size="small" color={variant === 'primary' ? '#FFF' : colors.primary} />
+        <ActivityIndicator size="small" color={uiColor(variant === 'primary' ? '#FFF' : colors.primary)} />
       ) : (
         icon
       )}
       <Text
-        style={[
+        style={uiTextStyle([
           a.buttonText,
           variant === 'primary'
             ? { color: '#FFF' }
@@ -76,9 +78,9 @@ export function AdminButton({
               ? { color: '#DB5865' }
               : { color: colors.ink },
           small && { fontSize: 12 },
-        ]}
+        ])}
       >
-        {title}
+        {uiText(title)}
       </Text>
     </Pressable>
   );
@@ -105,26 +107,27 @@ export function AdminField({
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
+  useUiPreferences();
   return (
-    <View style={[a.field, style]}>
-      <Text style={a.label}>{label}</Text>
+    <View style={uiStyle([a.field, style])}>
+      <Text style={uiTextStyle(a.label)}>{uiText(label)}</Text>
       <TextInput
-        accessibilityLabel={label}
+        accessibilityLabel={uiText(label)}
         value={value}
         onChangeText={onChange}
-        placeholder={placeholder}
-        placeholderTextColor="#A4B2BA"
+        placeholder={uiText(placeholder)}
+        placeholderTextColor={uiColor("#A4B2BA")}
         editable={!disabled}
         autoCapitalize="none"
         keyboardType={keyboardType}
         multiline={multiline}
-        style={[
+        style={uiStyle([
           a.input,
           multiline && { minHeight: 104, textAlignVertical: 'top' },
           disabled && a.dim,
-        ]}
+        ])}
       />
-      {!!helper && <Text style={a.helper}>{helper}</Text>}
+      {!!helper && <Text style={uiTextStyle(a.helper)}>{uiText(helper)}</Text>}
     </View>
   );
 }
@@ -144,6 +147,7 @@ export function AdminSelect({
   disabled?: boolean;
   placeholder?: string;
 }) {
+  useUiPreferences();
   const [open, setOpen] = useState(false),
     [search, setSearch] = useState('');
   const selected = options.find((o) => o.value === value);
@@ -151,53 +155,53 @@ export function AdminSelect({
     o.label.toLocaleLowerCase().includes(search.toLocaleLowerCase())
   );
   return (
-    <View style={a.field}>
-      <Text style={a.label}>{label}</Text>
+    <View style={uiStyle(a.field)}>
+      <Text style={uiTextStyle(a.label)}>{uiText(label)}</Text>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={label}
+        accessibilityLabel={uiText(label)}
         accessibilityState={{ disabled, expanded: open }}
         disabled={disabled}
         onPress={() => {
           setSearch('');
           setOpen(true);
         }}
-        style={[a.input, a.select, disabled && a.dim]}
+        style={uiStyle([a.input, a.select, disabled && a.dim])}
       >
         <Text
           numberOfLines={1}
-          style={[a.text, { flex: 1, color: selected ? colors.ink : colors.muted }]}
+          style={uiTextStyle([a.text, { flex: 1, color: selected ? colors.ink : colors.muted }])}
         >
-          {selected?.label || placeholder}
+          {uiText(selected?.label || placeholder)}
         </Text>
-        <ChevronDown size={17} color={colors.muted} />
+        <ChevronDown size={17} color={uiColor(colors.muted)} />
       </Pressable>
-      <AdminModal visible={open} title={label} onClose={() => setOpen(false)} width={460}>
+      <AdminModal visible={open} title={uiText(label)} onClose={() => setOpen(false)} width={460}>
         {options.length > 7 && (
           <AdminField
-            label="Tìm lựa chọn"
+            label={uiText("Tìm lựa chọn")}
             value={search}
             onChange={setSearch}
-            placeholder="Nhập từ khóa..."
+            placeholder={uiText("Nhập từ khóa...")}
           />
         )}
         {visible.map((option) => (
           <Pressable
             key={option.value}
             accessibilityRole="radio"
-            accessibilityLabel={option.label}
+            accessibilityLabel={uiText(option.label)}
             accessibilityState={{ checked: value === option.value }}
             onPress={() => {
               onChange(option.value);
               setOpen(false);
             }}
-            style={a.option}
+            style={uiStyle(a.option)}
           >
-            <Text style={[a.text, { flex: 1 }]}>{option.label}</Text>
-            {value === option.value && <Check size={18} color={colors.primary} />}
+            <Text style={uiTextStyle([a.text, { flex: 1 }])}>{uiText(option.label)}</Text>
+            {value === option.value && <Check size={18} color={uiColor(colors.primary)} />}
           </Pressable>
         ))}
-        {!visible.length && <Text style={a.emptyText}>Không tìm thấy lựa chọn phù hợp.</Text>}
+        {!visible.length && <Text style={uiTextStyle(a.emptyText)}>{uiText("Không tìm thấy lựa chọn phù hợp.")}</Text>}
       </AdminModal>
     </View>
   );
@@ -222,6 +226,7 @@ export function AdminModal({
   busy?: boolean;
   width?: number;
 }) {
+  useUiPreferences();
   return (
     <Modal
       visible={visible}
@@ -231,29 +236,29 @@ export function AdminModal({
         if (!busy) onClose();
       }}
     >
-      <View style={a.overlay}>
-        <View style={[a.modal, { maxWidth: width }]} accessibilityViewIsModal>
-          <View style={a.modalHeader}>
-            <View style={{ flex: 1 }}>
-              <Text accessibilityRole="header" style={a.modalTitle}>
-                {title}
+      <View style={uiStyle(a.overlay)}>
+        <View style={uiStyle([a.modal, { maxWidth: width }])} accessibilityViewIsModal>
+          <View style={uiStyle(a.modalHeader)}>
+            <View style={uiStyle({ flex: 1 })}>
+              <Text accessibilityRole="header" style={uiTextStyle(a.modalTitle)}>
+                {uiText(title)}
               </Text>
-              {!!subtitle && <Text style={[a.helper, { marginTop: 5 }]}>{subtitle}</Text>}
+              {!!subtitle && <Text style={uiTextStyle([a.helper, { marginTop: 5 }])}>{uiText(subtitle)}</Text>}
             </View>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={`Đóng ${title}`}
+              accessibilityLabel={uiText(`Đóng ${title}`)}
               disabled={busy}
               onPress={onClose}
-              style={a.iconButton}
+              style={uiStyle(a.iconButton)}
             >
-              <X size={20} color={colors.muted} />
+              <X size={20} color={uiColor(colors.muted)} />
             </Pressable>
           </View>
-          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={a.modalBody}>
+          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={uiStyle(a.modalBody)}>
             {children}
           </ScrollView>
-          {!!footer && <View style={a.modalFooter}>{footer}</View>}
+          {!!footer && <View style={uiStyle(a.modalFooter)}>{footer}</View>}
         </View>
       </View>
     </Modal>
@@ -283,11 +288,12 @@ const statuses: Record<string, [string, string, string]> = {
   timed_out: ['Hết thời gian', '#F0F3F6', '#83929D'],
 };
 export function AdminBadge({ status, label }: { status: string; label?: string }) {
+  useUiPreferences();
   const [text, background, color] = statuses[status] || [status, '#F0F3F6', '#83929D'];
   return (
-    <View style={[a.badge, { backgroundColor: background }]}>
-      <View style={[a.dot, { backgroundColor: color }]} />
-      <Text style={{ color, fontSize: 11, fontWeight: '600' }}>{label || text}</Text>
+    <View style={uiStyle([a.badge, { backgroundColor: background }])}>
+      <View style={uiStyle([a.dot, { backgroundColor: color }])} />
+      <Text style={uiTextStyle({ color, fontSize: 11, fontWeight: '600' })}>{uiText(label || text)}</Text>
     </View>
   );
 }
@@ -301,25 +307,26 @@ export function AdminNotice({
   error?: boolean;
   onClose?: () => void;
 }) {
+  useUiPreferences();
   return (
     <View
-      style={[
+      style={uiStyle([
         a.notice,
         {
           backgroundColor: error ? '#FFF1F2' : '#EAF8F4',
           borderColor: error ? '#F6D8DD' : '#CEEDE1',
         },
-      ]}
+      ])}
     >
       <Text
         accessibilityRole={error ? 'alert' : undefined}
-        style={{ flex: 1, color: error ? '#B8505D' : '#29866A', fontSize: 13, lineHeight: 21 }}
+        style={uiTextStyle({ flex: 1, color: error ? '#B8505D' : '#29866A', fontSize: 13, lineHeight: 21 })}
       >
-        {text}
+        {uiText(text)}
       </Text>
       {onClose && (
-        <Pressable accessibilityRole="button" accessibilityLabel="Đóng thông báo" onPress={onClose}>
-          <X size={17} color={colors.muted} />
+        <Pressable accessibilityRole="button" accessibilityLabel={uiText("Đóng thông báo")} onPress={onClose}>
+          <X size={17} color={uiColor(colors.muted)} />
         </Pressable>
       )}
     </View>
@@ -337,14 +344,15 @@ export function AdminEmpty({
   title?: string;
   description?: string;
 }) {
+  useUiPreferences();
   return (
-    <View style={a.empty}>
-      <View style={a.emptyIcon}>
-        <Search size={27} color={colors.primary} />
+    <View style={uiStyle(a.empty)}>
+      <View style={uiStyle(a.emptyIcon)}>
+        <Search size={27} color={uiColor(colors.primary)} />
       </View>
-      <Text style={a.emptyTitle}>{error ? 'Không tải được dữ liệu' : title}</Text>
-      <Text style={a.emptyText}>{error || description}</Text>
-      {onRetry && <AdminButton title="Tải lại" onPress={onRetry} variant="secondary" small />}
+      <Text style={uiTextStyle(a.emptyTitle)}>{error ? uiText('Không tải được dữ liệu') : uiText(title)}</Text>
+      <Text style={uiTextStyle(a.emptyText)}>{uiText(error || description)}</Text>
+      {onRetry && <AdminButton title={uiText("Tải lại")} onPress={onRetry} variant="secondary" small />}
     </View>
   );
 }
@@ -362,26 +370,27 @@ export function AdminPagination({
   busy?: boolean;
   onPage: (page: number) => void;
 }) {
+  useUiPreferences();
   return (
-    <View style={a.pagination}>
-      <Text style={a.helper}>
-        {total} kết quả · Trang {page}/{Math.max(1, totalPages)}
+    <View style={uiStyle(a.pagination)}>
+      <Text style={uiTextStyle(a.helper)}>
+        {uiText(total)}{uiText(" kết quả · Trang ")}{uiText(page)}{uiText("/")}{uiText(Math.max(1, totalPages))}
       </Text>
-      <View style={a.row}>
+      <View style={uiStyle(a.row)}>
         <AdminButton
-          title="Trước"
-          label="Trang trước"
+          title={uiText("Trước")}
+          label={uiText("Trang trước")}
           variant="secondary"
-          icon={<ChevronLeft size={15} color={colors.muted} />}
+          icon={<ChevronLeft size={15} color={uiColor(colors.muted)} />}
           small
           disabled={busy || page <= 1}
           onPress={() => onPage(page - 1)}
         />
         <AdminButton
-          title="Sau"
-          label="Trang sau"
+          title={uiText("Sau")}
+          label={uiText("Trang sau")}
           variant="secondary"
-          icon={<ChevronRight size={15} color={colors.muted} />}
+          icon={<ChevronRight size={15} color={uiColor(colors.muted)} />}
           small
           disabled={busy || page >= totalPages}
           onPress={() => onPage(page + 1)}
@@ -398,20 +407,21 @@ export interface AdminColumn {
   render: (row: any) => React.ReactNode;
 }
 export function AdminTable({ columns, rows }: { columns: AdminColumn[]; rows: any[] }) {
+  useUiPreferences();
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator>
-      <View style={{ minWidth: columns.reduce((n, c) => n + c.width, 0), flex: 1 }}>
-        <View style={a.tableHeader}>
+      <View style={uiStyle({ minWidth: columns.reduce((n, c) => n + c.width, 0), flex: 1 })}>
+        <View style={uiStyle(a.tableHeader)}>
           {columns.map((c) => (
-            <View key={c.key} style={{ width: c.width, paddingHorizontal: 16 }}>
-              <Text style={a.columnTitle}>{c.title}</Text>
+            <View key={c.key} style={uiStyle({ width: c.width, paddingHorizontal: 16 })}>
+              <Text style={uiTextStyle(a.columnTitle)}>{uiText(c.title)}</Text>
             </View>
           ))}
         </View>
         {rows.map((row) => (
-          <View key={row.id} style={a.tableRow}>
+          <View key={row.id} style={uiStyle(a.tableRow)}>
             {columns.map((c) => (
-              <View key={c.key} style={{ width: c.width, paddingHorizontal: 16 }}>
+              <View key={c.key} style={uiStyle({ width: c.width, paddingHorizontal: 16 })}>
                 {c.render(row)}
               </View>
             ))}

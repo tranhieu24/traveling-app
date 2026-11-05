@@ -1,3 +1,4 @@
+import { useUiPreferences, uiStyle, uiTextStyle, uiText } from '../../preferences/ui';
 import React, { useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { initStripe, initPaymentSheet, presentPaymentSheet, handleURLCallback } from '@stripe/stripe-react-native';
@@ -10,6 +11,7 @@ import type { Booking, PaymentPlan } from '../../types';
 
 export interface StripeCheckoutProps { bookingId:string; plan:PaymentPlan; publishableKey:string; onComplete:(booking:Booking)=>void; onBusy?:(busy:boolean)=>void }
 export function StripeCheckout({bookingId,plan,publishableKey,onComplete,onBusy}:StripeCheckoutProps) {
+  useUiPreferences();
   const [busy,setBusy]=useState(false),[message,setMessage]=useState('');
   const pending=useRef(false),paymentId=useRef<string | undefined>(undefined);
   const run=async(checkOnly=false)=>{
@@ -34,5 +36,5 @@ export function StripeCheckout({bookingId,plan,publishableKey,onComplete,onBusy}
     }catch(error){setMessage(paymentErrorMessage(error));}
     finally{listener.remove();pending.current=false;setBusy(false);onBusy?.(false);}
   };
-  return <View style={{gap:12,paddingVertical:16}}><Text>Stripe test — dùng thẻ thử nghiệm; không có giao dịch live.</Text><Button title={busy?'Đang kiểm tra...':'Mở thanh toán Stripe test'} disabled={busy} onPress={()=>void run()} />{busy&&<ActivityIndicator/>}{!!message&&<Text accessibilityRole="alert">{message}</Text>}<Pressable disabled={busy} style={{minHeight:44,justifyContent:'center'}} onPress={()=>void run(true)}><Text style={{color:'#008A9A'}}>Kiểm tra xác nhận từ server</Text></Pressable></View>;
+  return <View style={uiStyle({gap:12,paddingVertical:16})}><Text style={uiTextStyle(undefined)}>{uiText("Stripe test — dùng thẻ thử nghiệm; không có giao dịch live.")}</Text><Button title={busy ? uiText('Đang kiểm tra...') : uiText('Mở thanh toán Stripe test')} disabled={busy} onPress={()=>void run()} />{busy&&<ActivityIndicator/>}{!!message&&<Text accessibilityRole="alert" style={uiTextStyle(undefined)}>{uiText(message)}</Text>}<Pressable disabled={busy} style={uiStyle({minHeight:44,justifyContent:'center'})} onPress={()=>void run(true)}><Text style={uiTextStyle({color:'#008A9A'})}>{uiText("Kiểm tra xác nhận từ server")}</Text></Pressable></View>;
 }

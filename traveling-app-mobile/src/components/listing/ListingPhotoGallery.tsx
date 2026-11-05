@@ -1,22 +1,24 @@
+import { useUiPreferences, uiStyle, uiColor, uiTextStyle, uiText } from '../../preferences/ui';
 import React, { useEffect, useRef, useState } from 'react';
 import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft, ChevronRight, ImageOff, Images, X } from 'lucide-react-native';
 
 export const ListingImage = ({ url, contain = false }: { url?: string; contain?: boolean }) => {
+  useUiPreferences();
   const [failed, setFailed] = useState(false);
   useEffect(() => setFailed(false), [url]);
   return !url || failed ? (
-    <View style={s.missing}>
-      <ImageOff size={30} color="#A2AAB5" />
-      <Text style={s.missingText}>Chưa có ảnh</Text>
+    <View style={uiStyle(s.missing)}>
+      <ImageOff size={30} color={uiColor("#A2AAB5")} />
+      <Text style={uiTextStyle(s.missingText)}>{uiText("Chưa có ảnh")}</Text>
     </View>
   ) : (
     <Image
       source={{ uri: url }}
       resizeMode={contain ? 'contain' : 'cover'}
       onError={() => setFailed(true)}
-      style={s.image}
+      style={uiStyle(s.image)}
     />
   );
 };
@@ -29,12 +31,13 @@ export const ListingHero = ({
   onPhotos: () => void;
   controls: React.ReactNode;
 }) => {
+  useUiPreferences();
   const [width, setWidth] = useState(0),
     [active, setActive] = useState(0);
   const scroll = useRef<React.ComponentRef<typeof ScrollView>>(null);
   return (
     <View
-      style={s.hero}
+      style={uiStyle(s.hero)}
       onLayout={(event) => {
         const value = event.nativeEvent.layout.width;
         setWidth(value);
@@ -55,9 +58,9 @@ export const ListingHero = ({
             <Pressable
               key={url}
               accessibilityRole="button"
-              accessibilityLabel={`Mở ảnh chỗ ở ${index + 1}`}
+              accessibilityLabel={uiText(`Mở ảnh chỗ ở ${index + 1}`)}
               onPress={onPhotos}
-              style={{ width, height: '100%' }}
+              style={uiStyle({ width, height: '100%' })}
             >
               <ListingImage url={url} />
             </Pressable>
@@ -70,12 +73,12 @@ export const ListingHero = ({
       {photos.length > 0 && (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Hiển thị tất cả ${photos.length} ảnh`}
+          accessibilityLabel={uiText(`Hiển thị tất cả ${photos.length} ảnh`)}
           onPress={onPhotos}
-          style={s.photoCount}
+          style={uiStyle(s.photoCount)}
         >
-          <Images size={16} color="white" />
-          <Text style={s.count}>{photos.length}</Text>
+          <Images size={16} color={uiColor("white")} />
+          <Text style={uiTextStyle(s.count)}>{uiText(photos.length)}</Text>
         </Pressable>
       )}
     </View>
@@ -90,6 +93,7 @@ export const ListingPhotoGallery = ({
   visible: boolean;
   onClose: () => void;
 }) => {
+  useUiPreferences();
   const [width, setWidth] = useState(1),
     [active, setActive] = useState(0);
   const scroll = useRef<React.ComponentRef<typeof ScrollView>>(null);
@@ -106,21 +110,21 @@ export const ListingPhotoGallery = ({
   };
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <SafeAreaView style={s.gallery} edges={['top', 'bottom']}>
-        <View style={s.galleryHeader}>
+      <SafeAreaView style={uiStyle(s.gallery)} edges={['top', 'bottom']}>
+        <View style={uiStyle(s.galleryHeader)}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Đóng thư viện ảnh"
+            accessibilityLabel={uiText("Đóng thư viện ảnh")}
             onPress={onClose}
-            style={s.iconButton}
+            style={uiStyle(s.iconButton)}
           >
-            <X color="white" size={24} />
+            <X color={uiColor("white")} size={24} />
           </Pressable>
-          <Text style={s.galleryTitle}>Hình ảnh</Text>
-          <View style={s.iconButton} />
+          <Text style={uiTextStyle(s.galleryTitle)}>{uiText("Hình ảnh")}</Text>
+          <View style={uiStyle(s.iconButton)} />
         </View>
         <View
-          style={{ flex: 1 }}
+          style={uiStyle({ flex: 1 })}
           onLayout={(event) => {
             const value = event.nativeEvent.layout.width;
             setWidth(value);
@@ -132,7 +136,7 @@ export const ListingPhotoGallery = ({
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ height: '100%' }}
+            contentContainerStyle={uiStyle({ height: '100%' })}
             onMomentumScrollEnd={(event) =>
               setActive(Math.round(event.nativeEvent.contentOffset.x / width))
             }
@@ -140,35 +144,35 @@ export const ListingPhotoGallery = ({
             {photos.map((url, index) => (
               <View
                 key={url}
-                accessibilityLabel={`Ảnh chỗ ở ${index + 1} trên ${photos.length}`}
-                style={{ width, height: '100%' }}
+                accessibilityLabel={uiText(`Ảnh chỗ ở ${index + 1} trên ${photos.length}`)}
+                style={uiStyle({ width, height: '100%' })}
               >
                 <ListingImage url={url} contain />
               </View>
             ))}
           </ScrollView>
         </View>
-        <View style={s.galleryFooter}>
+        <View style={uiStyle(s.galleryFooter)}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Ảnh chỗ ở trước"
+            accessibilityLabel={uiText("Ảnh chỗ ở trước")}
             disabled={active <= 0}
             onPress={() => move(-1)}
-            style={[s.iconButton, active <= 0 && { opacity: 0.3 }]}
+            style={uiStyle([s.iconButton, active <= 0 && { opacity: 0.3 }])}
           >
-            <ChevronLeft size={25} color="white" />
+            <ChevronLeft size={25} color={uiColor("white")} />
           </Pressable>
-          <Text style={s.count}>
-            {active + 1} / {photos.length}
+          <Text style={uiTextStyle(s.count)}>
+            {uiText(active + 1)}{uiText(" / ")}{uiText(photos.length)}
           </Text>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Ảnh chỗ ở tiếp theo"
+            accessibilityLabel={uiText("Ảnh chỗ ở tiếp theo")}
             disabled={active >= photos.length - 1}
             onPress={() => move(1)}
-            style={[s.iconButton, active >= photos.length - 1 && { opacity: 0.3 }]}
+            style={uiStyle([s.iconButton, active >= photos.length - 1 && { opacity: 0.3 }])}
           >
-            <ChevronRight size={25} color="white" />
+            <ChevronRight size={25} color={uiColor("white")} />
           </Pressable>
         </View>
       </SafeAreaView>

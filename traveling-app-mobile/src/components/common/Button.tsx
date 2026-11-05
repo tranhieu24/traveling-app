@@ -1,3 +1,4 @@
+import { useUiPreferences, uiClasses, uiColor, uiText } from '../../preferences/ui';
 import React from 'react';
 import { TouchableOpacity, Text, ActivityIndicator, TouchableOpacityProps } from 'react-native';
 
@@ -19,6 +20,7 @@ export const Button: React.FC<ButtonProps> = ({
   disabled,
   ...props
 }) => {
+  useUiPreferences();
   const getVariantStyles = () => {
     switch (variant) {
       case 'primary':
@@ -69,9 +71,9 @@ export const Button: React.FC<ButtonProps> = ({
 
   return (
     <TouchableOpacity
-      className={`flex-row items-center justify-center ${getVariantStyles()} ${getSizeStyles()} ${
+      className={uiClasses(`flex-row items-center justify-center ${getVariantStyles()} ${getSizeStyles()} ${
         disabled || loading ? 'opacity-50' : ''
-      } ${className}`}
+      } ${className}`)}
       disabled={disabled || loading}
       activeOpacity={0.8}
       {...props}
@@ -79,14 +81,14 @@ export const Button: React.FC<ButtonProps> = ({
       {loading ? (
         <ActivityIndicator
           size="small"
-          color={variant === 'outline' ? '#00BCD4' : '#FFFFFF'}
-          className="mr-2"
+          color={uiColor(variant === 'outline' ? '#00BCD4' : '#FFFFFF')}
+          className={uiClasses("mr-2")}
         />
       ) : icon ? (
         <React.Fragment>{icon}</React.Fragment>
       ) : null}
-      <Text className={`${getTextVariantStyles()} ${getTextSizeStyles()} ${icon ? 'ml-2' : ''}`}>
-        {title}
+      <Text className={uiClasses(`${getTextVariantStyles()} ${getTextSizeStyles()} ${icon ? 'ml-2' : ''}`)}>
+        {uiText(title)}
       </Text>
     </TouchableOpacity>
   );

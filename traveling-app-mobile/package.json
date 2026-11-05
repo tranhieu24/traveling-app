@@ -13,7 +13,11 @@
     "test:native-ui": "node --test scripts/native-ui.test.cjs",
     "start:lan": "expo start --go --lan",
     "start:tunnel": "expo start --go --tunnel --clear",
-    "test:upgrade": "node --test scripts/upgrade.test.cjs"
+    "test:upgrade": "node --test scripts/upgrade.test.cjs",
+    "test:guest-access": "node --test scripts/guest-access.test.cjs",
+    "test:ai-chat": "node --test scripts/ai-chat.test.cjs",
+    "test:notifications": "node --test scripts/notifications.test.cjs",
+    "test:preferences": "node --test scripts/preferences.test.cjs"
   },
   "dependencies": {
     "@expo/metro-runtime": "~58.0.15",
