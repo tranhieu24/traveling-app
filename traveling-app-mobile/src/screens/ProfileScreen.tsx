@@ -1,3 +1,4 @@
+import { useUiPreferences, uiStyle, uiClasses, uiColor, uiText, uiTextStyle } from '../preferences/ui';
 import React, { useRef, useState } from 'react';
 import {
   View,
@@ -25,12 +26,14 @@ import {
   LogOut,
   LogIn,
   Edit3,
+  Bell,
 } from 'lucide-react-native';
 import { RootStackParamList } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { apiClient } from '../services/apiClient';
 
 export const ProfileScreen: React.FC = () => {
+  useUiPreferences();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user, signOut, refreshProfile } = useAuth();
 
@@ -90,38 +93,38 @@ export const ProfileScreen: React.FC = () => {
   return (
     <SafeAreaView
       edges={['top', 'left', 'right']}
-      style={{ flex: 1, backgroundColor: '#FFFFFF' }}
+      style={uiStyle({ flex: 1, backgroundColor: '#FFFFFF' })}
     >
       <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: 24 }}
+        style={uiStyle({ flex: 1 })}
+        contentContainerStyle={uiStyle({ paddingBottom: 24 })}
         showsVerticalScrollIndicator={false}
       >
         {/* Header Profile Card */}
-        <View className="p-6 bg-white border-b border-gray-100">
-          <View className="flex-row items-center">
+        <View className={uiClasses("p-6 bg-white border-b border-gray-100")}>
+          <View className={uiClasses("flex-row items-center")}>
             {user?.avatar_url ? (
               <Image
                 source={{ uri: user.avatar_url }}
-                className="w-20 h-20 rounded-full bg-cyan-100 mr-4"
+                className={uiClasses("w-20 h-20 rounded-full bg-cyan-100 mr-4")}
               />
             ) : (
-              <View className="w-20 h-20 bg-cyan-100 rounded-full items-center justify-center mr-4">
-                <UserIcon size={36} color="#00BCD4" />
+              <View className={uiClasses("w-20 h-20 bg-cyan-100 rounded-full items-center justify-center mr-4")}>
+                <UserIcon size={36} color={uiColor("#00BCD4")} />
               </View>
             )}
 
-            <View className="flex-1">
-              <Text className="text-xl font-bold text-gray-900">
-                {user ? user.full_name : 'Chào mừng đến với Traveling'}
+            <View className={uiClasses("flex-1")}>
+              <Text className={uiClasses("text-xl font-bold text-gray-900")}>
+                {user ? user.full_name : uiText('Chào mừng đến với Traveling')}
               </Text>
-              <Text className="text-sm text-gray-500 mt-0.5">
-                {user ? user.email : 'Đăng nhập để quản lý tài khoản và đơn đặt chỗ'}
+              <Text className={uiClasses("text-sm text-gray-500 mt-0.5")}>
+                {user ? user.email : uiText('Đăng nhập để quản lý tài khoản và đơn đặt chỗ')}
               </Text>
               {user && (
-                <View className="mt-2 bg-cyan-50 px-2.5 py-0.5 rounded-full self-start">
-                  <Text className="text-[11px] font-semibold text-[#00BCD4] uppercase">
-                    {user.role || "Khách"}
+                <View className={uiClasses("mt-2 bg-cyan-50 px-2.5 py-0.5 rounded-full self-start")}>
+                  <Text className={uiClasses("text-[11px] font-semibold text-[#00BCD4] uppercase")}>
+                    {uiText(user.role || "Khách")}
                   </Text>
                 </View>
               )}
@@ -130,34 +133,32 @@ export const ProfileScreen: React.FC = () => {
             {user && (
               <TouchableOpacity
                 onPress={() => setIsEditing(!isEditing)}
-                className="w-9 h-9 rounded-full bg-gray-100 items-center justify-center ml-2"
+                className={uiClasses("w-9 h-9 rounded-full bg-gray-100 items-center justify-center ml-2")}
                 activeOpacity={0.7}
               >
-                <Edit3 size={16} color="#4B5563" />
+                <Edit3 size={16} color={uiColor("#4B5563")} />
               </TouchableOpacity>
             )}
           </View>
 
           {/* Edit Name Section */}
           {user && isEditing && (
-            <View className="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
-              <Text className="text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wide">
-                Họ và tên
-              </Text>
+            <View className={uiClasses("mt-4 p-4 bg-gray-50 rounded-xl border border-gray-100")}>
+              <Text className={uiClasses("text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wide")}>{uiText("Họ và tên")}</Text>
               <TextInput
                 value={fullName}
                 onChangeText={setFullName}
-                className="border border-gray-300 rounded-lg p-3 bg-white text-sm text-gray-900 mb-3"
-                placeholder="Nhập họ và tên"
+                className={uiClasses("border border-gray-300 rounded-lg p-3 bg-white text-sm text-gray-900 mb-3")}
+                placeholder={uiText("Nhập họ và tên")}
               />
               <TouchableOpacity
                 onPress={handleSaveProfile}
                 disabled={isSaving}
                 activeOpacity={0.85}
-                className="bg-[#00BCD4] py-2.5 px-4 rounded-lg items-center"
+                className={uiClasses("bg-[#00BCD4] py-2.5 px-4 rounded-lg items-center")}
               >
-                <Text className="text-white font-semibold text-sm">
-                  {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
+                <Text className={uiClasses("text-white font-semibold text-sm")}>
+                  {isSaving ? uiText('Đang lưu...') : uiText('Lưu thay đổi')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -165,10 +166,10 @@ export const ProfileScreen: React.FC = () => {
         </View>
 
         {/* Menu Items Block */}
-        <View className="px-5 py-3">
-          {user?.role === 'admin' && <TouchableOpacity accessibilityRole="button" accessibilityLabel="Cổng quản trị" onPress={() => navigation.navigate('AdminPortal')} className="flex-row items-center py-4 border-b border-gray-100">
-            <View className="w-10 h-10 rounded-full bg-cyan-50 items-center justify-center mr-3"><ShieldCheck size={20} color="#00BCD4" /></View>
-            <Text className="flex-1 text-sm font-medium text-gray-800">Cổng quản trị</Text><ChevronRight size={18} color="#9CA3AF" />
+        <View className={uiClasses("px-5 py-3")}>
+          {user?.role === 'admin' && <TouchableOpacity accessibilityRole="button" accessibilityLabel={uiText("Cổng quản trị")} onPress={() => navigation.navigate('AdminPortal')} className={uiClasses("flex-row items-center py-4 border-b border-gray-100")}>
+            <View className={uiClasses("w-10 h-10 rounded-full bg-cyan-50 items-center justify-center mr-3")}><ShieldCheck size={20} color={uiColor("#00BCD4")} /></View>
+            <Text className={uiClasses("flex-1 text-sm font-medium text-gray-800")}>{uiText("Cổng quản trị")}</Text><ChevronRight size={18} color={uiColor("#9CA3AF")} />
           </TouchableOpacity>}
           {/* 1. Personal Information */}
           <TouchableOpacity
@@ -176,67 +177,65 @@ export const ProfileScreen: React.FC = () => {
               if (user) setIsEditing(!isEditing);
               else navigation.navigate('Login');
             }}
-            className="flex-row items-center py-4 border-b border-gray-100"
+            className={uiClasses("flex-row items-center py-4 border-b border-gray-100")}
             activeOpacity={0.7}
           >
-            <View className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center mr-3.5">
-              <UserIcon size={20} color="#00BCD4" />
+            <View className={uiClasses("w-10 h-10 rounded-full bg-gray-100 items-center justify-center mr-3.5")}>
+              <UserIcon size={20} color={uiColor("#00BCD4")} />
             </View>
-            <Text className="text-sm font-semibold text-gray-800 flex-1">
-              Thông tin cá nhân
-            </Text>
-            <ChevronRight size={18} color="#9CA3AF" />
+            <Text className={uiClasses("text-sm font-semibold text-gray-800 flex-1")}>{uiText("Thông tin cá nhân")}</Text>
+            <ChevronRight size={18} color={uiColor("#9CA3AF")} />
           </TouchableOpacity>
 
           {/* 2. Payments & Payouts */}
           <TouchableOpacity
             accessibilityRole="button"
-            accessibilityLabel="Thanh toán và nhận tiền"
+            accessibilityLabel={uiText("Thanh toán và nhận tiền")}
             onPress={() => navigation.navigate(user ? 'PaymentsPayouts' : 'Login')}
-            className="flex-row items-center py-4 border-b border-gray-100"
+            className={uiClasses("flex-row items-center py-4 border-b border-gray-100")}
             activeOpacity={0.7}
           >
-            <View className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center mr-3.5">
-              <CreditCard size={20} color="#00BCD4" />
+            <View className={uiClasses("w-10 h-10 rounded-full bg-gray-100 items-center justify-center mr-3.5")}>
+              <CreditCard size={20} color={uiColor("#00BCD4")} />
             </View>
-            <Text className="text-sm font-semibold text-gray-800 flex-1">
-              Thanh toán và nhận tiền
-            </Text>
-            <ChevronRight size={18} color="#9CA3AF" />
+            <Text className={uiClasses("text-sm font-semibold text-gray-800 flex-1")}>{uiText("Thanh toán và nhận tiền")}</Text>
+            <ChevronRight size={18} color={uiColor("#9CA3AF")} />
           </TouchableOpacity>
 
           {/* 3. Settings & Notifications */}
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel={uiText("Thông báo của tôi")}
+            onPress={() => navigation.navigate('Notifications')} className={uiClasses("flex-row items-center py-4 border-b border-gray-100")} activeOpacity={0.7}>
+            <View className={uiClasses("w-10 h-10 rounded-full bg-gray-100 items-center justify-center mr-3.5")}><Bell size={20} color={uiColor("#00BCD4")} /></View>
+            <Text className={uiClasses("text-sm font-semibold text-gray-800 flex-1")}>{uiText("Thông báo")}</Text>
+            <ChevronRight size={18} color={uiColor("#9CA3AF")} />
+          </TouchableOpacity>
           <TouchableOpacity
             accessibilityRole="button"
-            accessibilityLabel="Cài đặt và thông báo"
+            accessibilityLabel={uiText("Cài đặt và thông báo")}
             onPress={() => navigation.navigate("Settings")}
-            className="flex-row items-center py-4 border-b border-gray-100"
+            className={uiClasses("flex-row items-center py-4 border-b border-gray-100")}
             activeOpacity={0.7}
           >
-            <View className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center mr-3.5">
-              <Settings size={20} color="#00BCD4" />
+            <View className={uiClasses("w-10 h-10 rounded-full bg-gray-100 items-center justify-center mr-3.5")}>
+              <Settings size={20} color={uiColor("#00BCD4")} />
             </View>
-            <Text className="text-sm font-semibold text-gray-800 flex-1">
-              Cài đặt và thông báo
-            </Text>
-            <ChevronRight size={18} color="#9CA3AF" />
+            <Text className={uiClasses("text-sm font-semibold text-gray-800 flex-1")}>{uiText("Cài đặt và thông báo")}</Text>
+            <ChevronRight size={18} color={uiColor("#9CA3AF")} />
           </TouchableOpacity>
 
           {/* 4. Help Center */}
           <TouchableOpacity
             accessibilityRole="button"
-            accessibilityLabel="Trung tâm trợ giúp"
+            accessibilityLabel={uiText("Trung tâm trợ giúp")}
             onPress={() => navigation.navigate('HelpCenter')}
-            className="flex-row items-center py-4 border-b border-gray-100"
+            className={uiClasses("flex-row items-center py-4 border-b border-gray-100")}
             activeOpacity={0.7}
           >
-            <View className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center mr-3.5">
-              <HelpCircle size={20} color="#00BCD4" />
+            <View className={uiClasses("w-10 h-10 rounded-full bg-gray-100 items-center justify-center mr-3.5")}>
+              <HelpCircle size={20} color={uiColor("#00BCD4")} />
             </View>
-            <Text className="text-sm font-semibold text-gray-800 flex-1">
-              Trợ giúp
-            </Text>
-            <ChevronRight size={18} color="#9CA3AF" />
+            <Text className={uiClasses("text-sm font-semibold text-gray-800 flex-1")}>{uiText("Trợ giúp")}</Text>
+            <ChevronRight size={18} color={uiColor("#9CA3AF")} />
           </TouchableOpacity>
 
           {/* Log Out / Log In Button */}
@@ -244,26 +243,22 @@ export const ProfileScreen: React.FC = () => {
             <TouchableOpacity
               onPress={handleLogout}
               accessibilityRole="button"
-              accessibilityLabel="Đăng xuất"
+              accessibilityLabel={uiText("Đăng xuất")}
               disabled={isLoggingOut}
               activeOpacity={0.8}
-              className="border border-gray-300 rounded-xl py-3 items-center mt-6 flex-row justify-center"
+              className={uiClasses("border border-gray-300 rounded-xl py-3 items-center mt-6 flex-row justify-center")}
             >
-              <LogOut size={18} color="#EF4444" className="mr-2" />
-              <Text className="text-sm font-semibold text-red-500 ml-2">
-                Đăng xuất
-              </Text>
+              <LogOut size={18} color={uiColor("#EF4444")} className={uiClasses("mr-2")} />
+              <Text className={uiClasses("text-sm font-semibold text-red-500 ml-2")}>{uiText("Đăng xuất")}</Text>
             </TouchableOpacity>
           ) : (
             <TouchableOpacity
               onPress={() => navigation.navigate('Login')}
               activeOpacity={0.85}
-              className="bg-[#00BCD4] rounded-xl py-3 items-center mt-6 flex-row justify-center"
+              className={uiClasses("bg-[#00BCD4] rounded-xl py-3 items-center mt-6 flex-row justify-center")}
             >
-              <LogIn size={18} color="#FFFFFF" className="mr-2" />
-              <Text className="text-sm font-semibold text-white ml-2">
-                Đăng nhập / Đăng ký
-              </Text>
+              <LogIn size={18} color={uiColor("#FFFFFF")} className={uiClasses("mr-2")} />
+              <Text className={uiClasses("text-sm font-semibold text-white ml-2")}>{uiText("Đăng nhập / Đăng ký")}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -274,30 +269,30 @@ export const ProfileScreen: React.FC = () => {
         animationType="fade"
         onRequestClose={() => { if (!logoutPending.current) setLogoutVisible(false); }}
       >
-        <View style={logoutStyles.overlay}>
-          <View style={logoutStyles.card} accessibilityViewIsModal>
-            <Text accessibilityRole="header" style={logoutStyles.title}>Đăng xuất?</Text>
-            <Text style={logoutStyles.message}>Bạn có muốn đăng xuất khỏi tài khoản?</Text>
-            {!!logoutError && <Text accessibilityRole="alert" style={logoutStyles.error}>{logoutError}</Text>}
-            <View style={logoutStyles.actions}>
+        <View style={uiStyle(logoutStyles.overlay)}>
+          <View style={uiStyle(logoutStyles.card)} accessibilityViewIsModal>
+            <Text accessibilityRole="header" style={uiTextStyle(logoutStyles.title)}>{uiText("Đăng xuất?")}</Text>
+            <Text style={uiTextStyle(logoutStyles.message)}>{uiText("Bạn có muốn đăng xuất khỏi tài khoản?")}</Text>
+            {!!logoutError && <Text accessibilityRole="alert" style={uiTextStyle(logoutStyles.error)}>{uiText(logoutError)}</Text>}
+            <View style={uiStyle(logoutStyles.actions)}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Hủy đăng xuất"
+                accessibilityLabel={uiText("Hủy đăng xuất")}
                 disabled={isLoggingOut}
                 onPress={() => setLogoutVisible(false)}
-                style={logoutStyles.cancelButton}
+                style={uiStyle(logoutStyles.cancelButton)}
               >
-                <Text style={logoutStyles.cancelLabel}>Hủy</Text>
+                <Text style={uiTextStyle(logoutStyles.cancelLabel)}>{uiText("Hủy")}</Text>
               </Pressable>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Xác nhận đăng xuất"
+                accessibilityLabel={uiText("Xác nhận đăng xuất")}
                 disabled={isLoggingOut}
                 onPress={confirmLogout}
-                style={[logoutStyles.confirmButton, isLoggingOut && logoutStyles.busy]}
+                style={uiStyle([logoutStyles.confirmButton, isLoggingOut && logoutStyles.busy])}
               >
-                {isLoggingOut && <ActivityIndicator size="small" color="#FFFFFF" />}
-                <Text style={logoutStyles.confirmLabel}>{isLoggingOut ? 'Đang đăng xuất...' : 'Đăng xuất'}</Text>
+                {isLoggingOut && <ActivityIndicator size="small" color={uiColor("#FFFFFF")} />}
+                <Text style={uiTextStyle(logoutStyles.confirmLabel)}>{isLoggingOut ? uiText('Đang đăng xuất...') : uiText('Đăng xuất')}</Text>
               </Pressable>
             </View>
           </View>

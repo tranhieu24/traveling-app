@@ -3,8 +3,13 @@
 -- 2. Phân loại 35 homestay mới vào đúng Beach / Mountain / Camping
 -- 3. Nạp đầy đủ Tiện nghi và Dịch vụ (listing_amenities) cho 35 chỗ ở mới
 -- 4. Bổ sung bộ ảnh thật (3 ảnh/căn) cho toàn bộ 50 chỗ ở (thay thế ảnh minh họa cũ)
--- 5. Bổ sung đánh giá tiếng Việt chân thực để đồng bộ trải nghiệm
+-- Reviews remain subject to completed-stay eligibility; none are seeded here.
 BEGIN;
+
+-- A fresh database may not have run the optional seed file.
+INSERT INTO public.categories (name, slug, icon_name)
+VALUES ('Beach', 'beach', 'sun'), ('Mountain', 'mountain', 'mountain'), ('Camping', 'camping', 'tent')
+ON CONFLICT (slug) DO NOTHING;
 
 -- 1. Việt hóa tên danh mục hiển thị
 UPDATE public.categories SET name = 'Bãi biển' WHERE slug = 'beach';
@@ -122,24 +127,8 @@ SET photo_url = 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?au
 FROM public.listings l JOIN public.categories c ON c.id = l.category_id
 WHERE lp.listing_id = l.id AND lp.display_order = 1 AND c.slug = 'camping';
 
--- 5. Bổ sung đánh giá mẫu chất lượng cao cho các homestay mới
-INSERT INTO public.reviews (listing_id, user_id, rating, comment)
-SELECT
-  l.id,
-  u.id,
-  rev.rating,
-  rev.comment
-FROM public.listings l
-CROSS JOIN (
-  SELECT id FROM public.users WHERE role = 'guest' ORDER BY id LIMIT 1
-) u
-CROSS JOIN LATERAL (
-  VALUES
-    (5, 'Chỗ ở thực tế rất đẹp, sạch sẽ và thoáng đãng đúng như mô tả. Chủ nhà nhiệt tình hỗ trợ chu đáo.'),
-    (5, 'Không gian nghỉ dưỡng tuyệt vời, tiện nghi đầy đủ và gần các điểm tham quan. Sẽ quay lại!')
-) AS rev(rating, comment)
-WHERE l.id BETWEEN '10000000-0000-0000-0000-000000000016'::uuid AND '10000000-0000-0000-0000-000000000050'::uuid
-ON CONFLICT DO NOTHING;
+-- Reviews are created only by eligible guests through the review API.
+-- Do not manufacture guest reviews or bypass the completed-booking guard.
 
 -- Đảm bảo toàn bộ 50 listing đều đang hoạt động
 UPDATE public.listings SET is_active = true WHERE is_active = false;

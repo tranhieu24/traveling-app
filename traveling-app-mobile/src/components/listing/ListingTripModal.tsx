@@ -1,3 +1,5 @@
+import { uiLocale, useUiPreferences, uiStyle, uiTextStyle, uiText, uiColor } from '../../preferences/ui';
+
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -29,6 +31,7 @@ export const ListingTripModal = ({
   onClose: () => void;
   onApply: (draft: TripDraft) => Promise<void>;
 }) => {
+  useUiPreferences();
   const [draft, setDraft] = useState(trip),
     [saving, setSaving] = useState(false),
     [error, setError] = useState('');
@@ -72,28 +75,24 @@ export const ListingTripModal = ({
         if (!saving) onClose();
       }}
     >
-      <View style={s.overlay}>
-        <View style={s.sheet} accessibilityViewIsModal>
-          <View style={s.heading}>
-            <Text accessibilityRole="header" style={s.title}>
-              Chuyến đi của bạn
-            </Text>
+      <View style={uiStyle(s.overlay)}>
+        <View style={uiStyle(s.sheet)} accessibilityViewIsModal>
+          <View style={uiStyle(s.heading)}>
+            <Text accessibilityRole="header" style={uiTextStyle(s.title)}>{uiText("Chuyến đi của bạn")}</Text>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Đóng lựa chọn chuyến đi"
+              accessibilityLabel={uiText("Đóng lựa chọn chuyến đi")}
               disabled={saving}
               onPress={onClose}
-              style={s.close}
+              style={uiStyle(s.close)}
             >
-              <X size={22} color="#8E98A5" />
+              <X size={22} color={uiColor("#8E98A5")} />
             </Pressable>
           </View>
-          <ScrollView contentContainerStyle={s.body}>
-            <Text style={s.label}>Chọn ngày lưu trú</Text>
-            <Text style={s.dates}>
-              {draft.checkInDate && draft.checkOutDate
-                ? searchDateLabel(draft.checkInDate, draft.checkOutDate)
-                : 'Chọn ngày nhận và trả phòng'}
+          <ScrollView contentContainerStyle={uiStyle(s.body)}>
+            <Text style={uiTextStyle(s.label)}>{uiText("Chọn ngày lưu trú")}</Text>
+            <Text style={uiTextStyle(s.dates)}>
+              {draft.checkInDate && draft.checkOutDate ? uiText(searchDateLabel(draft.checkInDate, draft.checkOutDate, uiLocale())) : uiText('Chọn ngày nhận và trả phòng')}
             </Text>
             <View pointerEvents={saving ? 'none' : 'auto'}>
               <DateRangeCalendar
@@ -110,16 +109,14 @@ export const ListingTripModal = ({
                 onError={setError}
               />
             </View>
-            <Text style={[s.label, { marginTop: 24 }]}>Số khách</Text>
-            <Text style={s.capacity}>
-              Tối đa {maxGuests} khách cho kỳ lưu trú này.
-            </Text>
+            <Text style={uiTextStyle([s.label, { marginTop: 24 }])}>{uiText("Số khách")}</Text>
+            <Text style={uiTextStyle(s.capacity)}>{uiText("Tối đa ")}{uiText(maxGuests)}{uiText(" khách cho kỳ lưu trú này.")}</Text>
             {(['adults', 'children'] as const).map((field) => (
-              <View key={field} style={s.guest}>
-                <Text style={s.guestTitle}>{field === 'adults' ? "Người lớn" : "Trẻ em"}</Text>
+              <View key={field} style={uiStyle(s.guest)}>
+                <Text style={uiTextStyle(s.guestTitle)}>{field === 'adults' ? uiText("Người lớn") : uiText("Trẻ em")}</Text>
                 <View pointerEvents={saving ? 'none' : 'auto'}>
                   <Counter
-                    label={field === 'adults' ? 'người lớn' : 'trẻ em'}
+                    label={field === 'adults' ? uiText('người lớn') : uiText('trẻ em')}
                     value={draft[field]}
                     minimum={field === 'adults' ? 1 : 0}
                     maximum={Math.max(
@@ -132,23 +129,23 @@ export const ListingTripModal = ({
               </View>
             ))}
             {!!error && (
-              <Text accessibilityRole="alert" style={s.error}>
-                {error}
+              <Text accessibilityRole="alert" style={uiTextStyle(s.error)}>
+                {uiText(error)}
               </Text>
             )}
           </ScrollView>
           <SafeAreaView edges={['bottom']}>
-            <View style={s.footer}>
+            <View style={uiStyle(s.footer)}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Kiểm tra chỗ trống"
+                accessibilityLabel={uiText("Kiểm tra chỗ trống")}
                 disabled={saving}
                 onPress={() => void save()}
-                style={[s.apply, saving && { opacity: 0.6 }]}
+                style={uiStyle([s.apply, saving && { opacity: 0.6 }])}
               >
-                {saving && <ActivityIndicator color="white" size="small" />}
-                <Text style={s.applyText}>
-                  {saving ? 'Đang kiểm tra chỗ trống...' : 'Kiểm tra chỗ trống'}
+                {saving && <ActivityIndicator color={uiColor("white")} size="small" />}
+                <Text style={uiTextStyle(s.applyText)}>
+                  {saving ? uiText('Đang kiểm tra chỗ trống...') : uiText('Kiểm tra chỗ trống')}
                 </Text>
               </Pressable>
             </View>

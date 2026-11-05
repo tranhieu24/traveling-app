@@ -1,3 +1,4 @@
+import { useUiPreferences, uiStyle, uiColor, uiTextStyle, uiText } from '../preferences/ui';
 import { MediaNotice } from '../components/common/MediaNotice';
 import React, { useRef, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
@@ -23,6 +24,7 @@ const STATUS_COPY: Record<PaymentConfirmationState, { title: string; description
 };
 
 export const BookingSuccessScreen: React.FC = () => {
+  useUiPreferences();
   const route = useRoute<RouteProp<RootStackParamList, 'BookingSuccess'>>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { bookingId, bookingCode } = route.params;
@@ -65,74 +67,74 @@ export const BookingSuccessScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={styles.screen}>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        <View style={styles.card}>
+    <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={uiStyle(styles.screen)}>
+      <ScrollView style={uiStyle(styles.scroll)} contentContainerStyle={uiStyle(styles.content)}>
+        <View style={uiStyle(styles.card)}>
           {authLoading || (!!user && isLoading) ? (
-            <View style={styles.fallback}>
-              <ActivityIndicator size="large" color="#00B8CE" />
-              <Text style={styles.fallbackText}>Đang tải thông tin thanh toán...</Text>
+            <View style={uiStyle(styles.fallback)}>
+              <ActivityIndicator size="large" color={uiColor("#00B8CE")} />
+              <Text style={uiTextStyle(styles.fallbackText)}>{uiText("Đang tải thông tin thanh toán...")}</Text>
             </View>
           ) : loginRequired ? (
-            <View style={styles.fallback}>
-              <AlertCircle size={48} color="#00B8CE" />
-              <Text accessibilityRole="header" style={styles.fallbackTitle}>Xem thanh toán của bạn</Text>
-              <Text style={styles.fallbackText}>Đăng nhập để xem chi tiết thanh toán và biên lai.</Text>
-              <Pressable accessibilityRole="button" accessibilityLabel="Đăng nhập để xem thanh toán" onPress={() => navigation.navigate('Login')} style={styles.retryButton}><Text style={styles.retryLabel}>Đăng nhập</Text></Pressable>
+            <View style={uiStyle(styles.fallback)}>
+              <AlertCircle size={48} color={uiColor("#00B8CE")} />
+              <Text accessibilityRole="header" style={uiTextStyle(styles.fallbackTitle)}>{uiText("Xem thanh toán của bạn")}</Text>
+              <Text style={uiTextStyle(styles.fallbackText)}>{uiText("Đăng nhập để xem chi tiết thanh toán và biên lai.")}</Text>
+              <Pressable accessibilityRole="button" accessibilityLabel={uiText("Đăng nhập để xem thanh toán")} onPress={() => navigation.navigate('Login')} style={uiStyle(styles.retryButton)}><Text style={uiTextStyle(styles.retryLabel)}>{uiText("Đăng nhập")}</Text></Pressable>
             </View>
           ) : isError || !summary || !copy ? (
-            <View style={styles.fallback}>
-              <AlertCircle size={48} color="#9CA3AF" />
-              <Text accessibilityRole="header" style={styles.fallbackTitle}>Chưa tải được thanh toán</Text>
-              <Text style={styles.fallbackText}>Vui lòng kiểm tra kết nối rồi thử lại.</Text>
-              <Pressable accessibilityRole="button" accessibilityLabel="Tải lại chi tiết thanh toán" onPress={() => { void refetch(); }} style={styles.retryButton}><Text style={styles.retryLabel}>Thử lại</Text></Pressable>
+            <View style={uiStyle(styles.fallback)}>
+              <AlertCircle size={48} color={uiColor("#9CA3AF")} />
+              <Text accessibilityRole="header" style={uiTextStyle(styles.fallbackTitle)}>{uiText("Chưa tải được thanh toán")}</Text>
+              <Text style={uiTextStyle(styles.fallbackText)}>{uiText("Vui lòng kiểm tra kết nối rồi thử lại.")}</Text>
+              <Pressable accessibilityRole="button" accessibilityLabel={uiText("Tải lại chi tiết thanh toán")} onPress={() => { void refetch(); }} style={uiStyle(styles.retryButton)}><Text style={uiTextStyle(styles.retryLabel)}>{uiText("Thử lại")}</Text></Pressable>
             </View>
           ) : (
             <>
               {summary.state === 'success' ? (
-                <Image source={require('../../assets/payment-success.png')} style={styles.successImage} resizeMode="contain" accessibilityLabel="Thanh toán hoàn tất" />
+                <Image source={require('../../assets/payment-success.png')} style={uiStyle(styles.successImage)} resizeMode="contain" accessibilityLabel={uiText("Thanh toán hoàn tất")} />
               ) : (
-                <View style={styles.statusIllustration}>
-                  {summary.state === 'pending' ? <Clock3 size={64} color="#00B8CE" strokeWidth={1.6} /> : summary.state === 'refunded' ? <RotateCcw size={64} color="#00B8CE" strokeWidth={1.6} /> : <AlertCircle size={64} color="#D98A33" strokeWidth={1.6} />}
+                <View style={uiStyle(styles.statusIllustration)}>
+                  {summary.state === 'pending' ? <Clock3 size={64} color={uiColor("#00B8CE")} strokeWidth={1.6} /> : summary.state === 'refunded' ? <RotateCcw size={64} color={uiColor("#00B8CE")} strokeWidth={1.6} /> : <AlertCircle size={64} color={uiColor("#D98A33")} strokeWidth={1.6} />}
                 </View>
               )}
-              <Text accessibilityRole="header" style={[styles.title, width < 360 && styles.smallTitle]}>{copy.title}</Text>
-              {!!copy.description && <Text style={styles.description}>{copy.description}</Text>}
-              <View style={styles.details}>
-                <View style={styles.detailRow}><Text style={styles.label}>{summary.state === 'pending' ? "Mã đặt phòng" : "Mã giao dịch"}</Text><Text selectable style={styles.value}>{summary.reference || bookingCode || '--'}</Text></View>
-                <View style={styles.detailRow}><Text style={styles.label}>Ngày</Text><Text style={styles.value}>{summary.dateLabel}</Text></View>
-                <View style={styles.detailRow}><Text style={styles.label}>Thời gian</Text><Text style={styles.value}>{summary.timeLabel}</Text></View>
-                <View style={styles.detailRow}><Text style={styles.label}>Phương thức thanh toán</Text><Text style={styles.value}>{summary.paymentMethod}</Text></View>
+              <Text accessibilityRole="header" style={uiTextStyle([styles.title, width < 360 && styles.smallTitle])}>{uiText(copy.title)}</Text>
+              {!!copy.description && <Text style={uiTextStyle(styles.description)}>{uiText(copy.description)}</Text>}
+              <View style={uiStyle(styles.details)}>
+                <View style={uiStyle(styles.detailRow)}><Text style={uiTextStyle(styles.label)}>{summary.state === 'pending' ? uiText("Mã đặt phòng") : uiText("Mã giao dịch")}</Text><Text selectable style={uiTextStyle(styles.value)}>{uiText(summary.reference || bookingCode || '--')}</Text></View>
+                <View style={uiStyle(styles.detailRow)}><Text style={uiTextStyle(styles.label)}>{uiText("Ngày")}</Text><Text style={uiTextStyle(styles.value)}>{uiText(summary.dateLabel)}</Text></View>
+                <View style={uiStyle(styles.detailRow)}><Text style={uiTextStyle(styles.label)}>{uiText("Thời gian")}</Text><Text style={uiTextStyle(styles.value)}>{uiText(summary.timeLabel)}</Text></View>
+                <View style={uiStyle(styles.detailRow)}><Text style={uiTextStyle(styles.label)}>{uiText("Phương thức thanh toán")}</Text><Text style={uiTextStyle(styles.value)}>{uiText(summary.paymentMethod)}</Text></View>
               </View>
               <MediaNotice context={booking?.photo_context} compact/>
-              <View style={styles.amountRow}><Text style={styles.label}>{summary.state === 'pending' ? "Số tiền cần trả" : "Số tiền"}</Text><Text style={styles.amount}>{summary.amountLabel}</Text></View>
-              {summary.state === 'success' && !!summary.balanceLabel && <Text style={styles.balance}>Số dư còn lại: {summary.balanceLabel}</Text>}
-              {summary.isTestPayment && <Text style={styles.testPayment}>Giao dịch test - không trừ tiền thật</Text>}
+              <View style={uiStyle(styles.amountRow)}><Text style={uiTextStyle(styles.label)}>{summary.state === 'pending' ? uiText("Số tiền cần trả") : uiText("Số tiền")}</Text><Text style={uiTextStyle(styles.amount)}>{uiText(summary.amountLabel)}</Text></View>
+              {summary.state === 'success' && !!summary.balanceLabel && <Text style={uiTextStyle(styles.balance)}>{uiText("Số dư còn lại: ")}{uiText(summary.balanceLabel)}</Text>}
+              {summary.isTestPayment && <Text style={uiTextStyle(styles.testPayment)}>{uiText("Giao dịch test - không trừ tiền thật")}</Text>}
               {canContinuePayment && (
-                <Pressable accessibilityRole="button" accessibilityLabel="Tiếp tục thanh toán" onPress={() => navigation.replace("Payment", { bookingId })} style={styles.continuePaymentButton}>
-                  <Text style={styles.viewBookingLabel}>Tiếp tục thanh toán</Text>
+                <Pressable accessibilityRole="button" accessibilityLabel={uiText("Tiếp tục thanh toán")} onPress={() => navigation.replace("Payment", { bookingId })} style={uiStyle(styles.continuePaymentButton)}>
+                  <Text style={uiTextStyle(styles.viewBookingLabel)}>{uiText("Tiếp tục thanh toán")}</Text>
                 </Pressable>
               )}
               <Pressable
                 cssInterop={false}
-                accessibilityRole="button" accessibilityLabel="Tải biên lai PDF"
+                accessibilityRole="button" accessibilityLabel={uiText("Tải biên lai PDF")}
                 accessibilityState={{ disabled: !summary.canDownloadReceipt || downloading, busy: downloading }}
                 disabled={!summary.canDownloadReceipt || downloading} onPress={handleReceipt}
-                style={({ pressed }) => [styles.receiptButton, !summary.canDownloadReceipt && styles.disabled, pressed && styles.pressed]}
+                style={uiStyle(({ pressed }) => [styles.receiptButton, !summary.canDownloadReceipt && styles.disabled, pressed && styles.pressed])}
               >
-                {downloading ? <ActivityIndicator size="small" color="#7A8089" /> : <Download size={19} color="#8C929A" strokeWidth={2} />}
-                <Text style={styles.receiptLabel}>{downloading ? "Đang chuẩn bị chứng từ..." : "Tải chứng từ PDF"}</Text>
+                {downloading ? <ActivityIndicator size="small" color={uiColor("#7A8089")} /> : <Download size={19} color={uiColor("#8C929A")} strokeWidth={2} />}
+                <Text style={uiTextStyle(styles.receiptLabel)}>{downloading ? uiText("Đang chuẩn bị chứng từ...") : uiText("Tải chứng từ PDF")}</Text>
               </Pressable>
-              {!!receiptError && <Text accessibilityRole="alert" style={styles.receiptError}>{receiptError}</Text>}
-              {!!receiptMessage && <Text accessibilityLiveRegion="polite" style={styles.receiptMessage}>{receiptMessage}</Text>}
+              {!!receiptError && <Text accessibilityRole="alert" style={uiTextStyle(styles.receiptError)}>{uiText(receiptError)}</Text>}
+              {!!receiptMessage && <Text accessibilityLiveRegion="polite" style={uiTextStyle(styles.receiptMessage)}>{uiText(receiptMessage)}</Text>}
             </>
           )}
         </View>
       </ScrollView>
-      <View style={styles.footer}>
+      <View style={uiStyle(styles.footer)}>
         <Pressable
           cssInterop={false}
-          accessibilityRole="button" accessibilityLabel="Xem đơn đặt chỗ" disabled={!user || authLoading}
+          accessibilityRole="button" accessibilityLabel={uiText("Xem đơn đặt chỗ")} disabled={!user || authLoading}
           onPress={() => navigation.reset({
             index: 1,
             routes: [
@@ -140,8 +142,8 @@ export const BookingSuccessScreen: React.FC = () => {
               { name: 'BookingDetail', params: { bookingId } },
             ],
           })}
-          style={({ pressed }) => [styles.viewBookingButton, (!user || authLoading) && styles.disabled, pressed && styles.pressed]}
-        ><Text style={styles.viewBookingLabel}>Xem đặt phòng</Text></Pressable>
+          style={uiStyle(({ pressed }) => [styles.viewBookingButton, (!user || authLoading) && styles.disabled, pressed && styles.pressed])}
+        ><Text style={uiTextStyle(styles.viewBookingLabel)}>{uiText("Xem đặt phòng")}</Text></Pressable>
       </View>
     </SafeAreaView>
   );

@@ -2678,6 +2678,157 @@ Success HTTP 200.
 
 Endpoint error codes: `AI_RATE_LIMIT,AUTH_REQUIRED,BOOKING_NOT_FOUND`. HTTP responses: 200, 400, 401, 403, 404, 409, 429, 500.
 
+## POST /api/v1/ai/chat
+
+Trò chuyện và tra thông tin chỗ ở công khai
+
+Permission: **optional**. Read-only chat. Greeting, clarification, known FAQ topics and active public listing lookup do not call the provider or consume model budget. Match names, cities and category names against up to 1000 active listings. Optional listingId is a public UUID context for follow-up questions; each lookup revalidates visibility and current listed price. Source types: listing/article/booking. Listing prices are nightly base prices, never availability or checkout quotes. Other questions use approved FAQ selection with honest fallback. No chat history or private booking data is accepted. Shared AI rate limits and private/no-store caching apply.
+
+Request schema: `AiChatRequest` in OpenAPI.
+
+```json
+{
+  "message": "hello"
+}
+```
+
+Success HTTP 200.
+
+```json
+{
+  "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
+  "data": {
+    "mode": "data",
+    "answer": "Chào bạn! Bạn muốn xem thông tin phòng nào?",
+    "sourceRefs": [],
+    "fetchedAt": "2026-11-05T00:00:00Z"
+  }
+}
+```
+
+Endpoint error codes: `AI_RATE_LIMIT,VALIDATION_ERROR`. HTTP responses: 200, 400, 401, 403, 404, 409, 429, 500.
+
+## GET /api/v1/notifications
+
+Danh sách thông báo của tài khoản hiện tại
+
+Permission: **authenticated**. Owner-only notification history from transactional outbox, independent of email delivery. Stable newest-first order by created_at and id. unreadOnly=true filters read state. No email addresses, raw payload, provider errors or delivery credentials are returned. Booking links are included only for bookings owned by the recipient. Private/no-store.
+
+| Location | Parameter | Required | Schema/default |
+|---|---|---|---|
+| query | `page` | no | `{"type":"integer","minimum":1,"maximum":100000,"default":1}` |
+| query | `limit` | no | `{"type":"integer","minimum":1,"maximum":50,"default":12}` |
+| query | `unreadOnly` | no | `{"type":"string","enum":["true","false"],"default":"false"}` |
+
+Request body: none.
+
+Success HTTP 200.
+
+```json
+{
+  "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
+  "data": {
+    "items": [
+      {
+        "id": "11111111-1111-4111-8111-111111111111",
+        "type": "booking_created",
+        "title": "Đã tạo yêu cầu đặt phòng",
+        "body": "Mở chi tiết để kiểm tra trạng thái xác nhận.",
+        "bookingId": "11111111-1111-4111-8111-111111111111",
+        "createdAt": "2026-11-05T00:00:00Z",
+        "readAt": null
+      }
+    ],
+    "unreadCount": 1
+  }
+}
+```
+
+Endpoint error codes: `AUTH_REQUIRED,ACCOUNT_BLOCKED,VALIDATION_ERROR`. HTTP responses: 200, 400, 401, 403, 404, 409, 429, 500.
+
+## GET /api/v1/notifications/unread-count
+
+Số thông báo chưa đọc
+
+Permission: **authenticated**. Count unread events belonging to the authenticated recipient only. Private/no-store.
+
+Request body: none.
+
+Success HTTP 200.
+
+```json
+{
+  "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
+  "data": {
+    "unreadCount": 1
+  }
+}
+```
+
+Endpoint error codes: `AUTH_REQUIRED,ACCOUNT_BLOCKED`. HTTP responses: 200, 400, 401, 403, 404, 409, 429, 500.
+
+## PATCH /api/v1/notifications/read-all
+
+Đánh dấu các thông báo của mình đã đọc
+
+Permission: **authenticated**. Idempotent. Optional before is an ISO timestamp cutoff, clamped to server now. Newer arrivals remain unread. Updates only read_at; email delivery state is unchanged. Cannot target another user.
+
+Request schema: `NotificationReadAll` in OpenAPI.
+
+```json
+{}
+```
+
+Success HTTP 200.
+
+```json
+{
+  "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
+  "data": {
+    "updated": 1,
+    "unreadCount": 0
+  }
+}
+```
+
+Endpoint error codes: `AUTH_REQUIRED,VALIDATION_ERROR`. HTTP responses: 200, 400, 401, 403, 404, 409, 429, 500.
+
+## PATCH /api/v1/notifications/{id}/read
+
+Đánh dấu một thông báo đã đọc
+
+Permission: **authenticated**. Owner-only and idempotent: the first read timestamp is preserved. Foreign and nonexistent IDs return the same 404, including for administrators. Never modifies email delivery status.
+
+| Location | Parameter | Required | Schema/default |
+|---|---|---|---|
+| path | `id` | yes | `{"type":"string","format":"uuid"}` |
+
+Request schema: `NotificationRead` in OpenAPI.
+
+```json
+{}
+```
+
+Success HTTP 200.
+
+```json
+{
+  "success": true,
+  "serverTime": "2026-11-03T00:00:00Z",
+  "data": {
+    "id": "11111111-1111-4111-8111-111111111111",
+    "readAt": "2026-11-05T00:00:00Z",
+    "unreadCount": 0
+  }
+}
+```
+
+Endpoint error codes: `AUTH_REQUIRED,NOTIFICATION_NOT_FOUND,VALIDATION_ERROR`. HTTP responses: 200, 400, 401, 403, 404, 409, 429, 500.
+
 ## GET /api/v1/health
 
 Liveness API versioned

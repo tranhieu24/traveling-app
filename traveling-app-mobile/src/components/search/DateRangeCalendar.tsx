@@ -1,3 +1,5 @@
+import { uiLocale, useUiPreferences, uiStyle, uiTextStyle, uiText, uiColor } from '../../preferences/ui';
+
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
@@ -16,6 +18,7 @@ export const DateRangeCalendar = ({
   onChange: (start: string, end: string | null) => void;
   onError: (message: string) => void;
 }) => {
+  useUiPreferences();
   const today = isoToday();
   const [month, setMonth] = useState(
     () => (checkIn && checkIn >= today ? checkIn : today).slice(0, 7) + '-01'
@@ -45,36 +48,36 @@ export const DateRangeCalendar = ({
   };
   return (
     <View>
-      <View style={s.monthRow}>
-        <Text style={s.month}>
-          {date.toLocaleDateString('vi-VN', { month: 'long', year: 'numeric', timeZone: 'UTC' })}
+      <View style={uiStyle(s.monthRow)}>
+        <Text style={uiTextStyle(s.month)}>
+          {uiText(date.toLocaleDateString(uiLocale(), { month: 'long', year: 'numeric', timeZone: 'UTC' }))}
         </Text>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Tháng trước"
+          accessibilityLabel={uiText("Tháng trước")}
           disabled={month.slice(0, 7) <= today.slice(0, 7)}
           onPress={() => move(-1)}
-          style={s.arrow}
+          style={uiStyle(s.arrow)}
         >
-          <ChevronLeft color="#737983" size={21} />
+          <ChevronLeft color={uiColor("#737983")} size={21} />
         </Pressable>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Tháng sau"
+          accessibilityLabel={uiText("Tháng sau")}
           onPress={() => move(1)}
-          style={s.arrow}
+          style={uiStyle(s.arrow)}
         >
-          <ChevronRight color="#737983" size={21} />
+          <ChevronRight color={uiColor("#737983")} size={21} />
         </Pressable>
       </View>
-      <View style={s.grid}>
+      <View style={uiStyle(s.grid)}>
         {['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map((day) => (
-          <Text key={day} style={s.weekday}>
-            {day}
+          <Text key={day} style={uiTextStyle(s.weekday)}>
+            {uiText(day)}
           </Text>
         ))}
       </View>
-      <View style={s.grid}>
+      <View style={uiStyle(s.grid)}>
         {Array.from({ length: cells }, (_, index) => {
           const day = addIsoDays(month, index - offset),
             outside = day.slice(0, 7) !== month.slice(0, 7),
@@ -82,32 +85,32 @@ export const DateRangeCalendar = ({
           const endpoint = day === checkIn || day === checkOut;
           const inside = !!checkIn && !!checkOut && day > checkIn && day < checkOut;
           return (
-            <View key={day} style={[s.cell, inside && { backgroundColor: '#E0F9FC' }]}>
+            <View key={day} style={uiStyle([s.cell, inside && { backgroundColor: '#E0F9FC' }])}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`Chọn ngày ${day}`}
+                accessibilityLabel={uiText(`Chọn ngày ${day}`)}
                 accessibilityState={{ selected: endpoint, disabled }}
                 aria-selected={endpoint}
                 disabled={disabled}
                 onPress={() => select(day)}
-                style={[s.day, endpoint && { backgroundColor: CYAN }]}
+                style={uiStyle([s.day, endpoint && { backgroundColor: CYAN }])}
               >
                 <Text
-                  style={[
+                  style={uiTextStyle([
                     s.dayText,
                     (outside || disabled) && { color: '#C6CBD1' },
                     endpoint && { color: 'white' },
-                  ]}
+                  ])}
                 >
-                  {Number(day.slice(8))}
+                  {uiText(Number(day.slice(8)))}
                 </Text>
               </Pressable>
             </View>
           );
         })}
       </View>
-      <Text style={s.hint}>
-        {!checkIn || checkOut ? 'Chọn ngày nhận phòng' : 'Chọn ngày trả phòng sau ngày nhận phòng'}
+      <Text style={uiTextStyle(s.hint)}>
+        {!checkIn || checkOut ? uiText('Chọn ngày nhận phòng') : uiText('Chọn ngày trả phòng sau ngày nhận phòng')}
       </Text>
     </View>
   );

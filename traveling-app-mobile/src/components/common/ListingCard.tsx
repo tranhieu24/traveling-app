@@ -1,3 +1,5 @@
+import { uiLocale, useUiPreferences, uiStyle, uiText, uiColor, uiTextStyle } from '../../preferences/ui';
+
 import { MediaNotice } from './MediaNotice';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -19,6 +21,7 @@ interface ListingCardProps {
 }
 
 export const ListingCard: React.FC<ListingCardProps> = ({ listing, onPress, onFavoriteToggle, showTotalPrice = false, showBedroomCount = false }) => {
+  useUiPreferences();
   const { user } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const queryClient = useQueryClient();
@@ -76,9 +79,9 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, onPress, onFa
   };
 
   return (
-    <View style={styles.card}>
+    <View style={uiStyle(styles.card)}>
       <MediaNotice context={listing.photo_context} compact/>
-      <View style={styles.imageContainer} onLayout={(event) => {
+      <View style={uiStyle(styles.imageContainer)} onLayout={(event) => {
         const width = event.nativeEvent.layout.width;
         setImageWidth(width);
         gallery.current?.scrollTo({ x: activePhoto * width, animated: false });
@@ -93,16 +96,16 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, onPress, onFa
             onMomentumScrollEnd={(event) => {
               if (imageWidth > 0) setActivePhoto(Math.round(event.nativeEvent.contentOffset.x / imageWidth));
             }}
-            style={styles.gallery}
+            style={uiStyle(styles.gallery)}
           >
             {photoUrls.map((url, index) => (
-              <Pressable key={url} accessibilityRole="button" accessibilityLabel={`Xem ${listing.title}, ảnh ${index + 1}`} onPress={onPress} style={[styles.photo, { width: imageWidth }]}>
-                {failedPhotos.includes(url) ? <ImageOff size={30} color="#9AA1A9" /> : (
+              <Pressable key={url} accessibilityRole="button" accessibilityLabel={uiText(`Xem ${listing.title}, ảnh ${index + 1}`)} onPress={onPress} style={uiStyle([styles.photo, { width: imageWidth }])}>
+                {failedPhotos.includes(url) ? <ImageOff size={30} color={uiColor("#9AA1A9")} /> : (
                   <Image
                     source={{ uri: url }}
                     accessibilityLabel={listing.title}
                     resizeMode="cover"
-                    style={styles.image}
+                    style={uiStyle(styles.image)}
                     onError={() => setFailedPhotos((current) => current.includes(url) ? current : [...current, url])}
                   />
                 )}
@@ -110,8 +113,8 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, onPress, onFa
             ))}
           </ScrollView>
         ) : (
-          <Pressable accessibilityRole="button" accessibilityLabel={`Xem ${listing.title}`} onPress={onPress} style={styles.placeholder}>
-            <ImageOff size={30} color="#9AA1A9" />
+          <Pressable accessibilityRole="button" accessibilityLabel={uiText(`Xem ${listing.title}`)} onPress={onPress} style={uiStyle(styles.placeholder)}>
+            <ImageOff size={30} color={uiColor("#9AA1A9")} />
           </Pressable>
         )}
 
@@ -119,50 +122,50 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, onPress, onFa
 
           cssInterop={false}
           accessibilityRole="button"
-          accessibilityLabel={isFavorite ? `Xóa ${listing.title} khỏi mục yêu thích` : `Lưu ${listing.title} vào mục yêu thích`}
+          accessibilityLabel={isFavorite ? uiText(`Xóa ${listing.title} khỏi mục yêu thích`) : uiText(`Lưu ${listing.title} vào mục yêu thích`)}
           accessibilityState={{ selected: isFavorite, disabled: loadingFav, busy: loadingFav }}
           onPress={handleFavoritePress}
           disabled={loadingFav}
           hitSlop={6}
-          style={({ pressed }) => [styles.heartButton, pressed && styles.pressed]}
+          style={uiStyle(({ pressed }) => [styles.heartButton, pressed && styles.pressed])}
         >
-          {loadingFav ? <ActivityIndicator size="small" color="#00BCD4" /> : (
-            <Heart size={21} color={isFavorite ? '#F05C70' : '#939BA4'} fill={isFavorite ? '#F05C70' : 'transparent'} strokeWidth={1.8} />
+          {loadingFav ? <ActivityIndicator size="small" color={uiColor("#00BCD4")} /> : (
+            <Heart size={21} color={uiColor(isFavorite ? '#F05C70' : '#939BA4')} fill={uiColor(isFavorite ? '#F05C70' : 'transparent')} strokeWidth={1.8} />
           )}
         </Pressable>
 
         {photoUrls.length > 1 && (
-          <View style={styles.pagination}>
+          <View style={uiStyle(styles.pagination)}>
             {photoUrls.map((url, index) => (
               <Pressable
                 key={url}
                 accessibilityRole="button"
-                accessibilityLabel={`Photo ${index + 1} of ${photoUrls.length}`}
+                accessibilityLabel={uiText(`Photo ${index + 1} of ${photoUrls.length}`)}
                 accessibilityState={{ selected: activePhoto === index }}
                 onPress={() => {
                   setActivePhoto(index);
                   gallery.current?.scrollTo({ x: index * imageWidth, animated: true });
                 }}
-                style={styles.dotTarget}
+                style={uiStyle(styles.dotTarget)}
               >
-                <View style={[styles.dot, activePhoto === index && styles.activeDot]} />
+                <View style={uiStyle([styles.dot, activePhoto === index && styles.activeDot])} />
               </Pressable>
             ))}
           </View>
         )}
       </View>
 
-      <Pressable accessibilityRole="button" accessibilityLabel={`Xem ${listing.title}`} onPress={onPress} style={styles.content}>
-        <View style={styles.row}>
-          <Text style={styles.title} numberOfLines={1}>{listing.title}</Text>
-          <View style={styles.ratingRow}>
-            <Star size={12} color="#EBC64D" fill="#EBC64D" strokeWidth={1} />
-            <Text style={styles.ratingText}>{Number.isFinite(rating) && rating > 0 ? rating.toFixed(1) : 'Mới'}</Text>
+      <Pressable accessibilityRole="button" accessibilityLabel={uiText(`Xem ${listing.title}`)} onPress={onPress} style={uiStyle(styles.content)}>
+        <View style={uiStyle(styles.row)}>
+          <Text style={uiTextStyle(styles.title)} numberOfLines={1}>{listing.title}</Text>
+          <View style={uiStyle(styles.ratingRow)}>
+            <Star size={12} color={uiColor("#EBC64D")} fill={uiColor("#EBC64D")} strokeWidth={1} />
+            <Text style={uiTextStyle(styles.ratingText)}>{Number.isFinite(rating) && rating > 0 ? uiText(rating.toFixed(1)) : uiText('Mới')}</Text>
           </View>
         </View>
-        <View style={styles.secondRow}>
-          {showBedroomCount ? <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 5 }}><Bed size={14} color="#93979F" /><Text style={styles.category}>{listing.bedrooms} phòng ngủ</Text></View> : <Text style={styles.category} numberOfLines={1}>{listing.category_name || listing.property_type}</Text>}
-          <Text style={styles.price}><Text style={styles.priceAmount}>{Number.isFinite(price) ? formatPaymentMoney(price, listing.currency || 'USD') : '--'}</Text>{showTotalPrice ? ' tổng cộng' : '/đêm'}</Text>
+        <View style={uiStyle(styles.secondRow)}>
+          {showBedroomCount ? <View style={uiStyle({ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 5 })}><Bed size={14} color={uiColor("#93979F")} /><Text style={uiTextStyle(styles.category)}>{uiText(listing.bedrooms)}{uiText(" phòng ngủ")}</Text></View> : <Text style={uiTextStyle(styles.category)} numberOfLines={1}>{uiText(listing.category_name || listing.property_type)}</Text>}
+          <Text style={uiTextStyle(styles.price)}><Text style={uiTextStyle(styles.priceAmount)}>{Number.isFinite(price) ? uiText(formatPaymentMoney(price, listing.currency || 'USD', uiLocale())) : uiText('--')}</Text>{showTotalPrice ? uiText(' tổng cộng') : uiText('/đêm')}</Text>
         </View>
       </Pressable>
     </View>

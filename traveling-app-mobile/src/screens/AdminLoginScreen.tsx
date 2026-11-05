@@ -1,3 +1,4 @@
+import { useUiPreferences, uiStyle, uiColor, uiTextStyle, uiText } from '../preferences/ui';
 import React, { useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -20,6 +21,7 @@ import { adminSession } from '../services/admin';
 import { a, AdminButton, AdminNotice, colors } from '../components/admin/AdminUI';
 
 export function AdminLoginScreen() {
+  useUiPreferences();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { signIn, isLoading } = useAuth();
   const [email, setEmail] = useState(''),
@@ -50,92 +52,87 @@ export function AdminLoginScreen() {
     }
   };
   return (
-    <SafeAreaView style={s.screen}>
+    <SafeAreaView style={uiStyle(s.screen)}>
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={uiStyle({ flex: 1 })}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
-          <View style={s.brand}>
-            <View style={s.brandIcon}>
-              <ShieldCheck size={27} color={colors.primary} />
+        <ScrollView contentContainerStyle={uiStyle(s.content)} keyboardShouldPersistTaps="handled">
+          <View style={uiStyle(s.brand)}>
+            <View style={uiStyle(s.brandIcon)}>
+              <ShieldCheck size={27} color={uiColor(colors.primary)} />
             </View>
-            <Text style={s.brandText}>
-              traveling<Text style={{ color: colors.primary }}>.</Text>
+            <Text style={uiTextStyle(s.brandText)}>{uiText("traveling")}<Text style={uiTextStyle({ color: colors.primary })}>{uiText(".")}</Text>
             </Text>
-            <Text style={s.tag}>ADMIN PORTAL</Text>
+            <Text style={uiTextStyle(s.tag)}>{uiText("ADMIN PORTAL")}</Text>
           </View>
-          <View style={s.card}>
-            <View style={s.lock}>
-              <LockKeyhole size={26} color={colors.primary} />
+          <View style={uiStyle(s.card)}>
+            <View style={uiStyle(s.lock)}>
+              <LockKeyhole size={26} color={uiColor(colors.primary)} />
             </View>
-            <Text accessibilityRole="header" style={s.title}>
-              Chào mừng trở lại
-            </Text>
-            <Text style={s.subtitle}>Đăng nhập để quản lý hệ thống Traveling.</Text>
-            <View style={{ gap: 9 }}>
-              <Text style={a.label}>Email quản trị</Text>
+            <Text accessibilityRole="header" style={uiTextStyle(s.title)}>{uiText("Chào mừng trở lại")}</Text>
+            <Text style={uiTextStyle(s.subtitle)}>{uiText("Đăng nhập để quản lý hệ thống Traveling.")}</Text>
+            <View style={uiStyle({ gap: 9 })}>
+              <Text style={uiTextStyle(a.label)}>{uiText("Email quản trị")}</Text>
               <TextInput
-                accessibilityLabel="Email quản trị"
+                accessibilityLabel={uiText("Email quản trị")}
                 value={email}
                 onChangeText={setEmail}
-                placeholder="admin@example.com"
-                placeholderTextColor="#A4B2BA"
+                placeholder={uiText("admin@example.com")}
+                placeholderTextColor={uiColor("#A4B2BA")}
                 autoCapitalize="none"
                 autoComplete="email"
                 keyboardType="email-address"
                 editable={!busy && !isLoading}
-                style={a.input}
+                style={uiStyle(a.input)}
               />
             </View>
-            <View style={{ gap: 9 }}>
-              <Text style={a.label}>Mật khẩu quản trị</Text>
-              <View style={[a.input, a.row, { paddingVertical: 0 }]}>
+            <View style={uiStyle({ gap: 9 })}>
+              <Text style={uiTextStyle(a.label)}>{uiText("Mật khẩu quản trị")}</Text>
+              <View style={uiStyle([a.input, a.row, { paddingVertical: 0 }])}>
                 <TextInput
-                  accessibilityLabel="Mật khẩu quản trị"
+                  accessibilityLabel={uiText("Mật khẩu quản trị")}
                   value={password}
                   onChangeText={setPassword}
-                  placeholder="Nhập mật khẩu"
-                  placeholderTextColor="#A4B2BA"
+                  placeholder={uiText("Nhập mật khẩu")}
+                  placeholderTextColor={uiColor("#A4B2BA")}
                   secureTextEntry={!visible}
                   autoCapitalize="none"
                   autoComplete="current-password"
                   onSubmitEditing={() => void login()}
                   editable={!busy && !isLoading}
-                  style={{ minHeight: 43, flex: 1, color: colors.ink, fontSize: 13 }}
+                  style={uiStyle({ minHeight: 43, flex: 1, color: colors.ink, fontSize: 13 })}
                 />
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel={visible ? 'Ẩn mật khẩu quản trị' : 'Hiện mật khẩu quản trị'}
+                  accessibilityLabel={visible ? uiText('Ẩn mật khẩu quản trị') : uiText('Hiện mật khẩu quản trị')}
                   onPress={() => setVisible((current) => !current)}
                 >
                   {visible ? (
-                    <EyeOff size={18} color={colors.muted} />
+                    <EyeOff size={18} color={uiColor(colors.muted)} />
                   ) : (
-                    <Eye size={18} color={colors.muted} />
+                    <Eye size={18} color={uiColor(colors.muted)} />
                   )}
                 </Pressable>
               </View>
             </View>
             {!!error && <AdminNotice text={error} error />}
             <AdminButton
-              title="Đăng nhập quản trị"
+              title={uiText("Đăng nhập quản trị")}
               onPress={() => void login()}
               busy={busy || isLoading}
-              icon={<ArrowRight size={17} color="#FFF" />}
+              icon={<ArrowRight size={17} color={uiColor("#FFF")} />}
             />
-            <Text style={s.note}>
-              Chỉ tài khoản đã được cấp quyền quản trị mới có thể truy cập.
-            </Text>
+            <Text style={uiTextStyle(s.note)}>{uiText("Chỉ tài khoản đã được cấp quyền quản trị mới có thể truy cập.")}</Text>
           </View>
           <AdminButton
-            title="Quay về ứng dụng"
+            title={uiText("Quay về ứng dụng")}
             variant="ghost"
             onPress={() => navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] })}
-            icon={<ArrowLeft size={15} color={colors.muted} />}
+            icon={<ArrowLeft size={15} color={uiColor(colors.muted)} />}
             disabled={busy}
           />
-          <Text style={s.footer}>Traveling · Quản lý hành trình, kết nối trải nghiệm.</Text>
+          <Text style={uiTextStyle(s.footer)}>{uiText("Traveling · Quản lý hành trình, kết nối trải nghiệm.")}</Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

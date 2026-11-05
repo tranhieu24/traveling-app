@@ -6,10 +6,10 @@ const timeOf = (payment: BookingPayment) => {
   return Number.isFinite(value) ? value : 0;
 };
 
-export const formatPaymentMoney = (amount: number | string | null | undefined, currency = 'USD'): string => {
+export const formatPaymentMoney = (amount: number | string | null | undefined, currency = 'USD', locale = 'vi-VN'): string => {
   if (amount == null || amount === '' || !Number.isFinite(Number(amount))) return '--';
   try {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(Number(amount));
+    return new Intl.NumberFormat(locale, { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(Number(amount));
   } catch {
     return `${Number(amount).toFixed(2)} ${currency}`;
   }

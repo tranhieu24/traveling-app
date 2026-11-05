@@ -1,3 +1,4 @@
+import { useUiPreferences, uiColor, uiStyle, uiTextStyle, uiText } from '../../preferences/ui';
 import React from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -24,6 +25,7 @@ import { ListingImage } from './ListingPhotoGallery';
 
 export type ListingPanel = 'facilities' | 'policies' | 'description' | null;
 export const AmenityIcon = ({ amenity }: { amenity: Amenity }) => {
+  useUiPreferences();
   const icons: Record<string, typeof Wifi> = {
     wifi: Wifi,
     utensils: Utensils,
@@ -39,10 +41,10 @@ export const AmenityIcon = ({ amenity }: { amenity: Amenity }) => {
     snowflake: Snowflake,
   };
   const Icon = icons[amenity.icon] || CheckCircle2;
-  return <Icon size={18} color="#7A828C" strokeWidth={1.7} />;
+  return <Icon size={18} color={uiColor("#7A828C")} strokeWidth={1.7} />;
 };
-export const ListingStats = ({ listing }: { listing: Listing }) => (
-  <View style={s.stats}>
+export const ListingStats = ({ listing }: { listing: Listing }) => { useUiPreferences(); return ((
+  <View style={uiStyle(s.stats)}>
     {[
       `${listing.max_guests} ${listing.max_guests === 1 ? "Khách" : "Số khách"}`,
       listing.bedrooms === 0
@@ -51,33 +53,32 @@ export const ListingStats = ({ listing }: { listing: Listing }) => (
       `${listing.beds} giường`,
       `${listing.bathrooms} phòng tắm`,
     ].map((text) => (
-      <Text key={text} style={s.stat}>
-        {text}
+      <Text key={text} style={uiTextStyle(s.stat)}>
+        {uiText(text)}
       </Text>
     ))}
   </View>
-);
-export const HouseRules = ({ listing }: { listing: Listing }) => (
-  <View style={s.rules}>
-    <Text style={s.ruleTitle}>Nội quy chỗ ở</Text>
-    <View style={s.ruleRow}>
-      <Clock3 size={15} color="#8C939D" />
-      <Text style={s.ruleText}>Giờ nhận phòng sớm nhất: {listingTime(listing.check_in_time)}</Text>
+)); };
+export const HouseRules = ({ listing }: { listing: Listing }) => { useUiPreferences(); return ((
+  <View style={uiStyle(s.rules)}>
+    <Text style={uiTextStyle(s.ruleTitle)}>{uiText("Nội quy chỗ ở")}</Text>
+    <View style={uiStyle(s.ruleRow)}>
+      <Clock3 size={15} color={uiColor("#8C939D")} />
+      <Text style={uiTextStyle(s.ruleText)}>{uiText("Giờ nhận phòng sớm nhất: ")}{uiText(listingTime(listing.check_in_time))}</Text>
     </View>
-    <View style={s.ruleRow}>
-      <Clock3 size={15} color="#8C939D" />
-      <Text style={s.ruleText}>Giờ trả phòng muộn nhất: {listingTime(listing.check_out_time)}</Text>
+    <View style={uiStyle(s.ruleRow)}>
+      <Clock3 size={15} color={uiColor("#8C939D")} />
+      <Text style={uiTextStyle(s.ruleText)}>{uiText("Giờ trả phòng muộn nhất: ")}{uiText(listingTime(listing.check_out_time))}</Text>
     </View>
   </View>
-);
+)); };
 export const CheckinPolicy = ({ listing }: { listing: Listing }) => {
+  useUiPreferences();
   const checkIn = listingTime(listing.check_in_time),
     checkOut = listingTime(listing.check_out_time);
   return (
-    <Text style={s.policy}>
-      {checkIn === 'Chờ xác nhận' || checkOut === 'Chờ xác nhận'
-        ? 'Vui lòng xác nhận lịch nhận và trả phòng với chủ nhà trước chuyến đi.'
-        : `Nhận phòng từ ${checkIn} và trả phòng trước ${checkOut}. Vui lòng xác nhận lịch đến với chủ nhà trước chuyến đi.`}
+    <Text style={uiTextStyle(s.policy)}>
+      {checkIn === 'Chờ xác nhận' || checkOut === 'Chờ xác nhận' ? uiText('Vui lòng xác nhận lịch nhận và trả phòng với chủ nhà trước chuyến đi.') : uiText(`Nhận phòng từ ${checkIn} và trả phòng trước ${checkOut}. Vui lòng xác nhận lịch đến với chủ nhà trước chuyến đi.`)}
     </Text>
   );
 };
@@ -94,43 +95,39 @@ export const ListingDetailPanels = ({
   descriptionPhoto?: string;
   onClose: () => void;
   onMap: () => void;
-}) => (
+}) => { useUiPreferences(); return ((
   <Modal visible={!!panel} animationType="slide" onRequestClose={onClose}>
-    <SafeAreaView edges={['top', 'bottom']} style={s.screen}>
-      <View style={s.frame}>
-        <View style={s.header}>
+    <SafeAreaView edges={['top', 'bottom']} style={uiStyle(s.screen)}>
+      <View style={uiStyle(s.frame)}>
+        <View style={uiStyle(s.header)}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Quay lại chi tiết chỗ ở"
+            accessibilityLabel={uiText("Quay lại chi tiết chỗ ở")}
             onPress={onClose}
-            style={s.back}
+            style={uiStyle(s.back)}
           >
-            <ChevronLeft size={26} color="#969DA7" />
+            <ChevronLeft size={26} color={uiColor("#969DA7")} />
           </Pressable>
-          <Text accessibilityRole="header" style={s.headerTitle}>
-            {panel === 'facilities'
-              ? 'Tiện nghi và dịch vụ'
-              : panel === 'policies'
-                ? "Chính sách"
-                : "Mô tả"}
+          <Text accessibilityRole="header" style={uiTextStyle(s.headerTitle)}>
+            {panel === 'facilities' ? uiText('Tiện nghi và dịch vụ') : panel === 'policies' ? uiText("Chính sách") : uiText("Mô tả")}
           </Text>
-          <View style={s.back} />
+          <View style={uiStyle(s.back)} />
         </View>
-        <ScrollView contentContainerStyle={s.content}>
+        <ScrollView contentContainerStyle={uiStyle(s.content)}>
           {panel === 'facilities' ? (
             <>
-              <Text style={s.title}>Tiện nghi</Text>
+              <Text style={uiTextStyle(s.title)}>{uiText("Tiện nghi")}</Text>
               <ListingStats listing={listing} />
               {!listing.amenities?.length && (
-                <Text style={s.policy}>Chỗ ở này chưa liệt kê tiện nghi.</Text>
+                <Text style={uiTextStyle(s.policy)}>{uiText("Chỗ ở này chưa liệt kê tiện nghi.")}</Text>
               )}
               {groupAmenities(listing.amenities || []).map(([label, amenities]) => (
-                <View key={label} style={s.group}>
-                  <Text style={s.groupTitle}>{label}</Text>
+                <View key={label} style={uiStyle(s.group)}>
+                  <Text style={uiTextStyle(s.groupTitle)}>{uiText(label)}</Text>
                   {amenities.map((amenity) => (
-                    <View key={amenity.id} style={s.amenity}>
+                    <View key={amenity.id} style={uiStyle(s.amenity)}>
                       <AmenityIcon amenity={amenity} />
-                      <Text style={s.amenityText}>{formatAmenityName(amenity.name)}</Text>
+                      <Text style={uiTextStyle(s.amenityText)}>{uiText(formatAmenityName(amenity.name))}</Text>
                     </View>
                   ))}
                 </View>
@@ -138,32 +135,30 @@ export const ListingDetailPanels = ({
             </>
           ) : panel === 'policies' ? (
             <>
-              <Text style={s.title}>Chính sách</Text>
+              <Text style={uiTextStyle(s.title)}>{uiText("Chính sách")}</Text>
               <HouseRules listing={listing} />
-              <Text style={s.groupTitle}>Điều kiện nhận phòng</Text>
+              <Text style={uiTextStyle(s.groupTitle)}>{uiText("Điều kiện nhận phòng")}</Text>
               <CheckinPolicy listing={listing} />
-              <Text style={[s.groupTitle, { marginTop: 24 }]}>Giới hạn số khách</Text>
-              <Text style={s.policy}>
-                Chỗ ở này phục vụ tối đa {listing.max_guests} khách.
-              </Text>
+              <Text style={uiTextStyle([s.groupTitle, { marginTop: 24 }])}>{uiText("Giới hạn số khách")}</Text>
+              <Text style={uiTextStyle(s.policy)}>{uiText("Chỗ ở này phục vụ tối đa ")}{uiText(listing.max_guests)}{uiText(" khách.")}</Text>
             </>
           ) : (
             <>
-              <View style={s.descriptionPhoto}>
+              <View style={uiStyle(s.descriptionPhoto)}>
                 <ListingImage url={descriptionPhoto} />
               </View>
-              <Text style={s.description}>
-                {listing.description?.trim() || "Cơ sở chưa cung cấp mô tả cho chỗ ở này."}
+              <Text style={uiTextStyle(s.description)}>
+                {uiText(listing.description?.trim() || "Cơ sở chưa cung cấp mô tả cho chỗ ở này.")}
               </Text>
-              <View style={s.location}>
-                <MapPin size={18} color="#00B8CE" />
-                <Text style={s.address}>{listingAddress(listing) || 'Chưa cung cấp địa chỉ'}</Text>
+              <View style={uiStyle(s.location)}>
+                <MapPin size={18} color={uiColor("#00B8CE")} />
+                <Text style={uiTextStyle(s.address)}>{uiText(listingAddress(listing) || 'Chưa cung cấp địa chỉ')}</Text>
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Mở chỗ ở trong Google Maps"
+                  accessibilityLabel={uiText("Mở chỗ ở trong Google Maps")}
                   onPress={onMap}
                 >
-                  <Text style={s.link}>Mở bản đồ</Text>
+                  <Text style={uiTextStyle(s.link)}>{uiText("Mở bản đồ")}</Text>
                 </Pressable>
               </View>
             </>
@@ -172,7 +167,7 @@ export const ListingDetailPanels = ({
       </View>
     </SafeAreaView>
   </Modal>
-);
+)); };
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#F0F2F5' },
   frame: { flex: 1, backgroundColor: 'white', width: '100%', maxWidth: 560, alignSelf: 'center' },

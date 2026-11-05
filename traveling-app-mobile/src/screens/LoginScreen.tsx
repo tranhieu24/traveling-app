@@ -1,4 +1,6 @@
-import React, { useRef, useState } from 'react';
+import { useUiPreferences, uiStyle, uiText, uiColor, uiTextStyle } from '../preferences/ui';
+import { clearAuthReturn, finishAuthNavigation } from '../navigation/authReturn';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Keyboard,
@@ -20,6 +22,7 @@ import { RootStackParamList } from '../types';
 import { useAuth } from '../context/AuthContext';
 
 export const LoginScreen: React.FC = () => {
+  useUiPreferences();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { signIn, isLoading } = useAuth();
   const emailRef = useRef<React.ComponentRef<typeof TextInput>>(null);
@@ -32,6 +35,10 @@ export const LoginScreen: React.FC = () => {
   const [errors, setErrors] = useState<{ email?: string; password?: string; form?: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const busy = isLoading || isSubmitting;
+
+  useEffect(() => navigation.addListener('beforeRemove', (event) => {
+    if (['GO_BACK', 'POP', 'POP_TO_TOP'].includes(event.data.action.type)) clearAuthReturn();
+  }), [navigation]);
 
   const handleLogin = async () => {
     if (busy || submittingRef.current) return;
@@ -55,10 +62,7 @@ export const LoginScreen: React.FC = () => {
     setIsSubmitting(true);
     try {
       const profile = await signIn(email.trim(), password);
-      navigation.reset({
-        index: 0,
-        routes: [{ name: profile.role === 'admin' ? 'AdminPortal' : 'MainTabs' }],
-      });
+      finishAuthNavigation(navigation, profile.role);
     } catch (error: unknown) {
       setErrors({
         form: error instanceof Error ? error.message : 'Không thể đăng nhập. Vui lòng thử lại.',
@@ -70,53 +74,51 @@ export const LoginScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <SafeAreaView style={uiStyle(styles.screen)}>
       <KeyboardAvoidingView
-        style={styles.screen}
+        style={uiStyle(styles.screen)}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.content}
+          style={uiStyle(styles.scroll)}
+          contentContainerStyle={uiStyle(styles.content)}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.header}>
+          <View style={uiStyle(styles.header)}>
             <Pressable
               cssInterop={false}
               accessibilityRole="button"
-              accessibilityLabel="Go back"
+              accessibilityLabel={uiText("Go back")}
               disabled={busy}
               onPress={() =>
-                navigation.canGoBack() ? navigation.goBack() : navigation.replace('CreateAccount')
+                navigation.canGoBack() ? navigation.goBack() : navigation.replace('MainTabs')
               }
-              style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
+              style={uiStyle(({ pressed }) => [styles.backButton, pressed && styles.pressed])}
             >
-              <ArrowLeft size={23} color="#292C30" />
+              <ArrowLeft size={23} color={uiColor("#292C30")} />
             </Pressable>
-            <Text accessibilityRole="header" style={styles.title}>
-              Đăng nhập
-            </Text>
+            <Text accessibilityRole="header" style={uiTextStyle(styles.title)}>{uiText("Đăng nhập")}</Text>
           </View>
 
-          <View style={styles.form}>
-            <Text style={styles.welcome}>Chào mừng bạn trở lại!</Text>
-            <Text style={styles.subtitle}>Đăng nhập để tiếp tục lên kế hoạch cho chuyến đi.</Text>
+          <View style={uiStyle(styles.form)}>
+            <Text style={uiTextStyle(styles.welcome)}>{uiText("Chào mừng bạn trở lại!")}</Text>
+            <Text style={uiTextStyle(styles.subtitle)}>{uiText("Đăng nhập để tiếp tục lên kế hoạch cho chuyến đi.")}</Text>
 
-            <View style={styles.field}>
-              <Text style={styles.label}>Địa chỉ email</Text>
+            <View style={uiStyle(styles.field)}>
+              <Text style={uiTextStyle(styles.label)}>{uiText("Địa chỉ email")}</Text>
               <View
-                style={[
+                style={uiStyle([
                   styles.inputContainer,
                   focusedField === 'email' && styles.focusedInput,
                   !!errors.email && styles.invalidInput,
-                ]}
+                ])}
               >
-                <Mail size={19} color="#93979F" />
+                <Mail size={19} color={uiColor("#93979F")} />
                 <TextInput
                   ref={emailRef}
-                  accessibilityLabel="Địa chỉ email"
+                  accessibilityLabel={uiText("Địa chỉ email")}
                   value={email}
                   onChangeText={(value) => {
                     setEmail(value);
@@ -124,8 +126,8 @@ export const LoginScreen: React.FC = () => {
                   }}
                   onFocus={() => setFocusedField('email')}
                   onBlur={() => setFocusedField(null)}
-                  placeholder="Nhập địa chỉ email"
-                  placeholderTextColor="#BFC2C8"
+                  placeholder={uiText("Nhập địa chỉ email")}
+                  placeholderTextColor={uiColor("#BFC2C8")}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -135,29 +137,29 @@ export const LoginScreen: React.FC = () => {
                   blurOnSubmit={false}
                   onSubmitEditing={() => passwordRef.current?.focus()}
                   editable={!busy}
-                  style={styles.input}
+                  style={uiStyle(styles.input)}
                 />
               </View>
               {!!errors.email && (
-                <Text accessibilityRole="alert" style={styles.error}>
-                  {errors.email}
+                <Text accessibilityRole="alert" style={uiTextStyle(styles.error)}>
+                  {uiText(errors.email)}
                 </Text>
               )}
             </View>
 
-            <View style={styles.field}>
-              <Text style={styles.label}>Mật khẩu</Text>
+            <View style={uiStyle(styles.field)}>
+              <Text style={uiTextStyle(styles.label)}>{uiText("Mật khẩu")}</Text>
               <View
-                style={[
+                style={uiStyle([
                   styles.inputContainer,
                   focusedField === 'password' && styles.focusedInput,
                   !!errors.password && styles.invalidInput,
-                ]}
+                ])}
               >
-                <Lock size={19} color="#93979F" />
+                <Lock size={19} color={uiColor("#93979F")} />
                 <TextInput
                   ref={passwordRef}
-                  accessibilityLabel="Mật khẩu"
+                  accessibilityLabel={uiText("Mật khẩu")}
                   value={password}
                   onChangeText={(value) => {
                     setPassword(value);
@@ -165,8 +167,8 @@ export const LoginScreen: React.FC = () => {
                   }}
                   onFocus={() => setFocusedField('password')}
                   onBlur={() => setFocusedField(null)}
-                  placeholder="Nhập mật khẩu"
-                  placeholderTextColor="#BFC2C8"
+                  placeholder={uiText("Nhập mật khẩu")}
+                  placeholderTextColor={uiColor("#BFC2C8")}
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -175,35 +177,35 @@ export const LoginScreen: React.FC = () => {
                   returnKeyType="go"
                   onSubmitEditing={handleLogin}
                   editable={!busy}
-                  style={styles.input}
+                  style={uiStyle(styles.input)}
                 />
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                  accessibilityLabel={showPassword ? uiText('Ẩn mật khẩu') : uiText('Hiện mật khẩu')}
                   accessibilityState={{ checked: showPassword }}
                   disabled={busy}
                   onPress={() => setShowPassword((value) => !value)}
-                  style={styles.passwordToggle}
+                  style={uiStyle(styles.passwordToggle)}
                 >
                   {showPassword ? (
-                    <EyeOff size={20} color="#797C81" />
+                    <EyeOff size={20} color={uiColor("#797C81")} />
                   ) : (
-                    <Eye size={20} color="#797C81" />
+                    <Eye size={20} color={uiColor("#797C81")} />
                   )}
                 </Pressable>
               </View>
               {!!errors.password && (
-                <Text accessibilityRole="alert" style={styles.error}>
-                  {errors.password}
+                <Text accessibilityRole="alert" style={uiTextStyle(styles.error)}>
+                  {uiText(errors.password)}
                 </Text>
               )}
             </View>
 
-            <Pressable accessibilityRole="button" disabled={busy} onPress={()=>navigation.navigate('ForgotPassword')} style={{minHeight:44,justifyContent:'center',alignItems:'flex-end'}}><Text style={{color:'#008A9A'}}>Quên mật khẩu?</Text></Pressable>
+            <Pressable accessibilityRole="button" disabled={busy} onPress={()=>navigation.navigate('ForgotPassword')} style={uiStyle({minHeight:44,justifyContent:'center',alignItems:'flex-end'})}><Text style={uiTextStyle({color:'#008A9A'})}>{uiText("Quên mật khẩu?")}</Text></Pressable>
             {!!errors.form && (
-              <View style={styles.errorBanner}>
-                <Text accessibilityRole="alert" style={styles.formError}>
-                  {errors.form}
+              <View style={uiStyle(styles.errorBanner)}>
+                <Text accessibilityRole="alert" style={uiTextStyle(styles.formError)}>
+                  {uiText(errors.form)}
                 </Text>
               </View>
             )}
@@ -212,43 +214,43 @@ export const LoginScreen: React.FC = () => {
 
               cssInterop={false}
               accessibilityRole="button"
-              accessibilityLabel={isSubmitting ? 'Đang đăng nhập' : 'Đăng nhập'}
+              accessibilityLabel={isSubmitting ? uiText('Đang đăng nhập') : uiText('Đăng nhập')}
               accessibilityState={{ disabled: busy, busy }}
               disabled={busy}
               onPress={handleLogin}
-              style={({ pressed }) => [styles.loginButton, (pressed || busy) && styles.pressed]}
+              style={uiStyle(({ pressed }) => [styles.loginButton, (pressed || busy) && styles.pressed])}
             >
-              {isSubmitting && <ActivityIndicator size="small" color="#FFFFFF" />}
-              <Text style={styles.loginText}>{isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}</Text>
+              {isSubmitting && <ActivityIndicator size="small" color={uiColor("#FFFFFF")} />}
+              <Text style={uiTextStyle(styles.loginText)}>{isSubmitting ? uiText("Đang đăng nhập...") : uiText("Đăng nhập")}</Text>
             </Pressable>
 
-            <View style={styles.separator}>
-              <View style={styles.separatorLine} />
-              <Text style={styles.separatorText}>hoặc tiếp tục với</Text>
-              <View style={styles.separatorLine} />
+            <View style={uiStyle(styles.separator)}>
+              <View style={uiStyle(styles.separatorLine)} />
+              <Text style={uiTextStyle(styles.separatorText)}>{uiText("hoặc tiếp tục với")}</Text>
+              <View style={uiStyle(styles.separatorLine)} />
             </View>
             <SocialSignInButtons disabled={busy} />
           </View>
 
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Chưa có tài khoản?</Text>
+          <View style={uiStyle(styles.footer)}>
+            <Text style={uiTextStyle(styles.footerText)}>{uiText("Chưa có tài khoản?")}</Text>
             <Pressable
               accessibilityRole="link"
               hitSlop={8}
               disabled={busy}
               onPress={() => navigation.navigate('CreateAccount')}
             >
-              <Text style={styles.signupLink}>Đăng ký</Text>
+              <Text style={uiTextStyle(styles.signupLink)}>{uiText("Đăng ký")}</Text>
             </Pressable>
           </View>
           <Pressable
             accessibilityRole="link"
-            accessibilityLabel="Admin Portal"
+            accessibilityLabel={uiText("Admin Portal")}
             disabled={busy}
             onPress={() => navigation.navigate('AdminLogin')}
-            style={styles.adminLink}
+            style={uiStyle(styles.adminLink)}
           >
-            <Text style={styles.adminText}>Cổng quản trị</Text>
+            <Text style={uiTextStyle(styles.adminText)}>{uiText("Cổng quản trị")}</Text>
           </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>

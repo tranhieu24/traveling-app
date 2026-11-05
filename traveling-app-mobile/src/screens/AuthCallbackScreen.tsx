@@ -1,3 +1,5 @@
+import { useUiPreferences, uiStyle, uiColor, uiTextStyle, uiText } from '../preferences/ui';
+import { finishAuthNavigation } from '../navigation/authReturn';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,6 +11,7 @@ import { getCapturedAuthCallback, safeAuthError } from '../config/auth';
 import type { RootStackParamList, User } from '../types';
 
 export function AuthCallbackScreen() {
+  useUiPreferences();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { completeSocialSignIn } = useAuth();
   const [error, setError] = useState('');
@@ -35,7 +38,7 @@ export function AuthCallbackScreen() {
         const profile = await completion.current;
         if (alive && !navigated.current) {
           navigated.current = true;
-          navigation.reset({ index: 0, routes: [{ name: profile.role === 'admin' ? 'AdminPortal' : 'MainTabs' }] });
+          finishAuthNavigation(navigation, profile.role);
         }
       } catch (e) {
         if (alive) setError(safeAuthError(e).message);
@@ -48,34 +51,34 @@ export function AuthCallbackScreen() {
   }, [attempt, navigation]);
 
   return (
-    <SafeAreaView style={styles.page}>
-      <View style={styles.card}>
-        {!error && <ActivityIndicator color="#00B8CE" size="large" />}
-        <Text accessibilityRole="header" style={styles.title}>
-          {error ? 'Chưa hoàn tất đăng nhập' : 'Đang hoàn tất đăng nhập...'}
+    <SafeAreaView style={uiStyle(styles.page)}>
+      <View style={uiStyle(styles.card)}>
+        {!error && <ActivityIndicator color={uiColor("#00B8CE")} size="large" />}
+        <Text accessibilityRole="header" style={uiTextStyle(styles.title)}>
+          {error ? uiText('Chưa hoàn tất đăng nhập') : uiText('Đang hoàn tất đăng nhập...')}
         </Text>
-        <Text accessibilityRole={error ? 'alert' : undefined} style={styles.message}>
-          {error || 'Đang xác minh tài khoản. Vui lòng chờ.'}
+        <Text accessibilityRole={error ? 'alert' : undefined} style={uiTextStyle(styles.message)}>
+          {uiText(error || 'Đang xác minh tài khoản. Vui lòng chờ.')}
         </Text>
         {!!error && (
           <>
             <Pressable
               accessibilityRole="button"
-              style={styles.primary}
+              style={uiStyle(styles.primary)}
               onPress={() => {
                 completion.current = null;
                 setError('');
                 setAttempt((n) => n + 1);
               }}
             >
-              <Text style={styles.white}>Thử lại</Text>
+              <Text style={uiTextStyle(styles.white)}>{uiText("Thử lại")}</Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
-              style={styles.secondary}
+              style={uiStyle(styles.secondary)}
               onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Login' }] })}
             >
-              <Text>Quay lại đăng nhập</Text>
+              <Text style={uiTextStyle(undefined)}>{uiText("Quay lại đăng nhập")}</Text>
             </Pressable>
           </>
         )}

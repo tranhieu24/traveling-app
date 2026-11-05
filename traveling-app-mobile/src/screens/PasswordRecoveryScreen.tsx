@@ -1,3 +1,4 @@
+import { useUiPreferences, uiStyle, uiTextStyle, uiText } from '../preferences/ui';
 import React,{useEffect,useRef,useState} from 'react';
 import { ActivityIndicator,KeyboardAvoidingView,Platform,Pressable,ScrollView,StyleSheet,Text,TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,9 +11,12 @@ import { createPasswordRecovery } from '../services/passwordRecovery';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../context/AuthContext';
 const recovery=createPasswordRecovery(supabase.auth);
-export function ForgotPasswordScreen(){return <RecoveryForm/>;}
-export function ResetPasswordScreen(){return <RecoveryForm reset/>;}
+export function ForgotPasswordScreen(){
+  useUiPreferences();return <RecoveryForm/>;}
+export function ResetPasswordScreen(){
+  useUiPreferences();return <RecoveryForm reset/>;}
 function RecoveryForm({reset=false}:{reset?:boolean}) {
+  useUiPreferences();
   const nav=useNavigation<NativeStackNavigationProp<RootStackParamList>>(),{signOut}=useAuth();
   const [email,setEmail]=useState(''),[password,setPassword]=useState(''),[confirm,setConfirm]=useState(''),[ready,setReady]=useState(false),[busy,setBusy]=useState(false),[notice,setNotice]=useState(''),[done,setDone]=useState(false);
   const lock=useRef(false),urlRef=useRef<string|null>(null);
@@ -30,13 +34,13 @@ function RecoveryForm({reset=false}:{reset?:boolean}) {
     if(reset){if(!ready)throw new Error('Vui lòng mở liên kết khôi phục hợp lệ.');if(password!==confirm)throw new Error('Hai mật khẩu chưa khớp.');const result=await recovery.update(password);if(!result.signedOut)await signOut();setPassword('');setConfirm('');setReady(false);setDone(true);setNotice('Đã đổi mật khẩu. Vui lòng đăng nhập bằng mật khẩu mới.');}
     else {setNotice(await recovery.request(email));setDone(true);}
   }catch(e){setNotice(e instanceof Error?e.message:'Chưa hoàn tất. Vui lòng thử lại.');}finally{lock.current=false;setBusy(false);}};
-  return <SafeAreaView style={{flex:1,backgroundColor:'#fff'}}><KeyboardAvoidingView style={{flex:1}} behavior={Platform.OS==='ios'?'padding':undefined}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={s.page}>
-    <Text style={s.title}>{reset?'Đặt lại mật khẩu':'Quên mật khẩu'}</Text>
-    {!done&&(!reset?<><Text>Nhập email tài khoản để yêu cầu liên kết khôi phục.</Text><TextInput accessibilityLabel="Email khôi phục" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoComplete="email" style={s.input} editable={!busy}/></>:ready?<><Text>Mật khẩu mới từ 8 đến 128 ký tự.</Text><TextInput accessibilityLabel="Mật khẩu mới" secureTextEntry autoComplete="new-password" value={password} onChangeText={setPassword} maxLength={128} style={s.input} editable={!busy}/><TextInput accessibilityLabel="Nhập lại mật khẩu mới" secureTextEntry value={confirm} onChangeText={setConfirm} maxLength={128} style={s.input} editable={!busy}/></>:null)}
-    {busy&&<ActivityIndicator/>}{!!notice&&<Text accessibilityRole="alert">{notice}</Text>}
-    {!done&&(!reset||ready)&&<Pressable disabled={busy} style={s.button} onPress={()=>void submit()}><Text style={s.white}>{reset?'Lưu mật khẩu mới':'Gửi liên kết khôi phục'}</Text></Pressable>}
-    {reset&&!ready&&!busy&&!done&&<Pressable style={s.link} onPress={()=>nav.replace('ForgotPassword')}><Text>Gửi liên kết mới</Text></Pressable>}
-    <Pressable disabled={busy} style={s.link} onPress={()=>nav.replace('Login')}><Text>Quay lại đăng nhập</Text></Pressable>
+  return <SafeAreaView style={uiStyle({flex:1,backgroundColor:'#fff'})}><KeyboardAvoidingView style={uiStyle({flex:1})} behavior={Platform.OS==='ios'?'padding':undefined}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={uiStyle(s.page)}>
+    <Text style={uiTextStyle(s.title)}>{reset ? uiText('Đặt lại mật khẩu') : uiText('Quên mật khẩu')}</Text>
+    {!done&&(!reset?<><Text style={uiTextStyle(undefined)}>{uiText("Nhập email tài khoản để yêu cầu liên kết khôi phục.")}</Text><TextInput accessibilityLabel={uiText("Email khôi phục")} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoComplete="email" style={uiStyle(s.input)} editable={!busy}/></>:ready?<><Text style={uiTextStyle(undefined)}>{uiText("Mật khẩu mới từ 8 đến 128 ký tự.")}</Text><TextInput accessibilityLabel={uiText("Mật khẩu mới")} secureTextEntry autoComplete="new-password" value={password} onChangeText={setPassword} maxLength={128} style={uiStyle(s.input)} editable={!busy}/><TextInput accessibilityLabel={uiText("Nhập lại mật khẩu mới")} secureTextEntry value={confirm} onChangeText={setConfirm} maxLength={128} style={uiStyle(s.input)} editable={!busy}/></>:null)}
+    {busy&&<ActivityIndicator/>}{!!notice&&<Text accessibilityRole="alert" style={uiTextStyle(undefined)}>{uiText(notice)}</Text>}
+    {!done&&(!reset||ready)&&<Pressable disabled={busy} style={uiStyle(s.button)} onPress={()=>void submit()}><Text style={uiTextStyle(s.white)}>{reset ? uiText('Lưu mật khẩu mới') : uiText('Gửi liên kết khôi phục')}</Text></Pressable>}
+    {reset&&!ready&&!busy&&!done&&<Pressable style={uiStyle(s.link)} onPress={()=>nav.replace('ForgotPassword')}><Text style={uiTextStyle(undefined)}>{uiText("Gửi liên kết mới")}</Text></Pressable>}
+    <Pressable disabled={busy} style={uiStyle(s.link)} onPress={()=>nav.replace('Login')}><Text style={uiTextStyle(undefined)}>{uiText("Quay lại đăng nhập")}</Text></Pressable>
   </ScrollView></KeyboardAvoidingView></SafeAreaView>;
 }
 const s=StyleSheet.create({page:{padding:24,gap:18,width:'100%',maxWidth:520,alignSelf:'center',paddingTop:50},title:{fontSize:25,fontWeight:'700'},input:{borderWidth:1,borderColor:'#DCE5EA',borderRadius:10,minHeight:48,padding:12,fontSize:16},button:{minHeight:48,padding:12,borderRadius:10,backgroundColor:'#008A9A',alignItems:'center',justifyContent:'center'},white:{color:'#fff',fontWeight:'600'},link:{minHeight:44,justifyContent:'center'}});

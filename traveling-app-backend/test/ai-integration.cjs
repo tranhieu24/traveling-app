@@ -7,11 +7,12 @@ const {randomUUID}=require('node:crypto');
 const {createServer}=require('node:net');
 const assert=require('node:assert/strict');
 const backend=path.resolve(__dirname,'..');
+const selectedProvider=process.argv.includes('--gemini')?'gemini':'openai';
 if(!process.argv.includes('--fixture-child')) {
   const temp=fs.mkdtempSync(path.join(os.tmpdir(),'traveling-ai-integration-'));
   const env={...process.env};
-  for(const key of Object.keys(env))if(/^(DATABASE_|SUPABASE_|STRIPE_|MOCK_|PAYMENT_|BOOKING_|CANCELLATION_|EMAIL_|AI_|OPENAI_|TAX_RATE$|PG)/i.test(key))delete env[key];
-  const child=spawnSync(process.execPath,[__filename,'--fixture-child'],{cwd:temp,env,stdio:'inherit',windowsHide:true});
+  for(const key of Object.keys(env))if(/^(DATABASE_|SUPABASE_|STRIPE_|MOCK_|PAYMENT_|BOOKING_|CANCELLATION_|EMAIL_|AI_|OPENAI_|GEMINI_|TAX_RATE$|PG)/i.test(key))delete env[key];
+  const child=spawnSync(process.execPath,[__filename,'--fixture-child',...(selectedProvider==='gemini'?['--gemini']:[])],{cwd:temp,env,stdio:'inherit',windowsHide:true});
   console.log('Disposable AI fixture retained at '+temp);
   const evidence=path.join(temp,'ai-results.json');
   process.exitCode=child.status===0&&fs.existsSync(evidence)?0:1;
@@ -43,7 +44,7 @@ async function main() {
     const listing=(await client.query("INSERT INTO listings(host_id,category_id,title,city,country,region,price_per_night,cleaning_fee,service_fee,max_guests,bedrooms,beds,bathrooms) VALUES($1,$2,'AI fixture','Đà Lạt','Vietnam','Asia',42,5,5,2,1,1,1) RETURNING id",[host,category])).rows[0].id;
     const bookingId=(await client.query("INSERT INTO bookings(booking_code,guest_id,listing_id,check_in_date,check_out_date,number_of_guests,price_per_night,cleaning_fee,service_fee,total_price,payment_due_at) VALUES('AI-FIXTURE',$1,$2,'2099-07-10','2099-07-12',2,42,5,5,94,now()+interval '15 minutes') RETURNING id",[guest,listing])).rows[0].id;
     const url=new URL(`postgresql://test_owner:${password}@127.0.0.1:${port}/postgres`);url.searchParams.set('options','-c role=traveling_backend');
-    Object.assign(process.env,{NODE_ENV:'test',PAYMENT_MODE:'disabled',DATABASE_SSL:'disable',DATABASE_URL:url.toString(),SUPABASE_URL:'https://example.supabase.co',SUPABASE_SERVICE_ROLE_KEY:'fixture-only',AI_ENABLED:'false',AI_MODEL:'fixture-model',OPENAI_API_KEY:'fixture-only'});
+    Object.assign(process.env,{NODE_ENV:'test',PAYMENT_MODE:'disabled',DATABASE_SSL:'disable',DATABASE_URL:url.toString(),SUPABASE_URL:'https://example.supabase.co',SUPABASE_SERVICE_ROLE_KEY:'fixture-only',AI_ENABLED:'false',AI_PROVIDER:selectedProvider,AI_MODEL:selectedProvider==='gemini'?'gemini-3.6-flash':'fixture-model',OPENAI_API_KEY:'fixture-only',GEMINI_API_KEY:'fixture-only'});
     const get=name=>require(path.join(backend,'dist',name));
     pool=get('config/database.js').pool;
     const supabase=get('config/supabase.js').supabaseAdmin;
@@ -51,7 +52,7 @@ async function main() {
     supabase.auth.getUser=async token=>{const id=Object.keys(tokens).find(id=>tokens[id]===token);return {data:{user:id?{id}:null},error:id?null:{status:401,message:'invalid'}};};
     const config=get('config/ai.js').AI_CONFIG;
     const adapter=get('services/aiProvider.js');let providerCalls=0;
-    adapter.OpenAiProvider.prototype.complete=async()=>{providerCalls++;return {value:{destination:'Da Lat',country:null,dateKind:'exact',checkIn:'2099-07-10',checkOut:'2099-07-12',guests:2,maxBudget:100,currency:'USD',budgetUnit:'night',amenities:[],propertyType:null,unsupported:[]},inputTokens:50,outputTokens:40};};
+    adapter[selectedProvider==='gemini'?'GeminiProvider':'OpenAiProvider'].prototype.complete=async()=>{providerCalls++;return {value:{destination:'Da Lat',country:null,dateKind:'exact',checkIn:'2099-07-10',checkOut:'2099-07-12',guests:2,maxBudget:100,currency:'USD',budgetUnit:'night',amenities:[],propertyType:null,unsupported:[]},inputTokens:50,outputTokens:40};};
     const app=get('app.js').createApp();server=app.listen(0,'127.0.0.1');await new Promise(resolve=>server.on('listening',resolve));
     const api=async(endpoint,body,id)=>{const response=await fetch(`http://127.0.0.1:${server.address().port}/api/v1/ai/${endpoint}`,{method:'POST',headers:{'Content-Type':'application/json',...(id?{Authorization:'Bearer '+tokens[id]}:{})},body:JSON.stringify(body)});return {status:response.status,body:await response.json(),cache:response.headers.get('cache-control')};};
     await check('disabled search provides explicit fallback without provider',async()=>{const r=await api('search',{message:'homestay Da Lat'});assert.equal(r.body.data.reason,'disabled');assert.equal(providerCalls,0);});
@@ -81,6 +82,21 @@ async function main() {
       const ticket=calls.find(r=>r.status==='fulfilled').value;await repo.recordAiUsage(ticket,5,2,false);
       const row=(await client.query('SELECT input_tokens,output_tokens FROM ai_usage_daily WHERE day=$1 AND scope_key=$2',[ticket.day,ticket.key])).rows[0];assert.equal(Number(row.input_tokens),5);assert.equal(Number(row.output_tokens),2);
       config.dailyTokens=1;await assert.rejects(repo.reserveAiBudget('global-blocked',10),e=>e.reason==='quota');
+    });
+    await check('chat suggestions work after model quota and recheck real booking availability',async()=>{
+      const chat=get('services/aiChat.service.js').aiChatService;
+      const before=providerCalls;
+      const context={listingId:listing,city:'Đà Lạt',checkIn:'2099-07-10',checkOut:'2099-07-12',guests:2,maxPrice:100};
+      const available=await chat.reply('gợi ý phòng','chat-fixture',undefined,undefined,context);
+      assert.equal(available.mode,'data');assert.equal(available.sourceRefs[0]?.id,listing);
+      assert.match(available.answer,/42 USD/);
+      const held=(await client.query("INSERT INTO bookings(booking_code,guest_id,listing_id,check_in_date,check_out_date,number_of_guests,price_per_night,cleaning_fee,service_fee,total_price,payment_due_at) VALUES('AI-CHAT-HELD',$1,$2,'2099-07-10','2099-07-12',2,42,5,5,94,now()+interval '15 minutes') RETURNING id",[guest,listing])).rows[0].id;
+      const occupied=await chat.reply('gợi ý phòng','chat-fixture',undefined,undefined,context);
+      assert.equal(occupied.sourceRefs.length,0);assert.match(occupied.answer,/không có chỗ ở/);
+      assert.equal(occupied.searchContext.checkIn,context.checkIn);assert.equal(providerCalls,before);
+      await client.query("UPDATE bookings SET payment_due_at=now()-interval '1 minute' WHERE id=$1",[held]);
+      const released=await chat.reply('gợi ý phòng','chat-fixture',undefined,undefined,context);
+      assert.equal(released.sourceRefs[0]?.id,listing);assert.equal(providerCalls,before);
     });
     await check('anonymous clients cannot access AI usage metadata',async()=>{
       await client.query('BEGIN');try{await client.query('SET LOCAL ROLE anon');await assert.rejects(client.query('SELECT * FROM ai_usage_daily'),e=>e.code==='42501');}finally{await client.query('ROLLBACK');}

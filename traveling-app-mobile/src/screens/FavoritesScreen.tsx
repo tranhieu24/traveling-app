@@ -1,3 +1,4 @@
+import { useUiPreferences, uiClasses, uiColor, uiText, uiStyle } from '../preferences/ui';
 import React from 'react';
 import {
   View,
@@ -18,6 +19,7 @@ import { ListingCard } from '../components/common/ListingCard';
 import { SkeletonListingList } from '../components/common/SkeletonLoader';
 
 export const FavoritesScreen: React.FC = () => {
+  useUiPreferences();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user } = useAuth();
 
@@ -37,22 +39,16 @@ export const FavoritesScreen: React.FC = () => {
   });
 
   const renderEmptyState = () => (
-    <View className="bg-gray-50 flex-1 justify-center items-center px-6">
-      <Heart size={64} color="#FF5A5F" fill="#FF5A5F" />
-      <Text className="text-2xl font-bold text-gray-800 mt-4 mb-2 text-center">
-        Danh sách yêu thích
-      </Text>
-      <Text className="text-sm text-gray-500 text-center max-w-xs leading-5">
-        Lưu những chỗ ở bạn yêu thích để dễ dàng tìm lại sau này.
-      </Text>
+    <View className={uiClasses("bg-gray-50 flex-1 justify-center items-center px-6")}>
+      <Heart size={64} color={uiColor("#FF5A5F")} fill={uiColor("#FF5A5F")} />
+      <Text className={uiClasses("text-2xl font-bold text-gray-800 mt-4 mb-2 text-center")}>{uiText("Danh sách yêu thích")}</Text>
+      <Text className={uiClasses("text-sm text-gray-500 text-center max-w-xs leading-5")}>{uiText("Lưu những chỗ ở bạn yêu thích để dễ dàng tìm lại sau này.")}</Text>
       <TouchableOpacity
         onPress={() => navigation.navigate('MainTabs', { screen: 'SearchTab' })}
         activeOpacity={0.85}
-        className="bg-[#00BCD4] py-3 px-8 rounded-xl shadow-sm mt-6"
+        className={uiClasses("bg-[#00BCD4] py-3 px-8 rounded-xl shadow-sm mt-6")}
       >
-        <Text className="text-white font-semibold text-base text-center">
-          Khám phá chỗ ở
-        </Text>
+        <Text className={uiClasses("text-white font-semibold text-base text-center")}>{uiText("Khám phá chỗ ở")}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -60,33 +56,30 @@ export const FavoritesScreen: React.FC = () => {
   return (
     <SafeAreaView
       edges={['top', 'left', 'right']}
-      style={{ flex: 1, backgroundColor: '#FFFFFF' }}
+      style={uiStyle({ flex: 1, backgroundColor: '#FFFFFF' })}
     >
       {isLoading ? (
-        <View className="flex-1 p-4 bg-white">
+        <View className={uiClasses("flex-1 p-4 bg-white")}>
           <SkeletonListingList count={2} />
         </View>
       ) : !user || favorites.length === 0 ? (
         renderEmptyState()
       ) : (
         <>
-          <View className="px-5 py-4 border-b border-gray-100 bg-white">
-            <Text className="text-2xl font-bold text-gray-900">
-              Danh sách yêu thích
-            </Text>
-            <Text className="text-xs text-gray-500 mt-0.5">
-              {favorites.length} chỗ ở đã lưu
-            </Text>
+          <View className={uiClasses("px-5 py-4 border-b border-gray-100 bg-white")}>
+            <Text className={uiClasses("text-2xl font-bold text-gray-900")}>{uiText("Danh sách yêu thích")}</Text>
+            <Text className={uiClasses("text-xs text-gray-500 mt-0.5")}>
+              {uiText(favorites.length)}{uiText(" chỗ ở đã lưu")}</Text>
           </View>
           <FlatList
             data={favorites}
             keyExtractor={(item) => item.id}
-            contentContainerStyle={{ padding: 16 }}
+            contentContainerStyle={uiStyle({ padding: 16 })}
             refreshControl={
               <RefreshControl
                 refreshing={isRefetching}
                 onRefresh={() => void refetch()}
-                tintColor="#00BCD4"
+                tintColor={uiColor("#00BCD4")}
               />
             }
             renderItem={({ item }) => (

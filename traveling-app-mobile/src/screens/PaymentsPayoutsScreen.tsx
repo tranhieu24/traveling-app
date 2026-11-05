@@ -1,3 +1,5 @@
+import { uiLocale, useUiPreferences, uiStyle, uiText, uiColor, uiTextStyle } from '../preferences/ui';
+
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -47,6 +49,7 @@ const filters: { key: PaymentHistoryFilter; label: string }[] = [
 ];
 
 export const PaymentsPayoutsScreen: React.FC = () => {
+  useUiPreferences();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user, isLoading: authLoading } = useAuth();
   const route = useRoute<RouteProp<RootStackParamList, 'PaymentsPayouts'>>();
@@ -117,164 +120,155 @@ export const PaymentsPayoutsScreen: React.FC = () => {
   ).length;
 
   return (
-    <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={s.screen}>
-      <View style={s.header}>
-        <View style={s.headerInner}>
+    <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={uiStyle(s.screen)}>
+      <View style={uiStyle(s.header)}>
+        <View style={uiStyle(s.headerInner)}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Quay lại hồ sơ"
+            accessibilityLabel={uiText("Quay lại hồ sơ")}
             onPress={back}
-            style={s.headerButton}
+            style={uiStyle(s.headerButton)}
           >
-            <ArrowLeft size={21} color="#566271" />
+            <ArrowLeft size={21} color={uiColor("#566271")} />
           </Pressable>
-          <Text accessibilityRole="header" style={s.headerTitle}>
-            Thanh toán và nhận tiền
-          </Text>
+          <Text accessibilityRole="header" style={uiTextStyle(s.headerTitle)}>{uiText("Thanh toán và nhận tiền")}</Text>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Cập nhật thanh toán"
+            accessibilityLabel={uiText("Cập nhật thanh toán")}
             disabled={!user || authLoading || account.isFetching}
             onPress={() => void account.refetch()}
-            style={[s.headerButton, (!user || account.isFetching) && { opacity: 0.4 }]}
+            style={uiStyle([s.headerButton, (!user || account.isFetching) && { opacity: 0.4 }])}
           >
-            <RefreshCw size={19} color="#81909F" />
+            <RefreshCw size={19} color={uiColor("#81909F")} />
           </Pressable>
         </View>
       </View>
       {authLoading || (!!user && account.isLoading) ? (
-        <View style={s.center}>
-          <ActivityIndicator color="#00B8CE" />
-          <Text style={s.centerCopy}>Đang tải thông tin thanh toán...</Text>
+        <View style={uiStyle(s.center)}>
+          <ActivityIndicator color={uiColor("#00B8CE")} />
+          <Text style={uiTextStyle(s.centerCopy)}>{uiText("Đang tải thông tin thanh toán...")}</Text>
         </View>
       ) : needsLogin ? (
-        <View style={s.center}>
-          <View style={s.emptyIcon}>
-            <LockKeyhole size={29} color="#00ABBF" />
+        <View style={uiStyle(s.center)}>
+          <View style={uiStyle(s.emptyIcon)}>
+            <LockKeyhole size={29} color={uiColor("#00ABBF")} />
           </View>
-          <Text style={s.emptyTitle}>Thông tin thanh toán của bạn được bảo mật</Text>
-          <Text style={s.centerCopy}>
-            {user
-              ? 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'
-              : 'Đăng nhập để xem lịch sử thanh toán, biên lai và hoàn tiền của các đơn đặt chỗ.'}
+          <Text style={uiTextStyle(s.emptyTitle)}>{uiText("Thông tin thanh toán của bạn được bảo mật")}</Text>
+          <Text style={uiTextStyle(s.centerCopy)}>
+            {user ? uiText('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.') : uiText('Đăng nhập để xem lịch sử thanh toán, biên lai và hoàn tiền của các đơn đặt chỗ.')}
           </Text>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Đăng nhập để xem thanh toán"
+            accessibilityLabel={uiText("Đăng nhập để xem thanh toán")}
             onPress={() => navigation.navigate('Login')}
-            style={s.primary}
+            style={uiStyle(s.primary)}
           >
-            <Text style={s.primaryLabel}>Đăng nhập</Text>
+            <Text style={uiTextStyle(s.primaryLabel)}>{uiText("Đăng nhập")}</Text>
           </Pressable>
         </View>
       ) : account.isError && !account.data ? (
-        <View style={s.center}>
-          <AlertCircle size={36} color="#00B8CE" />
-          <Text style={s.emptyTitle}>Không thể tải thông tin thanh toán</Text>
-          <Text style={s.centerCopy}>Vui lòng kiểm tra kết nối rồi thử lại.</Text>
+        <View style={uiStyle(s.center)}>
+          <AlertCircle size={36} color={uiColor("#00B8CE")} />
+          <Text style={uiTextStyle(s.emptyTitle)}>{uiText("Không thể tải thông tin thanh toán")}</Text>
+          <Text style={uiTextStyle(s.centerCopy)}>{uiText("Vui lòng kiểm tra kết nối rồi thử lại.")}</Text>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Tải lại lịch sử thanh toán"
+            accessibilityLabel={uiText("Tải lại lịch sử thanh toán")}
             onPress={() => void account.refetch()}
-            style={s.primary}
+            style={uiStyle(s.primary)}
           >
-            <Text style={s.primaryLabel}>Thử lại</Text>
+            <Text style={uiTextStyle(s.primaryLabel)}>{uiText("Thử lại")}</Text>
           </Pressable>
         </View>
       ) : (
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={s.content}
+          contentContainerStyle={uiStyle(s.content)}
           refreshControl={
             <RefreshControl
               refreshing={account.isRefetching}
               onRefresh={() => void account.refetch()}
-              tintColor="#00B8CE"
+              tintColor={uiColor("#00B8CE")}
             />
           }
         >
-          <View style={s.intro}>
-            <View style={s.introIcon}>
-              <CreditCard size={22} color="#00A8BD" />
+          <View style={uiStyle(s.intro)}>
+            <View style={uiStyle(s.introIcon)}>
+              <CreditCard size={22} color={uiColor("#00A8BD")} />
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={s.introTitle}>Quản lý chi phí cho mọi chuyến đi</Text>
-              <Text style={s.introDescription}>
-                Thanh toán, biên lai và hoàn tiền được quản lý tại một nơi.
-              </Text>
+            <View style={uiStyle({ flex: 1 })}>
+              <Text style={uiTextStyle(s.introTitle)}>{uiText("Quản lý chi phí cho mọi chuyến đi")}</Text>
+              <Text style={uiTextStyle(s.introDescription)}>{uiText("Thanh toán, biên lai và hoàn tiền được quản lý tại một nơi.")}</Text>
             </View>
           </View>
-          <View style={s.summary}>
-            <View style={s.summaryTop}>
-              <Text style={s.summaryLabel}>Tổng đã thanh toán</Text>
-              <Text style={s.currency}>USD</Text>
+          <View style={uiStyle(s.summary)}>
+            <View style={uiStyle(s.summaryTop)}>
+              <Text style={uiTextStyle(s.summaryLabel)}>{uiText("Tổng đã thanh toán")}</Text>
+              <Text style={uiTextStyle(s.currency)}>{uiText("USD")}</Text>
             </View>
-            <Text style={s.total}>{formatPaymentMoney(totals.paid)}</Text>
-            <View style={s.summaryBottom}>
-              <View style={{ flex: 1 }}>
-                <Text style={s.summarySmall}>Cần thanh toán</Text>
-                <Text style={s.summaryValue}>{formatPaymentMoney(totals.outstanding)}</Text>
+            <Text style={uiTextStyle(s.total)}>{uiText(formatPaymentMoney(totals.paid, 'USD', uiLocale()))}</Text>
+            <View style={uiStyle(s.summaryBottom)}>
+              <View style={uiStyle({ flex: 1 })}>
+                <Text style={uiTextStyle(s.summarySmall)}>{uiText("Cần thanh toán")}</Text>
+                <Text style={uiTextStyle(s.summaryValue)}>{uiText(formatPaymentMoney(totals.outstanding, 'USD', uiLocale()))}</Text>
               </View>
-              <View style={s.summaryDivider} />
-              <View style={{ flex: 1 }}>
-                <Text style={s.summarySmall}>Đã hoàn tiền</Text>
-                <Text style={s.summaryValue}>{formatPaymentMoney(totals.refunded)}</Text>
+              <View style={uiStyle(s.summaryDivider)} />
+              <View style={uiStyle({ flex: 1 })}>
+                <Text style={uiTextStyle(s.summarySmall)}>{uiText("Đã hoàn tiền")}</Text>
+                <Text style={uiTextStyle(s.summaryValue)}>{uiText(formatPaymentMoney(totals.refunded, 'USD', uiLocale()))}</Text>
               </View>
             </View>
           </View>
-          <View style={s.tabs}>
+          <View style={uiStyle(s.tabs)}>
             {(['payments', 'payouts'] as const).map((value) => (
               <Pressable
                 key={value}
                 accessibilityRole="tab"
-                accessibilityLabel={value === 'payments' ? 'Thanh toán' : 'Hoàn tiền'}
+                accessibilityLabel={value === 'payments' ? uiText('Thanh toán') : uiText('Hoàn tiền')}
                 accessibilityState={{ selected: tab === value }}
                 aria-selected={tab === value}
                 onPress={() => setTab(value)}
-                style={[s.tab, tab === value && s.activeTab]}
+                style={uiStyle([s.tab, tab === value && s.activeTab])}
               >
-                <Text style={[s.tabLabel, tab === value && s.activeTabLabel]}>
-                  {value === 'payments' ? 'Thanh toán' : 'Hoàn tiền'}
+                <Text style={uiTextStyle([s.tabLabel, tab === value && s.activeTabLabel])}>
+                  {value === 'payments' ? uiText('Thanh toán') : uiText('Hoàn tiền')}
                 </Text>
               </Pressable>
             ))}
           </View>
           {account.isError && (
-            <View style={s.refreshError}>
-              <AlertCircle size={17} color="#AF7A28" />
-              <Text style={s.refreshErrorCopy}>
-                Không thể cập nhật. Đây là thông tin được tải gần nhất.
-              </Text>
+            <View style={uiStyle(s.refreshError)}>
+              <AlertCircle size={17} color={uiColor("#AF7A28")} />
+              <Text style={uiTextStyle(s.refreshErrorCopy)}>{uiText("Không thể cập nhật. Đây là thông tin được tải gần nhất.")}</Text>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Thử cập nhật thanh toán lần nữa"
+                accessibilityLabel={uiText("Thử cập nhật thanh toán lần nữa")}
                 onPress={() => void account.refetch()}
               >
-                <Text style={s.link}>Thử lại</Text>
+                <Text style={uiTextStyle(s.link)}>{uiText("Thử lại")}</Text>
               </Pressable>
             </View>
           )}
           {tab === 'payments' ? (
             <>
-              <View style={s.sectionHeading}>
-                <Text style={s.sectionTitle}>Lịch sử thanh toán</Text>
-                <Text style={s.count}>
-                  {bookings.length} đơn đặt chỗ
-                </Text>
+              <View style={uiStyle(s.sectionHeading)}>
+                <Text style={uiTextStyle(s.sectionTitle)}>{uiText("Lịch sử thanh toán")}</Text>
+                <Text style={uiTextStyle(s.count)}>
+                  {uiText(bookings.length)}{uiText(" đơn đặt chỗ")}</Text>
               </View>
-              <View style={s.filters}>
+              <View style={uiStyle(s.filters)}>
                 {filters.map((item) => (
                   <Pressable
                     key={item.key}
                     accessibilityRole="button"
-                    accessibilityLabel={`Bộ lọc thanh toán: ${item.label}`}
+                    accessibilityLabel={uiText(`Bộ lọc thanh toán: ${item.label}`)}
                     accessibilityState={{ selected: filter === item.key }}
                     aria-pressed={filter === item.key}
                     onPress={() => setFilter(item.key)}
-                    style={[s.filter, filter === item.key && s.activeFilter]}
+                    style={uiStyle([s.filter, filter === item.key && s.activeFilter])}
                   >
-                    <Text style={[s.filterLabel, filter === item.key && s.activeFilterLabel]}>
-                      {item.label}
+                    <Text style={uiTextStyle([s.filterLabel, filter === item.key && s.activeFilterLabel])}>
+                      {uiText(item.label)}
                     </Text>
                   </Pressable>
                 ))}
@@ -300,73 +294,58 @@ export const PaymentsPayoutsScreen: React.FC = () => {
                   />
                 ))
               ) : (
-                <View style={s.emptyCard}>
-                  <View style={s.emptyIcon}>
-                    <CreditCard size={28} color="#00B0C5" />
+                <View style={uiStyle(s.emptyCard)}>
+                  <View style={uiStyle(s.emptyIcon)}>
+                    <CreditCard size={28} color={uiColor("#00B0C5")} />
                   </View>
-                  <Text style={s.emptyTitle}>
-                    {!bookings.length
-                      ? 'Chưa có thanh toán'
-                      : filter === 'outstanding'
-                        ? 'Không có khoản chưa thanh toán'
-                        : 'Chưa có thanh toán hoàn tất'}
+                  <Text style={uiTextStyle(s.emptyTitle)}>
+                    {!bookings.length ? uiText('Chưa có thanh toán') : filter === 'outstanding' ? uiText('Không có khoản chưa thanh toán') : uiText('Chưa có thanh toán hoàn tất')}
                   </Text>
-                  <Text style={s.centerCopy}>
-                    {!bookings.length
-                      ? 'Thanh toán và biên lai chuyến đi sẽ xuất hiện ở đây sau khi bạn đặt chỗ.'
-                      : filter === 'outstanding'
-                        ? 'Hiện không có số dư đơn đặt chỗ cần thanh toán.'
-                        : 'Thanh toán thành công sẽ xuất hiện sau khi được xác nhận.'}
+                  <Text style={uiTextStyle(s.centerCopy)}>
+                    {!bookings.length ? uiText('Thanh toán và biên lai chuyến đi sẽ xuất hiện ở đây sau khi bạn đặt chỗ.') : filter === 'outstanding' ? uiText('Hiện không có số dư đơn đặt chỗ cần thanh toán.') : uiText('Thanh toán thành công sẽ xuất hiện sau khi được xác nhận.')}
                   </Text>
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel={bookings.length ? 'Xem tất cả thanh toán' : 'Khám phá chỗ ở'}
+                    accessibilityLabel={bookings.length ? uiText('Xem tất cả thanh toán') : uiText('Khám phá chỗ ở')}
                     onPress={() =>
                       bookings.length
                         ? setFilter('all')
                         : navigation.navigate('MainTabs', { screen: 'SearchTab' })
                     }
-                    style={s.primary}
+                    style={uiStyle(s.primary)}
                   >
-                    <Text style={s.primaryLabel}>
-                      {bookings.length ? 'Xem tất cả thanh toán' : 'Khám phá chỗ ở'}
+                    <Text style={uiTextStyle(s.primaryLabel)}>
+                      {bookings.length ? uiText('Xem tất cả thanh toán') : uiText('Khám phá chỗ ở')}
                     </Text>
                   </Pressable>
                 </View>
               )}
-              <View style={s.receiptInfo}>
-                <FileText size={21} color="#00A8BD" />
-                <View style={{ flex: 1 }}>
-                  <Text style={s.infoTitle}>Biên lai cho mọi chuyến đi đã thanh toán</Text>
-                  <Text style={s.infoCopy}>
-                    Biên lai PDF có sau khi thanh toán thành công. Phương thức thanh toán được chọn
-                    tại bước thanh toán.
-                  </Text>
+              <View style={uiStyle(s.receiptInfo)}>
+                <FileText size={21} color={uiColor("#00A8BD")} />
+                <View style={uiStyle({ flex: 1 })}>
+                  <Text style={uiTextStyle(s.infoTitle)}>{uiText("Biên lai cho mọi chuyến đi đã thanh toán")}</Text>
+                  <Text style={uiTextStyle(s.infoCopy)}>{uiText("Biên lai PDF có sau khi thanh toán thành công. Phương thức thanh toán được chọn tại bước thanh toán.")}</Text>
                 </View>
               </View>
             </>
           ) : (
             <>
-              <View style={s.sectionHeading}>
-                <Text style={s.sectionTitle}>Hoàn tiền</Text>
-                <Text style={s.count}>
-                  {refunds.length} yêu cầu hoàn tiền
-                </Text>
+              <View style={uiStyle(s.sectionHeading)}>
+                <Text style={uiTextStyle(s.sectionTitle)}>{uiText("Hoàn tiền")}</Text>
+                <Text style={uiTextStyle(s.count)}>
+                  {uiText(refunds.length)}{uiText(" yêu cầu hoàn tiền")}</Text>
               </View>
-              <View style={s.refundInfo}>
-                <ShieldCheck size={23} color="#00A8BD" />
-                <View style={{ flex: 1 }}>
-                  <Text style={s.infoTitle}>Hoàn tiền từ đơn đặt chỗ đã hủy</Text>
-                  <Text style={s.infoCopy}>
-                    Quản trị viên sẽ xem xét từng yêu cầu. Khoản hoàn được duyệt sẽ trả về phương
-                    thức thanh toán ban đầu sau khi xử lý được xác nhận.
-                  </Text>
+              <View style={uiStyle(s.refundInfo)}>
+                <ShieldCheck size={23} color={uiColor("#00A8BD")} />
+                <View style={uiStyle({ flex: 1 })}>
+                  <Text style={uiTextStyle(s.infoTitle)}>{uiText("Hoàn tiền từ đơn đặt chỗ đã hủy")}</Text>
+                  <Text style={uiTextStyle(s.infoCopy)}>{uiText("Quản trị viên sẽ xem xét từng yêu cầu. Khoản hoàn được duyệt sẽ trả về phương thức thanh toán ban đầu sau khi xử lý được xác nhận.")}</Text>
                 </View>
               </View>
               {refunds.length > 0 && (
-                <View style={s.refundCounts}>
-                  <Text style={s.count}>{pendingRefunds} đang chờ hoàn tất</Text>
-                  <Text style={s.count}>{refundedCount} đã hoàn tất</Text>
+                <View style={uiStyle(s.refundCounts)}>
+                  <Text style={uiTextStyle(s.count)}>{uiText(pendingRefunds)}{uiText(" đang chờ hoàn tất")}</Text>
+                  <Text style={uiTextStyle(s.count)}>{uiText(refundedCount)}{uiText(" đã hoàn tất")}</Text>
                 </View>
               )}
               {refunds.length ? (
@@ -379,21 +358,19 @@ export const PaymentsPayoutsScreen: React.FC = () => {
                   />
                 ))
               ) : (
-                <View style={s.emptyCard}>
-                  <View style={s.emptyIcon}>
-                    <RotateCcw size={28} color="#00B0C5" />
+                <View style={uiStyle(s.emptyCard)}>
+                  <View style={uiStyle(s.emptyIcon)}>
+                    <RotateCcw size={28} color={uiColor("#00B0C5")} />
                   </View>
-                  <Text style={s.emptyTitle}>Chưa có khoản hoàn tiền cần theo dõi</Text>
-                  <Text style={s.centerCopy}>
-                    Yêu cầu hoàn tiền cho đơn đã hủy sẽ xuất hiện ở đây cùng trạng thái phê duyệt và xử lý.
-                  </Text>
+                  <Text style={uiTextStyle(s.emptyTitle)}>{uiText("Chưa có khoản hoàn tiền cần theo dõi")}</Text>
+                  <Text style={uiTextStyle(s.centerCopy)}>{uiText("Yêu cầu hoàn tiền cho đơn đã hủy sẽ xuất hiện ở đây cùng trạng thái phê duyệt và xử lý.")}</Text>
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel="Xem đơn đặt chỗ từ mục hoàn tiền"
+                    accessibilityLabel={uiText("Xem đơn đặt chỗ từ mục hoàn tiền")}
                     onPress={viewBookings}
-                    style={s.primary}
+                    style={uiStyle(s.primary)}
                   >
-                    <Text style={s.primaryLabel}>Xem đơn đặt chỗ</Text>
+                    <Text style={uiTextStyle(s.primaryLabel)}>{uiText("Xem đơn đặt chỗ")}</Text>
                   </Pressable>
                 </View>
               )}
@@ -401,19 +378,18 @@ export const PaymentsPayoutsScreen: React.FC = () => {
           )}
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Trợ giúp thanh toán và hoàn tiền"
+            accessibilityLabel={uiText("Trợ giúp thanh toán và hoàn tiền")}
             onPress={() => navigation.navigate('HelpCenter')}
-            style={s.help}
+            style={uiStyle(s.help)}
           >
-            <HelpCircle size={18} color="#94A0AC" />
-            <Text style={s.helpLabel}>Bạn cần hỗ trợ thanh toán hoặc hoàn tiền?</Text>
-            <ArrowUpRight size={17} color="#94A0AC" />
+            <HelpCircle size={18} color={uiColor("#94A0AC")} />
+            <Text style={uiTextStyle(s.helpLabel)}>{uiText("Bạn cần hỗ trợ thanh toán hoặc hoàn tiền?")}</Text>
+            <ArrowUpRight size={17} color={uiColor("#94A0AC")} />
           </Pressable>
-          <Text style={s.updated}>
-            Cập nhật{' '}
-            {accountDate(
+          <Text style={uiTextStyle(s.updated)}>{uiText("Cập nhật")}{uiText(' ')}
+            {uiText(accountDate(
               account.dataUpdatedAt ? new Date(account.dataUpdatedAt).toISOString() : undefined
-            )}
+            ))}
           </Text>
         </ScrollView>
       )}

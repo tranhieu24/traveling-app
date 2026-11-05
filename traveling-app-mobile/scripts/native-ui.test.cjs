@@ -59,6 +59,7 @@ const rn = {
     get: () => ({ width: 390, height: 844, scale: 3, fontScale: 1 }),
     addEventListener: subscription,
   },
+  useWindowDimensions: () => ({ width: 390, height: 844, scale: 3, fontScale: 1 }),
   AccessibilityInfo: {
     isReduceMotionEnabled: () => Promise.resolve(false),
     addEventListener: subscription,
@@ -91,11 +92,18 @@ function load(relative) {
   return mod.exports;
 }
 Module._load = function (request, parent, isMain) {
+  if (request.endsWith('/preferences/ui')) return {
+    useUiPreferences: () => ({ language: 'vi', themeMode: 'light', isDark: false }),
+    uiText: value => value, uiStyle: value => value, uiTextStyle: value => value,
+    uiColor: value => value, uiClasses: value => value, uiLocale: () => 'vi-VN',
+  };
   if (request === 'react-native') return rn;
-  if (request === 'react-native-safe-area-context') return { SafeAreaView: host };
+  if (request === 'react-native-safe-area-context') return { SafeAreaView: host, useSafeAreaInsets: () => ({ top: 47, bottom: 34, left: 0, right: 0 }) };
   if (request === 'react-native-css-interop/jsx-runtime') return jsx;
-  if (request === '@react-navigation/native') return { useNavigation: () => navigation };
+  if (request === '@react-navigation/native') return { useNavigation: () => navigation, useIsFocused: () => true };
+  if (request === './useAiChat') return { useAiChat: () => ({ turns: [], draft: '', busy: false, error: '', cancel() {} }) };
   if (request.endsWith('/context/AuthContext')) return { useAuth: () => auth };
+  if (request.endsWith('/navigation/authReturn')) return { requestLogin() {}, finishAuthNavigation() {}, clearAuthReturn() {} };
   if (request === 'lucide-react-native') return new Proxy({}, { get: () => () => null });
   if (request === '@expo/vector-icons/FontAwesome')
     return { __esModule: true, default: () => null };
@@ -106,7 +114,7 @@ Module._load = function (request, parent, isMain) {
   }
   return originalLoad.call(this, request, parent, isMain);
 };
-let SocialButtons, CreateAccount, Login;
+let SocialButtons, CreateAccount, Login, ChatBubble, BookingStatusTabs;
 try {
   const native = require('react-native-css-interop/dist/runtime/native/api');
   const wrapJsx = require('react-native-css-interop/dist/runtime/wrap-jsx').default;
@@ -115,6 +123,8 @@ try {
   SocialButtons = load('src/components/common/SocialSignInButtons.tsx').SocialSignInButtons;
   CreateAccount = load('src/screens/CreateAccountScreen.tsx').CreateAccountScreen;
   Login = load('src/screens/LoginScreen.tsx').LoginScreen;
+  ChatBubble = load('src/components/ai/ChatBubble.tsx').ChatBubble;
+  BookingStatusTabs = load('src/components/booking/BookingStatusTabs.tsx').BookingStatusTabs;
 } catch (error) {
   Module._load = originalLoad;
   throw error;
@@ -162,6 +172,45 @@ test('iOS login retains a visible primary button and back-button touch target', 
   const back = buttons.find((v) => v.label === 'Go back');
   assert.equal(back.style.width, 44);
   assert.equal(back.style.height, 44);
+});
+
+test('iOS chat bubble retains its touch target and clears the tab bar plus safe area', () => {
+  const bubble = render(ChatBubble).find(value => value.label === 'Mở trò chuyện với trợ lý AI');
+  assert.equal(bubble.style.position, 'absolute');
+  assert.equal(bubble.style.width, 54);
+  assert.equal(bubble.style.height, 54);
+  assert.equal(bubble.style.backgroundColor, '#00ABC0');
+  assert.ok(bubble.style.bottom > 68 + 34);
+});
+
+test('NativeWind late CSS-variable warning reproduces the reported navigation-context getter crash', () => {
+  const { renderComponent, UpgradeState } = require('react-native-css-interop/dist/runtime/native/render-component');
+  const navigationContext = {};
+  Object.defineProperty(navigationContext, 'getKey', { enumerable: true, get() { throw new Error("Couldn't find a navigation context."); } });
+  const state = { pressable: UpgradeState.NONE, animated: UpgradeState.NONE, variables: UpgradeState.NONE, containers: UpgradeState.NONE,
+    canUpgradeWarn: false, originalProps: { children: { _owner: { navigationContext } } } };
+  renderComponent(NativePressable, state, {}, {});
+  state.variables = UpgradeState.SHOULD_UPGRADE;
+  assert.throws(() => renderComponent(NativePressable, state, {}, {}), /Couldn't find a navigation context/);
+});
+
+test('iOS booking filters bypass CSS interop throughout selection and send the real status keys', () => {
+  const statuses = ['all', 'confirmed', 'pending', 'cancelled'];
+  let selected = 'all';
+  for (const next of ['confirmed', 'pending', 'cancelled', 'all', 'pending']) {
+    const tree = BookingStatusTabs({ selected, onChange: value => { selected = value; } });
+    const tabs = tree.props.children;
+    assert.equal(tabs.length, 4);
+    tabs.forEach((tab, index) => {
+      assert.equal(tab.type, NativePressable, 'must stay the base native Pressable, never CssInterop.Pressable');
+      assert.equal(tab.props.className, undefined);
+      assert.equal(tab.props['aria-selected'], statuses[index] === selected);
+      assert.ok(flatten(tab.props.style).minHeight >= 44);
+    });
+    tabs[statuses.indexOf(next)].props.onPress();
+    assert.equal(selected, next);
+    assert.equal(BookingStatusTabs({ selected, onChange() {} }).props.children.filter(tab => tab.props['aria-selected']).length, 1);
+  }
 });
 
 after(() => {

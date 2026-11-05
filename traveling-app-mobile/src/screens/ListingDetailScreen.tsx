@@ -1,5 +1,8 @@
+import { uiLocale, useUiPreferences, uiStyle, uiText, uiColor, uiTextStyle } from '../preferences/ui';
+
+import { requestLogin } from '../navigation/authReturn';
 import { MediaNotice } from '../components/common/MediaNotice';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Linking,
@@ -48,8 +51,9 @@ import { TripDraft } from '../components/booking/TripEditor';
 
 type Notice = { title: string; message: string; login?: boolean; dates?: boolean };
 export const ListingDetailScreen: React.FC = () => {
+  useUiPreferences();
   const {
-    params: { listingId },
+    params: { listingId, openBooking, trip: resumedTrip },
   } = useRoute<RouteProp<RootStackParamList, 'ListingDetail'>>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user, isLoading: authLoading } = useAuth();
@@ -82,10 +86,23 @@ export const ListingDetailScreen: React.FC = () => {
     navigation.canGoBack()
       ? navigation.goBack()
       : navigation.replace('MainTabs', { screen: 'SearchTab' });
+  useEffect(() => {
+    if (!openBooking || !user || !listing) return;
+    navigation.setParams({ openBooking: undefined, trip: undefined });
+    if (resumedTrip) {
+      try {
+        validateTrip(resumedTrip.checkInDate, resumedTrip.checkOutDate, resumedTrip.adults, resumedTrip.children, listing.max_guests);
+        filters.setDates(resumedTrip.checkInDate, resumedTrip.checkOutDate);
+        filters.setGuestCounts(resumedTrip.adults, resumedTrip.children);
+      } catch { /* Invalid or old dates can be corrected in the trip editor. */ }
+    }
+    setTripVisible(true);
+  }, [openBooking, resumedTrip, user?.id, listing?.id, navigation]);
+
   const favorite = async () => {
     if (!listing || favoritePending.current || authLoading) return;
     if (!user) {
-      navigation.navigate('Login');
+      requestLogin(navigation, { name: 'ListingDetail', params: { listingId } });
       return;
     }
     favoritePending.current = true;
@@ -152,7 +169,7 @@ export const ListingDetailScreen: React.FC = () => {
     if (!listing || quotePending.current) return;
     if (!user) {
       setTripVisible(false);
-      navigation.navigate('Login');
+      requestLogin(navigation, { name: 'ListingDetail', params: { listingId, openBooking: true, trip: draft } });
       return;
     }
     validateTrip(
@@ -194,7 +211,7 @@ export const ListingDetailScreen: React.FC = () => {
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 401) {
         setTripVisible(false);
-        navigation.navigate('Login');
+        requestLogin(navigation, { name: 'ListingDetail', params: { listingId, openBooking: true, trip: draft } });
         return;
       }
       throw new Error(errorMessage(error));
@@ -206,7 +223,7 @@ export const ListingDetailScreen: React.FC = () => {
   const bookNow = async () => {
     if (!listing || authLoading || quotePending.current) return;
     if (!user) {
-      navigation.navigate('Login');
+      requestLogin(navigation, { name: 'ListingDetail', params: { listingId, openBooking: true, trip: trip } });
       return;
     }
     try {
@@ -229,8 +246,7 @@ export const ListingDetailScreen: React.FC = () => {
   };
   const openTrip = () => {
     if (authLoading || quotePending.current) return;
-    if (!user) navigation.navigate('Login');
-    else setTripVisible(true);
+    setTripVisible(true);
   };
   const openMap = async () => {
     if (!listing) return;
@@ -263,32 +279,30 @@ export const ListingDetailScreen: React.FC = () => {
 
   if (detail.isLoading || !listing)
     return (
-      <SafeAreaView edges={['top', 'bottom']} style={s.screen}>
-        <View style={s.frame}>
+      <SafeAreaView edges={['top', 'bottom']} style={uiStyle(s.screen)}>
+        <View style={uiStyle(s.frame)}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Back to stays"
+            accessibilityLabel={uiText("Back to stays")}
             onPress={back}
-            style={s.backFallback}
+            style={uiStyle(s.backFallback)}
           >
-            <ChevronLeft size={25} color="#8993A0" />
+            <ChevronLeft size={25} color={uiColor("#8993A0")} />
           </Pressable>
-          <View style={s.fallback}>
+          <View style={uiStyle(s.fallback)}>
             {detail.isLoading ? (
-              <ActivityIndicator color="#00B8CE" />
+              <ActivityIndicator color={uiColor("#00B8CE")} />
             ) : (
               <>
-                <Text style={s.emptyTitle}>Không thể tải chỗ ở này</Text>
-                <Text style={s.muted}>
-                  It may be unavailable, or your connection was interrupted.
-                </Text>
+                <Text style={uiTextStyle(s.emptyTitle)}>{uiText("Không thể tải chỗ ở này")}</Text>
+                <Text style={uiTextStyle(s.muted)}>{uiText("It may be unavailable, or your connection was interrupted.")}</Text>
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Retry room details"
+                  accessibilityLabel={uiText("Retry room details")}
                   onPress={() => void detail.refetch()}
-                  style={s.book}
+                  style={uiStyle(s.book)}
                 >
-                  <Text style={s.bookLabel}>Thử lại</Text>
+                  <Text style={uiTextStyle(s.bookLabel)}>{uiText("Thử lại")}</Text>
                 </Pressable>
               </>
             )}
@@ -302,45 +316,43 @@ export const ListingDetailScreen: React.FC = () => {
   const rating = Number(listing.rating_avg);
   const ratingLabel = count > 0 && Number.isFinite(rating) ? rating.toFixed(1) : 'Mới';
   return (
-    <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={s.screen}>
-      <View style={s.frame}>
+    <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={uiStyle(s.screen)}>
+      <View style={uiStyle(s.frame)}>
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 18 }}
+          contentContainerStyle={uiStyle({ paddingBottom: 18 })}
         >
           <ListingHero
             key={listing.id}
             photos={photos}
             onPhotos={() => setPhotosVisible(true)}
             controls={
-              <View style={s.photoActions}>
+              <View style={uiStyle(s.photoActions)}>
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Go back"
+                  accessibilityLabel={uiText("Go back")}
                   onPress={back}
-                  style={s.circle}
+                  style={uiStyle(s.circle)}
                 >
-                  <ChevronLeft size={24} color="#727C89" />
+                  <ChevronLeft size={24} color={uiColor("#727C89")} />
                 </Pressable>
-                <View style={s.photoRight}>
+                <View style={uiStyle(s.photoRight)}>
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel="Share this place"
+                    accessibilityLabel={uiText("Share this place")}
                     disabled={sharing}
                     onPress={() => void share()}
-                    style={s.circle}
+                    style={uiStyle(s.circle)}
                   >
                     {sharing ? (
-                      <ActivityIndicator color="#00B8CE" />
+                      <ActivityIndicator color={uiColor("#00B8CE")} />
                     ) : (
-                      <Share2 size={18} color="#727C89" />
+                      <Share2 size={18} color={uiColor("#727C89")} />
                     )}
                   </Pressable>
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel={
-                      listing.is_favorite ? 'Xóa khỏi mục yêu thích' : 'Lưu vào mục yêu thích'
-                    }
+                    accessibilityLabel={listing.is_favorite ? uiText('Xóa khỏi mục yêu thích') : uiText('Lưu vào mục yêu thích')}
                     aria-pressed={!!listing.is_favorite}
                     accessibilityState={{
                       selected: !!listing.is_favorite,
@@ -348,15 +360,15 @@ export const ListingDetailScreen: React.FC = () => {
                     }}
                     disabled={savingFavorite || authLoading}
                     onPress={() => void favorite()}
-                    style={s.circle}
+                    style={uiStyle(s.circle)}
                   >
                     {savingFavorite ? (
-                      <ActivityIndicator color="#00B8CE" />
+                      <ActivityIndicator color={uiColor("#00B8CE")} />
                     ) : (
                       <Heart
                         size={19}
-                        color={listing.is_favorite ? '#EC7180' : '#727C89'}
-                        fill={listing.is_favorite ? '#EC7180' : 'transparent'}
+                        color={uiColor(listing.is_favorite ? '#EC7180' : '#727C89')}
+                        fill={uiColor(listing.is_favorite ? '#EC7180' : 'transparent')}
                       />
                     )}
                   </Pressable>
@@ -364,105 +376,104 @@ export const ListingDetailScreen: React.FC = () => {
               </View>
             }
           />
-          <View style={s.intro}>
+          <View style={uiStyle(s.intro)}>
             <MediaNotice context={listing.photo_context} compact />
-            <Text style={s.title}>{listing.title}</Text>
-            <View style={s.location}>
-              <MapPin size={15} color="#00B8CE" />
-              <Text style={s.locationText}>
-                {listing.city}, {listing.country}
+            <Text style={uiTextStyle(s.title)}>{listing.title}</Text>
+            <View style={uiStyle(s.location)}>
+              <MapPin size={15} color={uiColor("#00B8CE")} />
+              <Text style={uiTextStyle(s.locationText)}>
+                {uiText(listing.city)}{uiText(", ")}{uiText(listing.country)}
               </Text>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Xem bản đồ chỗ ở"
+                accessibilityLabel={uiText("Xem bản đồ chỗ ở")}
                 onPress={() => void openMap()}
               >
-                <Text style={s.mapLink}>Xem bản đồ</Text>
+                <Text style={uiTextStyle(s.mapLink)}>{uiText("Xem bản đồ")}</Text>
               </Pressable>
             </View>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Xem tất cả đánh giá của khách"
+              accessibilityLabel={uiText("Xem tất cả đánh giá của khách")}
               onPress={openReviews}
-              style={s.ratingStrip}
+              style={uiStyle(s.ratingStrip)}
             >
-              <Star size={13} color="#EAC44C" fill="#EAC44C" />
-              <Text style={s.ratingSmall}>
-                {ratingLabel}
-                {count ? '/5' : ''}
+              <Star size={13} color={uiColor("#EAC44C")} fill={uiColor("#EAC44C")} />
+              <Text style={uiTextStyle(s.ratingSmall)}>
+                {uiText(ratingLabel)}
+                {count ? uiText('/5') : uiText('')}
               </Text>
-              <View style={{ flex: 1 }} />
-              <Text style={s.reviewCount}>
-                {count} đánh giá
-              </Text>
-              <ChevronRight size={17} color="#A2AAB5" />
+              <View style={uiStyle({ flex: 1 })} />
+              <Text style={uiTextStyle(s.reviewCount)}>
+                {uiText(count)}{uiText(" đánh giá")}</Text>
+              <ChevronRight size={17} color={uiColor("#A2AAB5")} />
             </Pressable>
             {!!favoriteFeedback && (
-              <Text accessibilityLiveRegion="polite" style={s.feedback}>
-                {favoriteFeedback}
+              <Text accessibilityLiveRegion="polite" style={uiTextStyle(s.feedback)}>
+                {uiText(favoriteFeedback)}
               </Text>
             )}
             {detail.isError && (
               <Pressable accessibilityRole="button" onPress={() => detail.refetch()}>
-                <Text style={s.muted}>Không thể cập nhật chỗ ở. Chạm để thử lại.</Text>
+                <Text style={uiTextStyle(s.muted)}>{uiText("Không thể cập nhật chỗ ở. Chạm để thử lại.")}</Text>
               </Pressable>
             )}
           </View>
-          <View style={s.section}>
-            <Text style={s.heading}>Tiện nghi và dịch vụ</Text>
+          <View style={uiStyle(s.section)}>
+            <Text style={uiTextStyle(s.heading)}>{uiText("Tiện nghi và dịch vụ")}</Text>
             <ListingStats listing={listing} />
             {previewAmenities(listing.amenities || []).map((amenity) => (
-              <View key={amenity.id} style={s.amenity}>
+              <View key={amenity.id} style={uiStyle(s.amenity)}>
                 <AmenityIcon amenity={amenity} />
-                <Text style={s.amenityName}>{formatAmenityName(amenity.name)}</Text>
+                <Text style={uiTextStyle(s.amenityName)}>{uiText(formatAmenityName(amenity.name))}</Text>
               </View>
             ))}
             {!listing.amenities?.length && (
-              <Text style={s.muted}>Chỗ ở này chưa liệt kê tiện nghi.</Text>
+              <Text style={uiTextStyle(s.muted)}>{uiText("Chỗ ở này chưa liệt kê tiện nghi.")}</Text>
             )}
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Xem tất cả tiện nghi và dịch vụ"
+              accessibilityLabel={uiText("Xem tất cả tiện nghi và dịch vụ")}
               onPress={() => setPanel('facilities')}
-              style={s.outline}
+              style={uiStyle(s.outline)}
             >
-              <Text style={s.outlineLabel}>Xem tất cả</Text>
+              <Text style={uiTextStyle(s.outlineLabel)}>{uiText("Xem tất cả")}</Text>
             </Pressable>
           </View>
-          <View style={s.section}>
-            <View style={s.headingRow}>
-              <Text style={s.heading}>Đánh giá</Text>
+          <View style={uiStyle(s.section)}>
+            <View style={uiStyle(s.headingRow)}>
+              <Text style={uiTextStyle(s.heading)}>{uiText("Đánh giá")}</Text>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Xem tất cả đánh giá"
+                accessibilityLabel={uiText("Xem tất cả đánh giá")}
                 onPress={openReviews}
-                style={s.seeAll}
+                style={uiStyle(s.seeAll)}
               >
-                <Text style={s.seeAllText}>Xem tất cả</Text>
-                <ChevronRight size={14} color="#A2AAB5" />
+                <Text style={uiTextStyle(s.seeAllText)}>{uiText("Xem tất cả")}</Text>
+                <ChevronRight size={14} color={uiColor("#A2AAB5")} />
               </Pressable>
             </View>
-            <View style={s.reviewScore}>
-              <Text style={s.largeRating}>{ratingLabel}</Text>
-              {count > 0 && <Text style={s.outOf}>/5</Text>}
+            <View style={uiStyle(s.reviewScore)}>
+              <Text style={uiTextStyle(s.largeRating)}>{uiText(ratingLabel)}</Text>
+              {count > 0 && <Text style={uiTextStyle(s.outOf)}>{uiText("/5")}</Text>}
             </View>
             {reviews.isLoading ? (
-              <ActivityIndicator color="#00B8CE" style={{ paddingVertical: 20 }} />
+              <ActivityIndicator color={uiColor("#00B8CE")} style={uiStyle({ paddingVertical: 20 })} />
             ) : reviews.isError ? (
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Retry room reviews"
+                accessibilityLabel={uiText("Retry room reviews")}
                 onPress={() => reviews.refetch()}
               >
-                <Text style={s.muted}>Chưa tải được đánh giá. Chạm để thử lại.</Text>
+                <Text style={uiTextStyle(s.muted)}>{uiText("Chưa tải được đánh giá. Chạm để thử lại.")}</Text>
               </Pressable>
             ) : !reviews.data?.reviews.length ? (
-              <Text style={s.muted}>Chỗ ở này chưa có đánh giá.</Text>
+              <Text style={uiTextStyle(s.muted)}>{uiText("Chỗ ở này chưa có đánh giá.")}</Text>
             ) : (
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ gap: 12 }}
+                contentContainerStyle={uiStyle({ gap: 12 })}
               >
                 {reviews.data.reviews.map((review) => (
                   <ReviewCard key={review.id} review={review} compact onPress={openReviews} />
@@ -470,68 +481,64 @@ export const ListingDetailScreen: React.FC = () => {
               </ScrollView>
             )}
           </View>
-          <View style={s.section}>
-            <Text style={s.heading}>Chính sách</Text>
+          <View style={uiStyle(s.section)}>
+            <Text style={uiTextStyle(s.heading)}>{uiText("Chính sách")}</Text>
             <HouseRules listing={listing} />
-            <Text style={s.subheading}>Điều kiện nhận phòng</Text>
-            <View style={{ maxHeight: 44, overflow: 'hidden' }}>
+            <Text style={uiTextStyle(s.subheading)}>{uiText("Điều kiện nhận phòng")}</Text>
+            <View style={uiStyle({ maxHeight: 44, overflow: 'hidden' })}>
               <CheckinPolicy listing={listing} />
             </View>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="View all room policies"
+              accessibilityLabel={uiText("View all room policies")}
               onPress={() => setPanel('policies')}
-              style={s.outline}
+              style={uiStyle(s.outline)}
             >
-              <Text style={s.outlineLabel}>Xem thêm</Text>
-              <ChevronRight size={14} color="#A6AEB7" />
+              <Text style={uiTextStyle(s.outlineLabel)}>{uiText("Xem thêm")}</Text>
+              <ChevronRight size={14} color={uiColor("#A6AEB7")} />
             </Pressable>
           </View>
-          <View style={s.section}>
+          <View style={uiStyle(s.section)}>
             <MediaNotice context={listing.photo_context} />
-            <Text style={s.heading}>Mô tả</Text>
-            <View style={s.descriptionPhoto}>
+            <Text style={uiTextStyle(s.heading)}>{uiText("Mô tả")}</Text>
+            <View style={uiStyle(s.descriptionPhoto)}>
               <ListingImage url={descriptionPhoto} />
             </View>
-            <Text style={s.description} numberOfLines={4}>
-              {listing.description?.trim() || "Cơ sở chưa cung cấp mô tả cho chỗ ở này."}
+            <Text style={uiTextStyle(s.description)} numberOfLines={4}>
+              {uiText(listing.description?.trim() || "Cơ sở chưa cung cấp mô tả cho chỗ ở này.")}
             </Text>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="View full room description"
+              accessibilityLabel={uiText("View full room description")}
               onPress={() => setPanel('description')}
-              style={s.outline}
+              style={uiStyle(s.outline)}
             >
-              <Text style={s.outlineLabel}>Xem thêm</Text>
-              <ChevronRight size={14} color="#A6AEB7" />
+              <Text style={uiTextStyle(s.outlineLabel)}>{uiText("Xem thêm")}</Text>
+              <ChevronRight size={14} color={uiColor("#A6AEB7")} />
             </Pressable>
           </View>
         </ScrollView>
-        <View style={s.footer}>
+        <View style={uiStyle(s.footer)}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Choose room dates and guests"
+            accessibilityLabel={uiText("Choose room dates and guests")}
             onPress={openTrip}
-            style={s.priceArea}
+            style={uiStyle(s.priceArea)}
           >
-            <Text style={s.from}>
-              From: <Text style={s.price}>{formatPaymentMoney(listing.price_per_night)}</Text>/night
-            </Text>
-            <Text style={s.tripHint} numberOfLines={1}>
-              {trip.checkInDate && trip.checkOutDate
-                ? searchDateLabel(trip.checkInDate, trip.checkOutDate)
-                : 'Chọn ngày'}
+            <Text style={uiTextStyle(s.from)}>{uiText("From: ")}<Text style={uiTextStyle(s.price)}>{uiText(formatPaymentMoney(listing.price_per_night, 'USD', uiLocale()))}</Text>{uiText("/night")}</Text>
+            <Text style={uiTextStyle(s.tripHint)} numberOfLines={1}>
+              {trip.checkInDate && trip.checkOutDate ? uiText(searchDateLabel(trip.checkInDate, trip.checkOutDate, uiLocale())) : uiText('Chọn ngày')}
             </Text>
           </Pressable>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Book now"
+            accessibilityLabel={uiText("Book now")}
             disabled={authLoading || quoting}
             onPress={() => void bookNow()}
-            style={[s.book, (authLoading || quoting) && { opacity: 0.6 }]}
+            style={uiStyle([s.book, (authLoading || quoting) && { opacity: 0.6 }])}
           >
-            {quoting && <ActivityIndicator color="white" size="small" />}
-            <Text style={s.bookLabel}>{quoting ? 'Checking...' : "Đặt phòng"}</Text>
+            {quoting && <ActivityIndicator color={uiColor("white")} size="small" />}
+            <Text style={uiTextStyle(s.bookLabel)}>{quoting ? uiText('Checking...') : uiText("Đặt phòng")}</Text>
           </Pressable>
         </View>
         <ListingPhotoGallery
@@ -566,45 +573,45 @@ export const ListingDetailScreen: React.FC = () => {
           animationType="fade"
           onRequestClose={() => setNotice(null)}
         >
-          <View style={s.noticeOverlay}>
-            <View accessibilityViewIsModal style={s.noticeCard}>
-              <Text accessibilityRole="header" style={s.emptyTitle}>
-                {notice?.title}
+          <View style={uiStyle(s.noticeOverlay)}>
+            <View accessibilityViewIsModal style={uiStyle(s.noticeCard)}>
+              <Text accessibilityRole="header" style={uiTextStyle(s.emptyTitle)}>
+                {uiText(notice?.title)}
               </Text>
-              <Text style={s.noticeText}>{notice?.message}</Text>
+              <Text style={uiTextStyle(s.noticeText)}>{uiText(notice?.message)}</Text>
               {notice?.login && (
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Log in to continue"
+                  accessibilityLabel={uiText("Log in to continue")}
                   onPress={() => {
                     setNotice(null);
-                    navigation.navigate('Login');
+                    requestLogin(navigation, { name: 'ListingDetail', params: { listingId } });
                   }}
-                  style={s.book}
+                  style={uiStyle(s.book)}
                 >
-                  <Text style={s.bookLabel}>Đăng nhập</Text>
+                  <Text style={uiTextStyle(s.bookLabel)}>{uiText("Đăng nhập")}</Text>
                 </Pressable>
               )}
               {notice?.dates && (
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Change room trip dates"
+                  accessibilityLabel={uiText("Change room trip dates")}
                   onPress={() => {
                     setNotice(null);
                     setTripVisible(true);
                   }}
-                  style={s.book}
+                  style={uiStyle(s.book)}
                 >
-                  <Text style={s.bookLabel}>Đổi ngày</Text>
+                  <Text style={uiTextStyle(s.bookLabel)}>{uiText("Đổi ngày")}</Text>
                 </Pressable>
               )}
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Close room notice"
+                accessibilityLabel={uiText("Close room notice")}
                 onPress={() => setNotice(null)}
-                style={s.outline}
+                style={uiStyle(s.outline)}
               >
-                <Text style={s.outlineLabel}>Đóng</Text>
+                <Text style={uiTextStyle(s.outlineLabel)}>{uiText("Đóng")}</Text>
               </Pressable>
             </View>
           </View>

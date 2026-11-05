@@ -1,54 +1,24 @@
-import React, { useEffect, useState } from 'react';
+import { useUiPreferences, uiStyle, uiText } from '../preferences/ui';
+import React, { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
-import { apiClient } from '../services/apiClient';
-import { useAuth } from '../context/AuthContext';
 
 export const SplashScreen: React.FC = () => {
+  useUiPreferences();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { token, user, isLoading } = useAuth();
-  const [isSplashReady, setIsSplashReady] = useState(false);
-
   useEffect(() => {
-    let isActive = true;
-    let navigationTimeout: ReturnType<typeof setTimeout> | undefined;
-
-    const initializeApp = async () => {
-      try {
-        // Ping ngầm /health để đánh thức Render cold start nếu có
-        await apiClient.get('/health', { timeout: 4000 }).catch(() => { });
-      } finally {
-        if (!isActive) return;
-
-        navigationTimeout = setTimeout(() => {
-          setIsSplashReady(true);
-        }, 1200);
-      }
-    };
-
-    initializeApp();
-
-    return () => {
-      isActive = false;
-      if (navigationTimeout) clearTimeout(navigationTimeout);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (isSplashReady && !isLoading) {
-      navigation.replace(token && user ? user.role === 'admin' ? 'AdminPortal' : 'MainTabs' : 'CreateAccount');
-    }
-  }, [isSplashReady, isLoading, token, user, navigation]);
+    navigation.replace('MainTabs', { screen: 'SearchTab' });
+  }, [navigation]);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.logo} accessible accessibilityRole="image" accessibilityLabel="Traveling">
-        <View style={styles.logoStem} />
-        <View style={styles.logoDots}>
-          <View style={[styles.logoDot, styles.purpleDot]} />
-          <View style={[styles.logoDot, styles.blueDot]} />
+    <View style={uiStyle(styles.container)}>
+      <View style={uiStyle(styles.logo)} accessible accessibilityRole="image" accessibilityLabel={uiText("Traveling")}>
+        <View style={uiStyle(styles.logoStem)} />
+        <View style={uiStyle(styles.logoDots)}>
+          <View style={uiStyle([styles.logoDot, styles.purpleDot])} />
+          <View style={uiStyle([styles.logoDot, styles.blueDot])} />
         </View>
       </View>
     </View>

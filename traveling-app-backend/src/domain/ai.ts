@@ -8,6 +8,18 @@ export const aiSearchRequest=z.object({
   },'Invalid IANA timezone'),
 }).strict();
 export const aiHelpRequest=z.object({message:z.string().trim().min(3).max(800),bookingId:z.string().uuid().optional()}).strict();
+export const chatSearchContextSchema=z.object({
+  listingId:z.string().uuid().optional(),
+  categorySlug:z.string().max(50).optional(),city:z.string().max(100).optional(),country:z.string().max(100).optional(),
+  checkIn:z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),checkOut:z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  guests:z.number().int().min(1).max(1000).optional(),maxPrice:z.number().finite().positive().max(10000000).optional(),
+  dateIssue:z.enum(['invalid','ambiguous']).optional(),budgetIssue:z.enum(['currency','unit','trip']).optional(),
+  unsupported:z.boolean().optional(),
+}).strict();
+export type ChatSearchContext=z.infer<typeof chatSearchContextSchema>;
+export const aiChatRequest=z.object({message:z.string().trim().min(2).max(800),listingId:z.string().uuid().optional(),
+  searchContext:chatSearchContextSchema.optional(),timeZone:aiSearchRequest.shape.timeZone,
+}).strict();
 export const searchIntentSchema=z.object({
   destination:z.string().max(100).nullable(),country:z.string().max(100).nullable(),
   dateKind:z.enum(['exact','this_weekend','missing','unclear']),
@@ -26,6 +38,7 @@ export const redactAiInput=(text:string)=>text
   .replace(/[\w.+-]+@[\w.-]+\.[a-z]{2,}/gi,'[email removed]')
   .replace(/\b(?:Bearer\s+)?eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g,'[token removed]')
   .replace(/\bsk-[A-Za-z0-9_-]+/g,'[key removed]')
+  .replace(/\b(?:AIza[A-Za-z0-9_-]{20,}|AQ\.[A-Za-z0-9._~-]{20,})\b/g,'[key removed]')
   .replace(/(?:\+\d[\d .()-]{8,}\d|\b\d{9,15}\b)/g,'[number removed]');
 const amenityAliases:Record<string,string[]>={parking:['cho do xe','bai do xe','free parking','parking'],wifi:['wifi','wi fi','internet'],pool:['ho boi','be boi','pool','swimming pool'],kitchen:['bep','kitchen'],ac:['dieu hoa','may lanh','air conditioning']};
 const amenityKey=(name:string)=>Object.entries(amenityAliases).find(([,names])=>names.includes(fold(name)))?.[0]||fold(name);

@@ -1,4 +1,7 @@
-import React, { useRef, useState } from 'react';
+import { uiLocale, useUiPreferences, uiStyle, uiText, uiColor, uiTextStyle } from '../preferences/ui';
+
+import { requestLogin } from '../navigation/authReturn';
+import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -16,6 +19,7 @@ import { StripeCheckout } from '../components/payments/StripeCheckout';
 import { bookingPaymentDue, formatTripDates } from '../utils/checkout';
 
 export const PaymentScreen: React.FC = () => {
+  useUiPreferences();
   const route = useRoute<RouteProp<RootStackParamList, "Payment">>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { bookingId } = route.params;
@@ -47,8 +51,12 @@ export const PaymentScreen: React.FC = () => {
   const payable = !holdElapsed && !!booking && ['pending', 'confirmed'].includes(booking.booking_status) && !alreadyPaid && booking.payment_status !== 'refunded' && Number(booking.balance_due ?? booking.total_price) > 0;
   const dueNow = booking ? bookingPaymentDue(booking, plan) : 0;
   const remaining = booking ? alreadyPaid ? Number(booking.balance_due || 0) : Math.max(0, Number(booking.balance_due ?? booking.total_price) - dueNow) : 0;
-  const money = (value: number | string) => formatPaymentMoney(value, 'USD');
+  const money = (value: number | string) => formatPaymentMoney(value, 'USD', uiLocale());
   const needsLogin = !authLoading && (!user || axios.isAxiosError(error) && error.response?.status === 401);
+  useEffect(() => {
+    if (!authLoading && !user) requestLogin(navigation, { name: 'Payment', params: { bookingId, plan: route.params.plan } });
+  }, [authLoading, user?.id, navigation]);
+
 
   const pay = async () => {
     if (pending.current || !payable || !booking) return;
@@ -69,65 +77,65 @@ export const PaymentScreen: React.FC = () => {
 
   React.useEffect(()=>{if(Platform.OS==='web' && typeof window!=='undefined' && window.location?.search?.includes('payment_intent'))window.history.replaceState({},'',window.location.pathname);},[]);
   return (
-    <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={styles.screen}>
-      <View style={styles.header}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Quay lại đơn đặt phòng" disabled={paying} onPress={() => navigation.replace('BookingDetail', { bookingId })} style={styles.backButton}><ChevronLeft size={25} color="#90979F" /></Pressable>
-        <Text accessibilityRole="header" style={styles.headerTitle}>Thanh toán</Text><View style={styles.backButton} />
+    <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={uiStyle(styles.screen)}>
+      <View style={uiStyle(styles.header)}>
+        <Pressable accessibilityRole="button" accessibilityLabel={uiText("Quay lại đơn đặt phòng")} disabled={paying} onPress={() => navigation.replace('BookingDetail', { bookingId })} style={uiStyle(styles.backButton)}><ChevronLeft size={25} color={uiColor("#90979F")} /></Pressable>
+        <Text accessibilityRole="header" style={uiTextStyle(styles.headerTitle)}>{uiText("Thanh toán")}</Text><View style={uiStyle(styles.backButton)} />
       </View>
-      <ScrollView contentContainerStyle={styles.content}>
-        {authLoading || !!user && isLoading ? <View style={styles.empty}><ActivityIndicator color="#00B8CE" /><Text style={styles.muted}>Đang tải thông tin thanh toán...</Text></View> : needsLogin ? (
-          <View style={styles.empty}><LockKeyhole size={36} color="#00A4BA" /><Text style={styles.emptyTitle}>Đăng nhập để tiếp tục</Text><Text style={styles.muted}>Thông tin đặt phòng và thanh toán của bạn được bảo vệ.</Text><Pressable accessibilityRole="button" accessibilityLabel="Đăng nhập để thanh toán" onPress={() => navigation.navigate('Login')} style={styles.outlineButton}><Text style={styles.outlineLabel}>Đăng nhập</Text></Pressable></View>
+      <ScrollView contentContainerStyle={uiStyle(styles.content)}>
+        {authLoading || !!user && isLoading ? <View style={uiStyle(styles.empty)}><ActivityIndicator color={uiColor("#00B8CE")} /><Text style={uiTextStyle(styles.muted)}>{uiText("Đang tải thông tin thanh toán...")}</Text></View> : needsLogin ? (
+          <View style={uiStyle(styles.empty)}><LockKeyhole size={36} color={uiColor("#00A4BA")} /><Text style={uiTextStyle(styles.emptyTitle)}>{uiText("Đăng nhập để tiếp tục")}</Text><Text style={uiTextStyle(styles.muted)}>{uiText("Thông tin đặt phòng và thanh toán của bạn được bảo vệ.")}</Text><Pressable accessibilityRole="button" accessibilityLabel={uiText("Đăng nhập để thanh toán")} onPress={() => requestLogin(navigation, { name: 'Payment', params: { bookingId, plan: route.params.plan } })} style={uiStyle(styles.outlineButton)}><Text style={uiTextStyle(styles.outlineLabel)}>{uiText("Đăng nhập")}</Text></Pressable></View>
         ) : isError || !booking ? (
-          <View style={styles.empty}><AlertCircle size={36} color="#9CA3AF" /><Text style={styles.emptyTitle}>Chưa tải được thanh toán</Text><Pressable accessibilityRole="button" accessibilityLabel="Tải lại thông tin thanh toán" onPress={() => { void refetch(); }} style={styles.outlineButton}><Text style={styles.outlineLabel}>Thử lại</Text></Pressable></View>
+          <View style={uiStyle(styles.empty)}><AlertCircle size={36} color={uiColor("#9CA3AF")} /><Text style={uiTextStyle(styles.emptyTitle)}>{uiText("Chưa tải được thanh toán")}</Text><Pressable accessibilityRole="button" accessibilityLabel={uiText("Tải lại thông tin thanh toán")} onPress={() => { void refetch(); }} style={uiStyle(styles.outlineButton)}><Text style={uiTextStyle(styles.outlineLabel)}>{uiText("Thử lại")}</Text></Pressable></View>
         ) : (
           <>
             <BookingHold booking={booking} onElapsed={setHoldElapsed} onRefresh={()=>void refetch()} onRebook={()=>navigation.replace('ListingDetail',{listingId:booking.listing_id})}/>
-            <View style={styles.amountHeader}>
-              <Text style={styles.eyebrow}>{alreadyPaid ? "Đã ghi nhận thanh toán" : plan === 'balance' ? "Số tiền còn lại" : "Số tiền cần thanh toán"}</Text>
-              <Text style={styles.amount}>{alreadyPaid ? money(booking.amount_paid || 0) : money(dueNow)}</Text>
-              <Text style={styles.planLabel}>{plan === 'deposit' ? "Trả cọc trước" : plan === 'balance' ? "Thanh toán phần còn lại" : "Thanh toán toàn bộ"}</Text>
+            <View style={uiStyle(styles.amountHeader)}>
+              <Text style={uiTextStyle(styles.eyebrow)}>{alreadyPaid ? uiText("Đã ghi nhận thanh toán") : plan === 'balance' ? uiText("Số tiền còn lại") : uiText("Số tiền cần thanh toán")}</Text>
+              <Text style={uiTextStyle(styles.amount)}>{alreadyPaid ? uiText(money(booking.amount_paid || 0)) : uiText(money(dueNow))}</Text>
+              <Text style={uiTextStyle(styles.planLabel)}>{plan === 'deposit' ? uiText("Trả cọc trước") : plan === 'balance' ? uiText("Thanh toán phần còn lại") : uiText("Thanh toán toàn bộ")}</Text>
             </View>
-            <View style={styles.staySummary}>
-              <Text style={styles.stayTitle}>{booking.listing_title}</Text>
-              <Text style={styles.muted}>{formatTripDates(booking.check_in_date.slice(0, 10), booking.check_out_date.slice(0, 10))} / {booking.number_of_guests} khách</Text>
-              <Text selectable style={styles.reference}>Mã đặt phòng: {booking.booking_code}</Text>
+            <View style={uiStyle(styles.staySummary)}>
+              <Text style={uiTextStyle(styles.stayTitle)}>{booking.listing_title}</Text>
+              <Text style={uiTextStyle(styles.muted)}>{uiText(formatTripDates(booking.check_in_date.slice(0, 10), booking.check_out_date.slice(0, 10)))}{uiText(" / ")}{uiText(booking.number_of_guests)}{uiText(" khách")}</Text>
+              <Text selectable style={uiTextStyle(styles.reference)}>{uiText("Mã đặt phòng: ")}{uiText(booking.booking_code)}</Text>
             </View>
             {alreadyPaid ? (
-              <View style={styles.notice}><Check size={22} color="#15803D" /><Text style={styles.noticeText}>Khoản thanh toán này đã hoàn tất. Bạn có thể xem chứng từ bên dưới.</Text></View>
+              <View style={uiStyle(styles.notice)}><Check size={22} color={uiColor("#15803D")} /><Text style={uiTextStyle(styles.noticeText)}>{uiText("Khoản thanh toán này đã hoàn tất. Bạn có thể xem chứng từ bên dưới.")}</Text></View>
             ) : !payable ? (
-              <View style={styles.notice}><AlertCircle size={22} color="#C78328" /><Text style={styles.noticeText}>Đơn hiện chưa thể nhận thanh toán. Hãy kiểm tra trạng thái trong chi tiết đặt phòng.</Text></View>
+              <View style={uiStyle(styles.notice)}><AlertCircle size={22} color={uiColor("#C78328")} /><Text style={uiTextStyle(styles.noticeText)}>{uiText("Đơn hiện chưa thể nhận thanh toán. Hãy kiểm tra trạng thái trong chi tiết đặt phòng.")}</Text></View>
             ) : (
               <>
-                <Text style={styles.sectionTitle}>Phương thức thanh toán</Text>
-                {config.data?.mode==='mock' && <><View style={styles.card} accessibilityRole="radio" aria-checked={true} accessibilityState={{ checked: true }} accessibilityLabel="Thẻ mô phỏng kết thúc bằng 4242">
-                  <View style={styles.cardTop}><CreditCard size={25} color="#008D9F" /><Text style={styles.cardBadge}>THẺ MÔ PHỎNG</Text></View>
-                  <Text style={styles.cardNumber}>{'4242   \u2022\u2022\u2022\u2022   \u2022\u2022\u2022\u2022   4242'}</Text>
-                  <View style={styles.cardBottom}><Text style={styles.cardCaption}>Thẻ thanh toán</Text><View style={styles.checkBadge}><Check size={13} color="#FFFFFF" /></View></View>
+                <Text style={uiTextStyle(styles.sectionTitle)}>{uiText("Phương thức thanh toán")}</Text>
+                {config.data?.mode==='mock' && <><View style={uiStyle(styles.card)} accessibilityRole="radio" aria-checked={true} accessibilityState={{ checked: true }} accessibilityLabel={uiText("Thẻ mô phỏng kết thúc bằng 4242")}>
+                  <View style={uiStyle(styles.cardTop)}><CreditCard size={25} color={uiColor("#008D9F")} /><Text style={uiTextStyle(styles.cardBadge)}>{uiText("THẺ MÔ PHỎNG")}</Text></View>
+                  <Text style={uiTextStyle(styles.cardNumber)}>{uiText('4242   \u2022\u2022\u2022\u2022   \u2022\u2022\u2022\u2022   4242')}</Text>
+                  <View style={uiStyle(styles.cardBottom)}><Text style={uiTextStyle(styles.cardCaption)}>{uiText("Thẻ thanh toán")}</Text><View style={uiStyle(styles.checkBadge)}><Check size={13} color={uiColor("#FFFFFF")} /></View></View>
                 </View>
-                <Text style={styles.mockNote}>Thanh toán mô phỏng, không trừ tiền thật.</Text></>}
-                {config.isLoading && <Text style={styles.muted}>Đang kiểm tra cổng thanh toán...</Text>}
-                {(config.isError || config.data?.mode==='disabled') && <Text accessibilityRole="alert" style={styles.error}>Cổng thanh toán chưa sẵn sàng. Đơn chưa được thanh toán.</Text>}
-                {config.data?.mode==='stripe_test' && (config.data.publishableKey ? <StripeCheckout bookingId={bookingId} plan={plan} publishableKey={config.data.publishableKey} onComplete={finishPayment} onBusy={setPaying}/> : <Text style={styles.error}>Backend chưa cấu hình publishable key Stripe test.</Text>)}
+                <Text style={uiTextStyle(styles.mockNote)}>{uiText("Thanh toán mô phỏng, không trừ tiền thật.")}</Text></>}
+                {config.isLoading && <Text style={uiTextStyle(styles.muted)}>{uiText("Đang kiểm tra cổng thanh toán...")}</Text>}
+                {(config.isError || config.data?.mode==='disabled') && <Text accessibilityRole="alert" style={uiTextStyle(styles.error)}>{uiText("Cổng thanh toán chưa sẵn sàng. Đơn chưa được thanh toán.")}</Text>}
+                {config.data?.mode==='stripe_test' && (config.data.publishableKey ? <StripeCheckout bookingId={bookingId} plan={plan} publishableKey={config.data.publishableKey} onComplete={finishPayment} onBusy={setPaying}/> : <Text style={uiTextStyle(styles.error)}>{uiText("Backend chưa cấu hình publishable key Stripe test.")}</Text>)}
               </>
             )}
-            <View style={styles.breakdown}>
-              <Text style={styles.sectionTitle}>Tóm tắt thanh toán</Text>
-              <View style={styles.priceRow}><Text style={styles.priceLabel}>Tổng chuyến đi (USD)</Text><Text style={styles.priceValue}>{money(booking.total_price)}</Text></View>
-              {Number(booking.amount_paid || 0) > 0 && <View style={styles.priceRow}><Text style={styles.priceLabel}>Đã thanh toán</Text><Text style={styles.priceValue}>{money(booking.amount_paid!)}</Text></View>}
-              {!alreadyPaid && <View style={styles.priceRow}><Text style={styles.priceLabel}>Cần trả ngay</Text><Text style={styles.priceValue}>{money(dueNow)}</Text></View>}
-              <View style={styles.totalRow}><Text style={styles.priceLabel}>Còn lại sau thanh toán</Text><Text style={styles.priceValue}>{money(remaining)}</Text></View>
+            <View style={uiStyle(styles.breakdown)}>
+              <Text style={uiTextStyle(styles.sectionTitle)}>{uiText("Tóm tắt thanh toán")}</Text>
+              <View style={uiStyle(styles.priceRow)}><Text style={uiTextStyle(styles.priceLabel)}>{uiText("Tổng chuyến đi (USD)")}</Text><Text style={uiTextStyle(styles.priceValue)}>{uiText(money(booking.total_price))}</Text></View>
+              {Number(booking.amount_paid || 0) > 0 && <View style={uiStyle(styles.priceRow)}><Text style={uiTextStyle(styles.priceLabel)}>{uiText("Đã thanh toán")}</Text><Text style={uiTextStyle(styles.priceValue)}>{uiText(money(booking.amount_paid!))}</Text></View>}
+              {!alreadyPaid && <View style={uiStyle(styles.priceRow)}><Text style={uiTextStyle(styles.priceLabel)}>{uiText("Cần trả ngay")}</Text><Text style={uiTextStyle(styles.priceValue)}>{uiText(money(dueNow))}</Text></View>}
+              <View style={uiStyle(styles.totalRow)}><Text style={uiTextStyle(styles.priceLabel)}>{uiText("Còn lại sau thanh toán")}</Text><Text style={uiTextStyle(styles.priceValue)}>{uiText(money(remaining))}</Text></View>
             </View>
           </>
         )}
       </ScrollView>
-      {!!booking && !needsLogin && <View style={styles.footer}>
-        {!!paymentError && <Text accessibilityRole="alert" style={styles.error}>{paymentError}</Text>}
+      {!!booking && !needsLogin && <View style={uiStyle(styles.footer)}>
+        {!!paymentError && <Text accessibilityRole="alert" style={uiTextStyle(styles.error)}>{uiText(paymentError)}</Text>}
         {(!payable || config.data?.mode==='mock') && <Pressable
-          accessibilityRole="button" accessibilityLabel={alreadyPaid ? "Xem chứng từ thanh toán" : payable ? 'Thanh toán ngay' : 'Xem trạng thái đặt phòng'} disabled={paying}
+          accessibilityRole="button" accessibilityLabel={alreadyPaid ? uiText("Xem chứng từ thanh toán") : payable ? uiText('Thanh toán ngay') : uiText('Xem trạng thái đặt phòng')} disabled={paying}
           onPress={() => alreadyPaid ? navigation.replace('BookingSuccess', { bookingId, bookingCode: booking.booking_code }) : payable ? pay() : navigation.replace('BookingDetail', { bookingId })}
-          style={[styles.payButton, paying && styles.disabled]}
-        >{paying && <ActivityIndicator size="small" color="#FFFFFF" />}<Text style={styles.payLabel}>{paying ? "Đang xử lý thanh toán..." : alreadyPaid ? "Xem chứng từ thanh toán" : payable ? `Thanh toán ${money(dueNow)}` : "Xem đặt phòng"}</Text></Pressable>}
-        {payable && config.data?.mode==='mock' && <View style={styles.secureRow}><LockKeyhole size={12} color="#9CA3AF" /><Text style={styles.secureText}>Thanh toán mô phỏng - không trừ tiền thật</Text></View>}
+          style={uiStyle([styles.payButton, paying && styles.disabled])}
+        >{paying && <ActivityIndicator size="small" color={uiColor("#FFFFFF")} />}<Text style={uiTextStyle(styles.payLabel)}>{paying ? uiText("Đang xử lý thanh toán...") : alreadyPaid ? uiText("Xem chứng từ thanh toán") : payable ? uiText(`Thanh toán ${money(dueNow)}`) : uiText("Xem đặt phòng")}</Text></Pressable>}
+        {payable && config.data?.mode==='mock' && <View style={uiStyle(styles.secureRow)}><LockKeyhole size={12} color={uiColor("#9CA3AF")} /><Text style={uiTextStyle(styles.secureText)}>{uiText("Thanh toán mô phỏng - không trừ tiền thật")}</Text></View>}
       </View>}
     </SafeAreaView>
   );

@@ -1,3 +1,5 @@
+import { uiLocale, useUiPreferences, uiStyle, uiTextStyle, uiText, uiColor } from '../../preferences/ui';
+
 import React, { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import {
@@ -30,11 +32,11 @@ const colors: Record<StatusTone, { backgroundColor: string; color: string }> = {
   error: { backgroundColor: '#FDEEF0', color: '#BD4053' },
   neutral: { backgroundColor: '#F0F2F5', color: '#737D89' },
 };
-export const PaymentBadge = ({ label, tone }: { label: string; tone: StatusTone }) => (
-  <View style={[s.badge, { backgroundColor: colors[tone].backgroundColor }]}>
-    <Text style={[s.badgeText, { color: colors[tone].color }]}>{label}</Text>
+export const PaymentBadge = ({ label, tone }: { label: string; tone: StatusTone }) => { useUiPreferences(); return ((
+  <View style={uiStyle([s.badge, { backgroundColor: colors[tone].backgroundColor }])}>
+    <Text style={uiTextStyle([s.badgeText, { color: colors[tone].color }])}>{uiText(label)}</Text>
   </View>
-);
+)); };
 
 export const PaymentBookingCard = ({
   booking,
@@ -55,142 +57,141 @@ export const PaymentBookingCard = ({
   receiptMessage?: string;
   receiptError?: string;
 }) => {
+  useUiPreferences();
   const [expanded, setExpanded] = useState(false);
   const status = getAccountBookingStatus(booking),
     action = getAccountPaymentAction(booking);
   const payments = [...(booking.payments || [])].reverse();
   return (
-    <View style={s.card}>
+    <View style={uiStyle(s.card)}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`Xem đơn đặt chỗ ${booking.booking_code}`}
+        accessibilityLabel={uiText(`Xem đơn đặt chỗ ${booking.booking_code}`)}
         onPress={onOpen}
-        style={s.cardHeader}
+        style={uiStyle(s.cardHeader)}
       >
-        <View style={s.icon}>
-          <CreditCard size={21} color="#00A8BD" />
+        <View style={uiStyle(s.icon)}>
+          <CreditCard size={21} color={uiColor("#00A8BD")} />
         </View>
-        <View style={{ flex: 1 }}>
-          <Text style={s.title}>{booking.listing_title}</Text>
-          <Text style={s.reference}>{booking.booking_code}</Text>
+        <View style={uiStyle({ flex: 1 })}>
+          <Text style={uiTextStyle(s.title)}>{booking.listing_title}</Text>
+          <Text style={uiTextStyle(s.reference)}>{uiText(booking.booking_code)}</Text>
         </View>
-        <ChevronRight size={19} color="#A5ADB7" />
+        <ChevronRight size={19} color={uiColor("#A5ADB7")} />
       </Pressable>
-      <View style={s.statusRow}>
-        <Text style={s.date}>
-          {formatTripDates(booking.check_in_date.slice(0, 10), booking.check_out_date.slice(0, 10))}
+      <View style={uiStyle(s.statusRow)}>
+        <Text style={uiTextStyle(s.date)}>
+          {uiText(formatTripDates(booking.check_in_date.slice(0, 10), booking.check_out_date.slice(0, 10)))}
         </Text>
         <PaymentBadge {...status} />
       </View>
-      <View style={s.amountRow}>
-        <View style={{ flex: 1 }}>
-          <Text style={s.small}>Tổng tiền đặt chỗ</Text>
-          <Text style={s.amount}>{formatPaymentMoney(booking.total_price)}</Text>
+      <View style={uiStyle(s.amountRow)}>
+        <View style={uiStyle({ flex: 1 })}>
+          <Text style={uiTextStyle(s.small)}>{uiText("Tổng tiền đặt chỗ")}</Text>
+          <Text style={uiTextStyle(s.amount)}>{uiText(formatPaymentMoney(booking.total_price, 'USD', uiLocale()))}</Text>
         </View>
-        <View style={{ alignItems: 'flex-end' }}>
-          <Text style={s.small}>Đã thanh toán</Text>
-          <Text style={s.paid}>{formatPaymentMoney(paidCents(booking) / 100)}</Text>
+        <View style={uiStyle({ alignItems: 'flex-end' })}>
+          <Text style={uiTextStyle(s.small)}>{uiText("Đã thanh toán")}</Text>
+          <Text style={uiTextStyle(s.paid)}>{uiText(formatPaymentMoney(paidCents(booking) / 100, 'USD', uiLocale()))}</Text>
         </View>
       </View>
       {action && (
-        <View style={s.balanceRow}>
-          <Text style={s.small}>Số dư chưa thanh toán</Text>
-          <Text style={s.balance}>
-            {formatPaymentMoney(booking.balance_due ?? booking.total_price)}
+        <View style={uiStyle(s.balanceRow)}>
+          <Text style={uiTextStyle(s.small)}>{uiText("Số dư chưa thanh toán")}</Text>
+          <Text style={uiTextStyle(s.balance)}>
+            {uiText(formatPaymentMoney(booking.balance_due ?? booking.total_price, 'USD', uiLocale()))}
           </Text>
         </View>
       )}
-      <View style={s.actions}>
+      <View style={uiStyle(s.actions)}>
         {action && (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`${action.label} cho đơn ${booking.booking_code}`}
+            accessibilityLabel={uiText(`${action.label} cho đơn ${booking.booking_code}`)}
             onPress={() => onPay(action.plan)}
-            style={s.payButton}
+            style={uiStyle(s.payButton)}
           >
-            <Text style={s.payLabel}>{action.label}</Text>
-            <ArrowUpRight size={16} color="white" />
+            <Text style={uiTextStyle(s.payLabel)}>{uiText(action.label)}</Text>
+            <ArrowUpRight size={16} color={uiColor("white")} />
           </Pressable>
         )}
         {hasReceipt(booking) && (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`Tải biên lai cho đơn ${booking.booking_code}`}
+            accessibilityLabel={uiText(`Tải biên lai cho đơn ${booking.booking_code}`)}
             accessibilityState={{ disabled: receiptDisabled, busy: downloading }}
             disabled={receiptDisabled}
             onPress={onReceipt}
-            style={[s.receiptButton, receiptDisabled && { opacity: 0.5 }]}
+            style={uiStyle([s.receiptButton, receiptDisabled && { opacity: 0.5 }])}
           >
             {downloading ? (
-              <ActivityIndicator size="small" color="#71808D" />
+              <ActivityIndicator size="small" color={uiColor("#71808D")} />
             ) : (
-              <Download size={16} color="#71808D" />
+              <Download size={16} color={uiColor("#71808D")} />
             )}
-            <Text style={s.receiptLabel}>{downloading ? 'Đang chuẩn bị...' : 'Biên lai PDF'}</Text>
+            <Text style={uiTextStyle(s.receiptLabel)}>{downloading ? uiText('Đang chuẩn bị...') : uiText('Biên lai PDF')}</Text>
           </Pressable>
         )}
       </View>
       {!!receiptError && (
-        <Text accessibilityRole="alert" style={s.error}>
-          {receiptError}
+        <Text accessibilityRole="alert" style={uiTextStyle(s.error)}>
+          {uiText(receiptError)}
         </Text>
       )}
       {!!receiptMessage && (
-        <Text accessibilityLiveRegion="polite" style={s.success}>
-          {receiptMessage}
+        <Text accessibilityLiveRegion="polite" style={uiTextStyle(s.success)}>
+          {uiText(receiptMessage)}
         </Text>
       )}
       {payments.length > 0 ? (
         <>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`Lịch sử thanh toán của đơn ${booking.booking_code}`}
+            accessibilityLabel={uiText(`Lịch sử thanh toán của đơn ${booking.booking_code}`)}
             accessibilityState={{ expanded }}
             aria-expanded={expanded}
             onPress={() => setExpanded(!expanded)}
-            style={s.historyToggle}
+            style={uiStyle(s.historyToggle)}
           >
-            <Text style={s.historyLabel}>
-              {payments.length} giao dịch thanh toán
-            </Text>
+            <Text style={uiTextStyle(s.historyLabel)}>
+              {uiText(payments.length)}{uiText(" giao dịch thanh toán")}</Text>
             {expanded ? (
-              <ChevronUp size={16} color="#8E99A6" />
+              <ChevronUp size={16} color={uiColor("#8E99A6")} />
             ) : (
-              <ChevronDown size={16} color="#8E99A6" />
+              <ChevronDown size={16} color={uiColor("#8E99A6")} />
             )}
           </Pressable>
           {expanded &&
             payments.map((payment) => {
               const attempt = getPaymentAttemptStatus(payment);
               return (
-                <View key={payment.id} style={s.attempt}>
-                  <View style={s.attemptHeader}>
-                    <Text style={s.transactionAmount}>
-                      {formatPaymentMoney(payment.amount, payment.currency || 'USD')}
+                <View key={payment.id} style={uiStyle(s.attempt)}>
+                  <View style={uiStyle(s.attemptHeader)}>
+                    <Text style={uiTextStyle(s.transactionAmount)}>
+                      {uiText(formatPaymentMoney(payment.amount, payment.currency || 'USD', uiLocale()))}
                     </Text>
                     <PaymentBadge {...attempt} />
                   </View>
-                  <Text style={s.date}>
-                    {accountPaymentMethod(payment)}
-                    {' \u00b7 '}
-                    {accountDate(payment.paid_at || payment.created_at)}
+                  <Text style={uiTextStyle(s.date)}>
+                    {uiText(accountPaymentMethod(payment))}
+                    {uiText(' \u00b7 ')}
+                    {uiText(accountDate(payment.paid_at || payment.created_at))}
                   </Text>
-                  <Text selectable style={s.transactionReference}>
-                    Mã tham chiếu:{' '}
-                    {payment.transaction_reference || payment.provider_payment_id || payment.id}
+                  <Text selectable style={uiTextStyle(s.transactionReference)}>{uiText("Mã tham chiếu:")}{uiText(' ')}
+                    {uiText(payment.transaction_reference || payment.provider_payment_id || payment.id)}
                   </Text>
                   {payment.requested_plan === 'deposit' && (
-                    <Text style={s.date}>Thanh toán tiền cọc</Text>
+                    <Text style={uiTextStyle(s.date)}>{uiText("Thanh toán tiền cọc")}</Text>
                   )}
                   {payment.requested_plan === 'balance' && (
-                    <Text style={s.date}>Số tiền còn lại</Text>
+                    <Text style={uiTextStyle(s.date)}>{uiText("Số tiền còn lại")}</Text>
                   )}
                 </View>
               );
             })}
         </>
       ) : (
-        <Text style={s.noTransactions}>Chưa có giao dịch thanh toán.</Text>
+        <Text style={uiTextStyle(s.noTransactions)}>{uiText("Chưa có giao dịch thanh toán.")}</Text>
       )}
     </View>
   );
@@ -205,62 +206,62 @@ export const RefundCard = ({
   refund: BookingRefund;
   onOpen: () => void;
 }) => {
+  useUiPreferences();
   const status = refundStatus[refund.status];
   const payment = booking.payments?.find((item) => item.id === refund.payment_id);
   return (
-    <View style={s.card}>
-      <View style={s.cardHeader}>
-        <View style={[s.icon, { backgroundColor: '#ECF8F1' }]}>
-          <RotateCcw size={21} color="#43996A" />
+    <View style={uiStyle(s.card)}>
+      <View style={uiStyle(s.cardHeader)}>
+        <View style={uiStyle([s.icon, { backgroundColor: '#ECF8F1' }])}>
+          <RotateCcw size={21} color={uiColor("#43996A")} />
         </View>
-        <View style={{ flex: 1 }}>
-          <Text style={s.title}>{booking.listing_title}</Text>
-          <Text style={s.reference}>{booking.booking_code}</Text>
+        <View style={uiStyle({ flex: 1 })}>
+          <Text style={uiTextStyle(s.title)}>{booking.listing_title}</Text>
+          <Text style={uiTextStyle(s.reference)}>{uiText(booking.booking_code)}</Text>
         </View>
       </View>
-      <View style={s.refundAmountRow}>
-        <Text style={s.refundAmount}>
-          {formatPaymentMoney(refund.amount, payment?.currency || 'USD')}
+      <View style={uiStyle(s.refundAmountRow)}>
+        <Text style={uiTextStyle(s.refundAmount)}>
+          {uiText(formatPaymentMoney(refund.amount, payment?.currency || 'USD', uiLocale()))}
         </Text>
         <PaymentBadge {...status} />
       </View>
-      <Text style={s.refundDescription}>{status.description}</Text>
-      <View style={s.refundDetails}>
-        <View style={s.detailRow}>
-          <Text style={s.small}>Ngày yêu cầu</Text>
-          <Text style={s.detailValue}>{accountDate(refund.created_at)}</Text>
+      <Text style={uiTextStyle(s.refundDescription)}>{uiText(status.description)}</Text>
+      <View style={uiStyle(s.refundDetails)}>
+        <View style={uiStyle(s.detailRow)}>
+          <Text style={uiTextStyle(s.small)}>{uiText("Ngày yêu cầu")}</Text>
+          <Text style={uiTextStyle(s.detailValue)}>{uiText(accountDate(refund.created_at))}</Text>
         </View>
         {refund.status === 'succeeded' && (
-          <View style={s.detailRow}>
-            <Text style={s.small}>Đã xác nhận hoàn tiền</Text>
-            <Text style={s.detailValue}>{accountDate(refund.succeeded_at)}</Text>
+          <View style={uiStyle(s.detailRow)}>
+            <Text style={uiTextStyle(s.small)}>{uiText("Đã xác nhận hoàn tiền")}</Text>
+            <Text style={uiTextStyle(s.detailValue)}>{uiText(accountDate(refund.succeeded_at))}</Text>
           </View>
         )}
         {!!refund.reason && (
-          <View style={s.reason}>
-            <Text style={s.small}>Lý do</Text>
-            <Text style={s.detailValue}>{refund.reason}</Text>
+          <View style={uiStyle(s.reason)}>
+            <Text style={uiTextStyle(s.small)}>{uiText("Lý do")}</Text>
+            <Text style={uiTextStyle(s.detailValue)}>{uiText(refund.reason)}</Text>
           </View>
         )}
         {!!refund.decision_reason && (
-          <View style={s.reason}>
-            <Text style={s.small}>Phản hồi của quản trị viên</Text>
-            <Text style={s.detailValue}>{refund.decision_reason}</Text>
+          <View style={uiStyle(s.reason)}>
+            <Text style={uiTextStyle(s.small)}>{uiText("Phản hồi của quản trị viên")}</Text>
+            <Text style={uiTextStyle(s.detailValue)}>{uiText(refund.decision_reason)}</Text>
           </View>
         )}
-        <Text selectable style={s.transactionReference}>
-          Mã hoàn tiền: {refund.provider_refund_id || refund.id}
+        <Text selectable style={uiTextStyle(s.transactionReference)}>{uiText("Mã hoàn tiền: ")}{uiText(refund.provider_refund_id || refund.id)}
         </Text>
-        {payment && <Text style={s.date}>{accountPaymentMethod(payment)}</Text>}
+        {payment && <Text style={uiTextStyle(s.date)}>{uiText(accountPaymentMethod(payment))}</Text>}
       </View>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`Xem đơn đã hoàn tiền ${booking.booking_code}`}
+        accessibilityLabel={uiText(`Xem đơn đã hoàn tiền ${booking.booking_code}`)}
         onPress={onOpen}
-        style={s.refundBooking}
+        style={uiStyle(s.refundBooking)}
       >
-        <Text style={s.link}>Xem đặt phòng</Text>
-        <ChevronRight size={17} color="#00A0B5" />
+        <Text style={uiTextStyle(s.link)}>{uiText("Xem đặt phòng")}</Text>
+        <ChevronRight size={17} color={uiColor("#00A0B5")} />
       </Pressable>
     </View>
   );

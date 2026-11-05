@@ -1,3 +1,4 @@
+import { useUiPreferences, uiStyle, uiText, uiTextStyle, uiColor } from '../../preferences/ui';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Modal, Platform, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import { Check, Copy, Share2, X } from 'lucide-react-native';
@@ -11,6 +12,7 @@ interface ListingShareDialogProps {
 }
 
 export const ListingShareDialog: React.FC<ListingShareDialogProps> = ({ listing, visible, onClose }) => {
+  useUiPreferences();
   const [copied, setCopied] = useState(false);
   const [copying, setCopying] = useState(false);
   const [sharing, setSharing] = useState(false);
@@ -56,48 +58,48 @@ export const ListingShareDialog: React.FC<ListingShareDialogProps> = ({ listing,
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Đóng hộp thoại chia sẻ" style={StyleSheet.absoluteFill} onPress={onClose} />
-        <View style={styles.card} accessibilityViewIsModal>
-          <View style={styles.header}>
-            <Text accessibilityRole="header" style={styles.heading}>Chia sẻ chỗ ở này</Text>
-            <Pressable accessibilityRole="button" accessibilityLabel="Đóng hộp thoại chia sẻ" onPress={onClose} style={styles.closeButton}>
-              <X size={22} color="#292C30" />
+      <View style={uiStyle(styles.overlay)}>
+        <Pressable accessibilityRole="button" accessibilityLabel={uiText("Đóng hộp thoại chia sẻ")} style={uiStyle(StyleSheet.absoluteFill)} onPress={onClose} />
+        <View style={uiStyle(styles.card)} accessibilityViewIsModal>
+          <View style={uiStyle(styles.header)}>
+            <Text accessibilityRole="header" style={uiTextStyle(styles.heading)}>{uiText("Chia sẻ chỗ ở này")}</Text>
+            <Pressable accessibilityRole="button" accessibilityLabel={uiText("Đóng hộp thoại chia sẻ")} onPress={onClose} style={uiStyle(styles.closeButton)}>
+              <X size={22} color={uiColor("#292C30")} />
             </Pressable>
           </View>
-          <View style={styles.summary}>
+          <View style={uiStyle(styles.summary)}>
             {!!(listing.cover_photo || listing.photos?.[0]?.photo_url) && (
-              <Image source={{ uri: listing.cover_photo || listing.photos?.[0]?.photo_url }} style={styles.photo} resizeMode="cover" />
+              <Image source={{ uri: listing.cover_photo || listing.photos?.[0]?.photo_url }} style={uiStyle(styles.photo)} resizeMode="cover" />
             )}
-            <View style={styles.summaryText}>
-              <Text style={styles.title} numberOfLines={2}>{listing.title}</Text>
-              <Text style={styles.location}>{listing.city}, {listing.country}</Text>
+            <View style={uiStyle(styles.summaryText)}>
+              <Text style={uiTextStyle(styles.title)} numberOfLines={2}>{listing.title}</Text>
+              <Text style={uiTextStyle(styles.location)}>{uiText(listing.city)}{uiText(", ")}{uiText(listing.country)}</Text>
             </View>
           </View>
-          <View style={styles.linkBox}>
-            <Text selectable accessibilityLabel="Liên kết chỗ ở" style={styles.link}>{content.url}</Text>
+          <View style={uiStyle(styles.linkBox)}>
+            <Text selectable accessibilityLabel={uiText("Liên kết chỗ ở")} style={uiTextStyle(styles.link)}>{uiText(content.url)}</Text>
           </View>
           {Platform.OS === 'web' && (
             <Pressable
               cssInterop={false}
               accessibilityRole="button"
-              accessibilityLabel={copied ? 'Đã sao chép liên kết' : 'Sao chép liên kết'}
+              accessibilityLabel={copied ? uiText('Đã sao chép liên kết') : uiText('Sao chép liên kết')}
               disabled={copying}
               onPress={handleCopy}
-              style={({ pressed }) => [styles.copyButton, (pressed || copying) && styles.pressed]}
+              style={uiStyle(({ pressed }) => [styles.copyButton, (pressed || copying) && styles.pressed])}
             >
-              {copying ? <ActivityIndicator size="small" color="#FFFFFF" /> : copied ? <Check size={19} color="#FFFFFF" /> : <Copy size={19} color="#FFFFFF" />}
-              <Text style={styles.copyText}>{copied ? 'Đã sao chép!' : 'Sao chép liên kết'}</Text>
+              {copying ? <ActivityIndicator size="small" color={uiColor("#FFFFFF")} /> : copied ? <Check size={19} color={uiColor("#FFFFFF")} /> : <Copy size={19} color={uiColor("#FFFFFF")} />}
+              <Text style={uiTextStyle(styles.copyText)}>{copied ? uiText('Đã sao chép!') : uiText('Sao chép liên kết')}</Text>
             </Pressable>
           )}
           {canShare && (
-            <Pressable accessibilityRole="button" disabled={sharing} onPress={handleSystemShare} style={styles.shareButton}>
-              <Share2 size={18} color="#00A6BC" />
-              <Text style={styles.shareText}>{sharing ? 'Đang mở chia sẻ...' : 'Tùy chọn chia sẻ khác'}</Text>
+            <Pressable accessibilityRole="button" disabled={sharing} onPress={handleSystemShare} style={uiStyle(styles.shareButton)}>
+              <Share2 size={18} color={uiColor("#00A6BC")} />
+              <Text style={uiTextStyle(styles.shareText)}>{sharing ? uiText('Đang mở chia sẻ...') : uiText('Tùy chọn chia sẻ khác')}</Text>
             </Pressable>
           )}
-          {!!error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
-          {copied && <Text accessibilityRole="alert" style={styles.success}>Liên kết đã sẵn sàng để dán vào tin nhắn.</Text>}
+          {!!error && <Text accessibilityRole="alert" style={uiTextStyle(styles.error)}>{uiText(error)}</Text>}
+          {copied && <Text accessibilityRole="alert" style={uiTextStyle(styles.success)}>{uiText("Liên kết đã sẵn sàng để dán vào tin nhắn.")}</Text>}
         </View>
       </View>
     </Modal>

@@ -1,3 +1,6 @@
+import { uiLocale, useUiPreferences, uiStyle, uiText, uiColor, uiTextStyle } from '../preferences/ui';
+
+import { requestLogin } from '../navigation/authReturn';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -48,6 +51,7 @@ import { ReviewStars } from '../components/listing/ReviewCard';
 type Phase = 'editing' | 'success' | 'already' | 'uncertain' | 'blocked';
 const ratingNames = ["Chọn số sao", "Rất kém", "Chưa tốt", "Tốt", "Rất tốt", "Xuất sắc"];
 export const WriteReviewScreen: React.FC = () => {
+  useUiPreferences();
   const {
     params: { listingId, listingTitle },
   } = useRoute<RouteProp<RootStackParamList, 'WriteReview'>>();
@@ -93,6 +97,10 @@ export const WriteReviewScreen: React.FC = () => {
     (!user ||
       forceLogin ||
       (axios.isAxiosError(access.error) && access.error.response?.status === 401));
+  useEffect(() => {
+    if (!authLoading && !user) requestLogin(navigation, { name: 'WriteReview', params: { listingId, listingTitle } });
+  }, [authLoading, user?.id, navigation]);
+
   const forbidden =
     axios.isAxiosError(access.error) && [403, 404].includes(access.error.response?.status || 0);
   const existing = record || data?.existingReview;
@@ -211,158 +219,147 @@ export const WriteReviewScreen: React.FC = () => {
     }
   };
   return (
-    <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={s.screen}>
-      <View style={s.frame}>
-        <View style={s.header}>
+    <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={uiStyle(s.screen)}>
+      <View style={uiStyle(s.frame)}>
+        <View style={uiStyle(s.header)}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Quay lại từ màn hình viết đánh giá"
+            accessibilityLabel={uiText("Quay lại từ màn hình viết đánh giá")}
             disabled={busy}
             onPress={back}
-            style={s.back}
+            style={uiStyle(s.back)}
           >
-            <ChevronLeft size={23} color="#687483" />
+            <ChevronLeft size={23} color={uiColor("#687483")} />
           </Pressable>
-          <Text accessibilityRole="header" style={s.headerTitle}>
-            Viết đánh giá
-          </Text>
+          <Text accessibilityRole="header" style={uiTextStyle(s.headerTitle)}>{uiText("Viết đánh giá")}</Text>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Kiểm tra lại quyền đánh giá"
+            accessibilityLabel={uiText("Kiểm tra lại quyền đánh giá")}
             disabled={!user || authLoading || busy || access.isFetching}
             onPress={() => void refresh()}
-            style={s.back}
+            style={uiStyle(s.back)}
           >
-            <RefreshCw size={17} color="#9CA7B4" />
+            <RefreshCw size={17} color={uiColor("#9CA7B4")} />
           </Pressable>
         </View>
         {authLoading || (!!user && access.isLoading) ? (
-          <View style={s.center}>
-            <ActivityIndicator color="#00B8CE" />
-            <Text style={s.stateCopy}>Đang kiểm tra kỳ lưu trú...</Text>
+          <View style={uiStyle(s.center)}>
+            <ActivityIndicator color={uiColor("#00B8CE")} />
+            <Text style={uiTextStyle(s.stateCopy)}>{uiText("Đang kiểm tra kỳ lưu trú...")}</Text>
           </View>
         ) : needsLogin ? (
-          <View style={s.center}>
-            <View style={s.stateIcon}>
-              <LockKeyhole size={29} color="#00A9BE" />
+          <View style={uiStyle(s.center)}>
+            <View style={uiStyle(s.stateIcon)}>
+              <LockKeyhole size={29} color={uiColor("#00A9BE")} />
             </View>
-            <Text style={s.stateTitle}>Đăng nhập để viết đánh giá</Text>
-            <Text style={s.stateCopy}>
-              Bạn cần đăng nhập và đã hoàn thành kỳ lưu trú để viết đánh giá.
-            </Text>
+            <Text style={uiTextStyle(s.stateTitle)}>{uiText("Đăng nhập để viết đánh giá")}</Text>
+            <Text style={uiTextStyle(s.stateCopy)}>{uiText("Bạn cần đăng nhập và đã hoàn thành kỳ lưu trú để viết đánh giá.")}</Text>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Đăng nhập để viết đánh giá"
-              onPress={() => navigation.navigate('Login')}
-              style={s.primary}
+              accessibilityLabel={uiText("Đăng nhập để viết đánh giá")}
+              onPress={() => requestLogin(navigation, { name: 'WriteReview', params: { listingId, listingTitle } })}
+              style={uiStyle(s.primary)}
             >
-              <Text style={s.primaryText}>Đăng nhập</Text>
+              <Text style={uiTextStyle(s.primaryText)}>{uiText("Đăng nhập")}</Text>
             </Pressable>
           </View>
         ) : !data || forbidden ? (
-          <View style={s.center}>
-            <Text style={s.stateTitle}>Không thể xác minh kỳ lưu trú</Text>
-            <Text style={s.stateCopy}>Vui lòng kiểm tra kết nối rồi thử lại.</Text>
+          <View style={uiStyle(s.center)}>
+            <Text style={uiTextStyle(s.stateTitle)}>{uiText("Không thể xác minh kỳ lưu trú")}</Text>
+            <Text style={uiTextStyle(s.stateCopy)}>{uiText("Vui lòng kiểm tra kết nối rồi thử lại.")}</Text>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Thử xác minh quyền đánh giá lần nữa"
+              accessibilityLabel={uiText("Thử xác minh quyền đánh giá lần nữa")}
               onPress={() => void refresh()}
-              style={s.primary}
+              style={uiStyle(s.primary)}
             >
-              <Text style={s.primaryText}>Thử lại</Text>
+              <Text style={uiTextStyle(s.primaryText)}>{uiText("Thử lại")}</Text>
             </Pressable>
           </View>
         ) : (
           <KeyboardAvoidingView
-            style={{ flex: 1 }}
+            style={uiStyle({ flex: 1 })}
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           >
             <ScrollView
               keyboardShouldPersistTaps="handled"
-              contentContainerStyle={s.content}
+              contentContainerStyle={uiStyle(s.content)}
               showsVerticalScrollIndicator={false}
             >
-              <Text style={s.propertyTitle}>{title}</Text>
+              <Text style={uiTextStyle(s.propertyTitle)}>{uiText(title)}</Text>
               {phase === 'success' || already ? (
-                <View style={s.outcome}>
-                  <View style={s.stateIcon}>
-                    <CheckCircle2 size={31} color="#00A8BD" />
+                <View style={uiStyle(s.outcome)}>
+                  <View style={uiStyle(s.stateIcon)}>
+                    <CheckCircle2 size={31} color={uiColor("#00A8BD")} />
                   </View>
-                  <Text accessibilityRole="header" style={s.stateTitle}>
-                    {phase === 'success'
-                      ? 'Đã gửi đánh giá!'
-                      : 'Bạn đã đánh giá kỳ lưu trú này'}
+                  <Text accessibilityRole="header" style={uiTextStyle(s.stateTitle)}>
+                    {phase === 'success' ? uiText('Đã gửi đánh giá!') : uiText('Bạn đã đánh giá kỳ lưu trú này')}
                   </Text>
-                  <Text style={s.stateCopy}>
-                    {phase === 'success'
-                      ? 'Cảm ơn bạn đã chia sẻ trải nghiệm. Đánh giá của bạn đã được lưu.'
-                      : 'Tài khoản của bạn đã có đánh giá cho chỗ ở này. Bạn có thể đọc bên dưới hoặc xem tất cả đánh giá.'}
+                  <Text style={uiTextStyle(s.stateCopy)}>
+                    {phase === 'success' ? uiText('Cảm ơn bạn đã chia sẻ trải nghiệm. Đánh giá của bạn đã được lưu.') : uiText('Tài khoản của bạn đã có đánh giá cho chỗ ở này. Bạn có thể đọc bên dưới hoặc xem tất cả đánh giá.')}
                   </Text>
                   {existing && (
-                    <View style={s.savedReview}>
-                      <View style={s.savedHeading}>
+                    <View style={uiStyle(s.savedReview)}>
+                      <View style={uiStyle(s.savedHeading)}>
                         <ReviewStars rating={existing.rating} size={18} />
-                        <Text style={s.savedDate}>{reviewDate(existing.created_at)}</Text>
+                        <Text style={uiTextStyle(s.savedDate)}>{uiText(reviewDate(existing.created_at, uiLocale()))}</Text>
                       </View>
-                      <Text selectable style={s.savedComment}>
-                        {existing.comment}
+                      <Text selectable style={uiTextStyle(s.savedComment)}>
+                        {uiText(existing.comment)}
                       </Text>
                     </View>
                   )}
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel="Xem đánh giá sau khi gửi"
+                    accessibilityLabel={uiText("Xem đánh giá sau khi gửi")}
                     onPress={viewReviews}
-                    style={s.primary}
+                    style={uiStyle(s.primary)}
                   >
-                    <Text style={s.primaryText}>Xem đánh giá</Text>
+                    <Text style={uiTextStyle(s.primaryText)}>{uiText("Xem đánh giá")}</Text>
                   </Pressable>
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel="Quay lại chỗ ở đã đánh giá"
+                    accessibilityLabel={uiText("Quay lại chỗ ở đã đánh giá")}
                     onPress={() => navigation.navigate('ListingDetail', { listingId })}
-                    style={s.secondary}
+                    style={uiStyle(s.secondary)}
                   >
-                    <Text style={s.secondaryText}>Quay lại chỗ ở</Text>
+                    <Text style={uiTextStyle(s.secondaryText)}>{uiText("Quay lại chỗ ở")}</Text>
                   </Pressable>
                 </View>
               ) : blocked ? (
-                <View style={s.outcome}>
-                  <View style={s.stateIcon}>
-                    <CalendarCheck size={31} color="#00A8BD" />
+                <View style={uiStyle(s.outcome)}>
+                  <View style={uiStyle(s.stateIcon)}>
+                    <CalendarCheck size={31} color={uiColor("#00A8BD")} />
                   </View>
-                  <Text style={s.stateTitle}>Đánh giá mở sau kỳ lưu trú</Text>
-                  <Text style={s.stateCopy}>
-                    Bạn có thể đánh giá chỗ ở sau khi đơn đặt chỗ được đánh dấu Đã hoàn thành. Hãy
-                    kiểm tra đơn đặt chỗ để xem trạng thái hiện tại.
-                  </Text>
+                  <Text style={uiTextStyle(s.stateTitle)}>{uiText("Đánh giá mở sau kỳ lưu trú")}</Text>
+                  <Text style={uiTextStyle(s.stateCopy)}>{uiText("Bạn có thể đánh giá chỗ ở sau khi đơn đặt chỗ được đánh dấu Đã hoàn thành. Hãy kiểm tra đơn đặt chỗ để xem trạng thái hiện tại.")}</Text>
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel="Xem đơn đặt chỗ để kiểm tra quyền đánh giá"
+                    accessibilityLabel={uiText("Xem đơn đặt chỗ để kiểm tra quyền đánh giá")}
                     onPress={() => navigation.navigate('MainTabs', { screen: 'BookingsTab' })}
-                    style={s.primary}
+                    style={uiStyle(s.primary)}
                   >
-                    <Text style={s.primaryText}>Xem đơn đặt chỗ</Text>
+                    <Text style={uiTextStyle(s.primaryText)}>{uiText("Xem đơn đặt chỗ")}</Text>
                   </Pressable>
                 </View>
               ) : (
                 <>
-                  <Text style={s.subtitle}>Chuyến đi của bạn thế nào? Hãy đánh giá trải nghiệm chung.</Text>
-                  <View style={s.verified}>
-                    <ShieldCheck size={13} color="#00A6BA" />
-                    <Text style={s.verifiedText}>Kỳ lưu trú đã hoàn thành</Text>
+                  <Text style={uiTextStyle(s.subtitle)}>{uiText("Chuyến đi của bạn thế nào? Hãy đánh giá trải nghiệm chung.")}</Text>
+                  <View style={uiStyle(s.verified)}>
+                    <ShieldCheck size={13} color={uiColor("#00A6BA")} />
+                    <Text style={uiTextStyle(s.verifiedText)}>{uiText("Kỳ lưu trú đã hoàn thành")}</Text>
                   </View>
-                  <View style={s.ratingBox}>
+                  <View style={uiStyle(s.ratingBox)}>
                     <View
                       accessibilityRole="radiogroup"
-                      accessibilityLabel="Điểm đánh giá tổng thể"
-                      style={s.ratingRow}
+                      accessibilityLabel={uiText("Điểm đánh giá tổng thể")}
+                      style={uiStyle(s.ratingRow)}
                     >
                       {[1, 2, 3, 4, 5].map((star) => (
                         <Pressable
                           key={star}
                           accessibilityRole="radio"
-                          accessibilityLabel={`Đánh giá ${star} sao`}
+                          accessibilityLabel={uiText(`Đánh giá ${star} sao`)}
                           accessibilityState={{
                             checked: rating === star,
                             disabled: busy || phase === 'uncertain',
@@ -374,29 +371,29 @@ export const WriteReviewScreen: React.FC = () => {
                             setFieldErrors((value) => ({ ...value, rating: undefined }));
                             setFormError('');
                           }}
-                          style={s.starButton}
+                          style={uiStyle(s.starButton)}
                         >
                           <Star
                             size={33}
                             strokeWidth={1.5}
-                            color={star <= rating ? '#F4AA14' : '#CDD4DD'}
-                            fill={star <= rating ? '#F4AA14' : 'transparent'}
+                            color={uiColor(star <= rating ? '#F4AA14' : '#CDD4DD')}
+                            fill={uiColor(star <= rating ? '#F4AA14' : 'transparent')}
                           />
                         </Pressable>
                       ))}
                     </View>
-                    <Text accessibilityLiveRegion="polite" style={s.ratingLabel}>
-                      {ratingNames[rating]}
+                    <Text accessibilityLiveRegion="polite" style={uiTextStyle(s.ratingLabel)}>
+                      {uiText(ratingNames[rating])}
                     </Text>
                   </View>
                   {!!fieldErrors.rating && (
-                    <Text accessibilityRole="alert" style={s.error}>
-                      {fieldErrors.rating}
+                    <Text accessibilityRole="alert" style={uiTextStyle(s.error)}>
+                      {uiText(fieldErrors.rating)}
                     </Text>
                   )}
-                  <Text style={s.feedbackLabel}>NHẬN XÉT CỦA BẠN</Text>
+                  <Text style={uiTextStyle(s.feedbackLabel)}>{uiText("NHẬN XÉT CỦA BẠN")}</Text>
                   <TextInput
-                    accessibilityLabel="Nội dung đánh giá của bạn"
+                    accessibilityLabel={uiText("Nội dung đánh giá của bạn")}
                     value={comment}
                     editable={!busy && phase !== 'uncertain'}
                     onChangeText={(value) => {
@@ -408,75 +405,73 @@ export const WriteReviewScreen: React.FC = () => {
                     maxLength={1000}
                     multiline
                     textAlignVertical="top"
-                    placeholder="Chia sẻ trải nghiệm, điều bạn thích nhất và lời khuyên cho những khách sau..."
-                    placeholderTextColor="#9DA7B3"
-                    style={[s.input, !!fieldErrors.comment && s.invalidInput]}
+                    placeholder={uiText("Chia sẻ trải nghiệm, điều bạn thích nhất và lời khuyên cho những khách sau...")}
+                    placeholderTextColor={uiColor("#9DA7B3")}
+                    style={uiStyle([s.input, !!fieldErrors.comment && s.invalidInput])}
                   />
-                  <View style={s.inputHints}>
-                    <Text style={s.hint}>Tối thiểu 5 ký tự</Text>
-                    <Text style={s.hint}>{comment.length}/1000</Text>
+                  <View style={uiStyle(s.inputHints)}>
+                    <Text style={uiTextStyle(s.hint)}>{uiText("Tối thiểu 5 ký tự")}</Text>
+                    <Text style={uiTextStyle(s.hint)}>{uiText(comment.length)}{uiText("/1000")}</Text>
                   </View>
                   {!!fieldErrors.comment && (
-                    <Text accessibilityRole="alert" style={s.error}>
-                      {fieldErrors.comment}
+                    <Text accessibilityRole="alert" style={uiTextStyle(s.error)}>
+                      {uiText(fieldErrors.comment)}
                     </Text>
                   )}
                   {!!formError && (
-                    <Text accessibilityRole="alert" style={s.error}>
-                      {formError}
+                    <Text accessibilityRole="alert" style={uiTextStyle(s.error)}>
+                      {uiText(formError)}
                     </Text>
                   )}
                   {!!statusNote && (
-                    <Text accessibilityLiveRegion="polite" style={s.note}>
-                      {statusNote}
+                    <Text accessibilityLiveRegion="polite" style={uiTextStyle(s.note)}>
+                      {uiText(statusNote)}
                     </Text>
                   )}
                   {access.isError && (
-                    <View style={s.accessError}>
-                      <Text style={s.stateCopy}>
-                        Không thể cập nhật quyền đánh giá. Vui lòng kiểm tra lại trước khi gửi.
-                      </Text>
+                    <View style={uiStyle(s.accessError)}>
+                      <Text style={uiTextStyle(s.stateCopy)}>{uiText("Không thể cập nhật quyền đánh giá. Vui lòng kiểm tra lại trước khi gửi.")}</Text>
                       <Pressable
                         accessibilityRole="button"
-                        accessibilityLabel="Kiểm tra lại quyền đánh giá"
+                        accessibilityLabel={uiText("Kiểm tra lại quyền đánh giá")}
                         onPress={() => void refresh()}
-                        style={s.secondary}
+                        style={uiStyle(s.secondary)}
                       >
-                        <Text style={s.secondaryText}>Kiểm tra lại</Text>
+                        <Text style={uiTextStyle(s.secondaryText)}>{uiText("Kiểm tra lại")}</Text>
                       </Pressable>
                     </View>
                   )}
                   {phase === 'uncertain' ? (
                     <Pressable
                       accessibilityRole="button"
-                      accessibilityLabel="Kiểm tra trạng thái gửi đánh giá"
+                      accessibilityLabel={uiText("Kiểm tra trạng thái gửi đánh giá")}
                       disabled={checking}
                       onPress={() => void checkSubmission()}
-                      style={[s.primary, checking && s.disabled]}
+                      style={uiStyle([s.primary, checking && s.disabled])}
                     >
-                      {checking && <ActivityIndicator size="small" color="white" />}
-                      <Text style={s.primaryText}>
-                        {checking ? 'Đang kiểm tra...' : 'Kiểm tra trạng thái gửi'}
+                      {checking && <ActivityIndicator size="small" color={uiColor("white")} />}
+                      <Text style={uiTextStyle(s.primaryText)}>
+                        {checking ? uiText('Đang kiểm tra...') : uiText('Kiểm tra trạng thái gửi')}
                       </Text>
                     </Pressable>
                   ) : (
                     <Pressable
                       accessibilityRole="button"
-                      accessibilityLabel="Gửi đánh giá"
+                      accessibilityLabel={uiText("Gửi đánh giá")}
                       accessibilityState={{
                         disabled: busy || access.isFetching || access.isError,
                         busy: submitting,
                       }}
                       disabled={busy || access.isFetching || access.isError}
                       onPress={() => void submit()}
-                      style={[
+                      style={uiStyle([
                         s.primary,
                         (busy || access.isFetching || access.isError) && s.disabled,
-                      ]}
+                      ])}
                     >
-                      {submitting && <ActivityIndicator size="small" color="white" />}
-                      <Text style={s.primaryText}>
-                        {submitting ? 'Đang gửi...' : 'Gửi đánh giá'}
+                      {submitting && <ActivityIndicator size="small" color={uiColor("white")} />}
+                      <Text style={uiTextStyle(s.primaryText)}>
+                        {submitting ? uiText('Đang gửi...') : uiText('Gửi đánh giá')}
                       </Text>
                     </Pressable>
                   )}

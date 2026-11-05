@@ -1,22 +1,24 @@
+import { uiLocale, useUiPreferences, uiText, uiStyle, uiColor, uiTextStyle } from '../../preferences/ui';
+
 import React, { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Star, UserRound } from 'lucide-react-native';
 import type { Review } from '../../types';
 import { reviewDate } from '../../utils/listingDetail';
 
-export const ReviewStars = ({ rating, size = 12 }: { rating: number; size?: number }) => (
-  <View accessibilityLabel={`${rating} trên 5 sao`} style={s.stars}>
+export const ReviewStars = ({ rating, size = 12 }: { rating: number; size?: number }) => { useUiPreferences(); return ((
+  <View accessibilityLabel={uiText(`${rating} trên 5 sao`)} style={uiStyle(s.stars)}>
     {[1, 2, 3, 4, 5].map((star) => (
       <Star
         key={star}
         size={size}
         strokeWidth={1}
-        color={star <= rating ? '#EAC44C' : '#E1E5EA'}
-        fill={star <= rating ? '#EAC44C' : '#E1E5EA'}
+        color={uiColor(star <= rating ? '#EAC44C' : '#E1E5EA')}
+        fill={uiColor(star <= rating ? '#EAC44C' : '#E1E5EA')}
       />
     ))}
   </View>
-);
+)); };
 export const ReviewCard = ({
   review,
   compact = false,
@@ -26,35 +28,36 @@ export const ReviewCard = ({
   compact?: boolean;
   onPress?: () => void;
 }) => {
+  useUiPreferences();
   const [failedAvatar, setFailedAvatar] = useState(false);
   return (
     <Pressable
       accessibilityRole={onPress ? 'button' : undefined}
-      accessibilityLabel={onPress ? `Đọc đánh giá của ${review.user_name || 'Khách'}` : undefined}
+      accessibilityLabel={onPress ? uiText(`Đọc đánh giá của ${review.user_name || 'Khách'}`) : uiText(undefined)}
       onPress={onPress}
-      style={[s.card, compact && s.compact]}
+      style={uiStyle([s.card, compact && s.compact])}
     >
-      <View style={s.heading}>
+      <View style={uiStyle(s.heading)}>
         {review.user_avatar && !failedAvatar ? (
           <Image
             source={{ uri: review.user_avatar }}
             onError={() => setFailedAvatar(true)}
-            style={s.avatar}
+            style={uiStyle(s.avatar)}
           />
         ) : (
-          <View style={s.avatarFallback}>
-            <UserRound size={17} color="#00A4BA" />
+          <View style={uiStyle(s.avatarFallback)}>
+            <UserRound size={17} color={uiColor("#00A4BA")} />
           </View>
         )}
-        <View style={s.person}>
-          <Text style={s.name} numberOfLines={1}>
-            {review.user_name || "Khách"}
+        <View style={uiStyle(s.person)}>
+          <Text style={uiTextStyle(s.name)} numberOfLines={1}>
+            {uiText(review.user_name || "Khách")}
           </Text>
-          <Text style={s.date}>{reviewDate(review.created_at)}</Text>
+          <Text style={uiTextStyle(s.date)}>{uiText(reviewDate(review.created_at, uiLocale()))}</Text>
         </View>
         <ReviewStars rating={Number(review.rating)} size={compact ? 10 : 12} />
       </View>
-      <Text style={s.comment} numberOfLines={compact ? 3 : undefined}>
+      <Text style={uiTextStyle(s.comment)} numberOfLines={compact ? 3 : undefined}>
         {review.comment}
       </Text>
     </Pressable>

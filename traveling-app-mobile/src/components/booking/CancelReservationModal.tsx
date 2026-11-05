@@ -1,3 +1,5 @@
+import { uiLocale, useUiPreferences, uiStyle, uiText, uiColor, uiTextStyle } from '../../preferences/ui';
+
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -33,6 +35,7 @@ export const CancelReservationModal = ({
   onClose: () => void;
   onConfirm: (reason: string) => void;
 }) => {
+  useUiPreferences();
   const [reason, setReason] = useState(''),
     [fieldError, setFieldError] = useState('');
   useEffect(() => {
@@ -61,56 +64,50 @@ export const CancelReservationModal = ({
       }}
     >
       <KeyboardAvoidingView
-        style={s.overlay}
+        style={uiStyle(s.overlay)}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Đóng yêu cầu hủy"
+          accessibilityLabel={uiText("Đóng yêu cầu hủy")}
           disabled={busy}
           onPress={onClose}
-          style={StyleSheet.absoluteFill}
+          style={uiStyle(StyleSheet.absoluteFill)}
         />
-        <View style={s.card} accessibilityViewIsModal>
-          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={s.content}>
-            <View style={s.top}>
-              <View style={s.icon}>
-                <CalendarX size={27} color="#E5646D" />
+        <View style={uiStyle(s.card)} accessibilityViewIsModal>
+          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={uiStyle(s.content)}>
+            <View style={uiStyle(s.top)}>
+              <View style={uiStyle(s.icon)}>
+                <CalendarX size={27} color={uiColor("#E5646D")} />
               </View>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Đóng yêu cầu hủy"
+                accessibilityLabel={uiText("Đóng yêu cầu hủy")}
                 disabled={busy}
                 onPress={onClose}
-                style={s.close}
+                style={uiStyle(s.close)}
               >
-                <X size={20} color="#929AA5" />
+                <X size={20} color={uiColor("#929AA5")} />
               </Pressable>
             </View>
-            <Text accessibilityRole="header" style={s.title}>
-              Hủy đặt phòng?
-            </Text>
-            <Text style={s.description}>
-              Kỳ lưu trú sẽ bị hủy khi bạn xác nhận. Hãy cho chúng tôi biết lý do để yêu cầu được xem xét.
-            </Text>
-            {!!booking.policy_snapshot&&<Text style={s.description}>{booking.policy_snapshot.cancellation}</Text>}
-            <View style={s.booking}>
-              <Text style={s.bookingTitle}>{booking.listing_title}</Text>
-              <Text style={s.bookingDates}>
-                {formatTripDates(
+            <Text accessibilityRole="header" style={uiTextStyle(s.title)}>{uiText("Hủy đặt phòng?")}</Text>
+            <Text style={uiTextStyle(s.description)}>{uiText("Kỳ lưu trú sẽ bị hủy khi bạn xác nhận. Hãy cho chúng tôi biết lý do để yêu cầu được xem xét.")}</Text>
+            {!!booking.policy_snapshot&&<Text style={uiTextStyle(s.description)}>{uiText(booking.policy_snapshot.cancellation)}</Text>}
+            <View style={uiStyle(s.booking)}>
+              <Text style={uiTextStyle(s.bookingTitle)}>{booking.listing_title}</Text>
+              <Text style={uiTextStyle(s.bookingDates)}>
+                {uiText(formatTripDates(
                   booking.check_in_date.slice(0, 10),
                   booking.check_out_date.slice(0, 10)
-                )}
-                {' \u00b7 '}
-                {booking.number_of_guests} khách
-              </Text>
-              <Text style={s.reference}>{booking.booking_code}</Text>
+                ))}
+                {uiText(' \u00b7 ')}
+                {uiText(booking.number_of_guests)}{uiText(" khách")}</Text>
+              <Text style={uiTextStyle(s.reference)}>{uiText(booking.booking_code)}</Text>
             </View>
-            <Text style={s.label}>
-              Lý do hủy <Text style={{ color: '#D85865' }}>*</Text>
+            <Text style={uiTextStyle(s.label)}>{uiText("Lý do hủy ")}<Text style={uiTextStyle({ color: '#D85865' })}>{uiText("*")}</Text>
             </Text>
             <TextInput
-              accessibilityLabel="Lý do hủy"
+              accessibilityLabel={uiText("Lý do hủy")}
               editable={!busy}
               multiline
               maxLength={500}
@@ -119,58 +116,54 @@ export const CancelReservationModal = ({
                 setReason(value);
                 setFieldError('');
               }}
-              placeholder="Cho chúng tôi biết lý do bạn cần hủy..."
-              placeholderTextColor="#A1A9B3"
+              placeholder={uiText("Cho chúng tôi biết lý do bạn cần hủy...")}
+              placeholderTextColor={uiColor("#A1A9B3")}
               textAlignVertical="top"
-              style={[s.input, !!fieldError && { borderColor: '#D85865' }]}
+              style={uiStyle([s.input, !!fieldError && { borderColor: '#D85865' }])}
             />
-            <Text style={s.counter}>{reason.length}/500</Text>
+            <Text style={uiTextStyle(s.counter)}>{uiText(reason.length)}{uiText("/500")}</Text>
             {!!fieldError && (
-              <Text accessibilityRole="alert" style={s.error}>
-                {fieldError}
+              <Text accessibilityRole="alert" style={uiTextStyle(s.error)}>
+                {uiText(fieldError)}
               </Text>
             )}
-            <View style={s.refund}>
-              <ShieldCheck size={20} color="#AA7B2F" />
-              <View style={{ flex: 1 }}>
-                <Text style={s.refundTitle}>
-                  {paid > 0
-                    ? `Đã thanh toán: ${formatPaymentMoney(paid)}`
-                    : 'Chưa ghi nhận khoản thanh toán'}
+            <View style={uiStyle(s.refund)}>
+              <ShieldCheck size={20} color={uiColor("#AA7B2F")} />
+              <View style={uiStyle({ flex: 1 })}>
+                <Text style={uiTextStyle(s.refundTitle)}>
+                  {paid > 0 ? uiText(`Đã thanh toán: ${formatPaymentMoney(paid, 'USD', uiLocale())}`) : uiText('Chưa ghi nhận khoản thanh toán')}
                 </Text>
-                <Text style={s.refundCopy}>
-                  {paid > 0
-                    ? 'Yêu cầu hoàn tiền cần quản trị viên xét duyệt. Tiền chỉ được hoàn sau khi được phê duyệt và dịch vụ thanh toán xác nhận.'
-                    : 'Đơn đặt chỗ sẽ bị hủy. Hiện không có khoản thanh toán thành công để hoàn lại.'}
+                <Text style={uiTextStyle(s.refundCopy)}>
+                  {paid > 0 ? uiText('Yêu cầu hoàn tiền cần quản trị viên xét duyệt. Tiền chỉ được hoàn sau khi được phê duyệt và dịch vụ thanh toán xác nhận.') : uiText('Đơn đặt chỗ sẽ bị hủy. Hiện không có khoản thanh toán thành công để hoàn lại.')}
                 </Text>
               </View>
             </View>
             {!!error && (
-              <Text accessibilityRole="alert" style={s.error}>
-                {error}
+              <Text accessibilityRole="alert" style={uiTextStyle(s.error)}>
+                {uiText(error)}
               </Text>
             )}
           </ScrollView>
-          <View style={s.actions}>
+          <View style={uiStyle(s.actions)}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Xác nhận hủy"
+              accessibilityLabel={uiText("Xác nhận hủy")}
               disabled={busy}
               accessibilityState={{ busy, disabled: busy }}
               onPress={confirm}
-              style={[s.confirm, busy && { opacity: 0.6 }]}
+              style={uiStyle([s.confirm, busy && { opacity: 0.6 }])}
             >
-              {busy && <ActivityIndicator color="white" size="small" />}
-              <Text style={s.confirmLabel}>{busy ? 'Đang hủy...' : 'Xác nhận hủy'}</Text>
+              {busy && <ActivityIndicator color={uiColor("white")} size="small" />}
+              <Text style={uiTextStyle(s.confirmLabel)}>{busy ? uiText('Đang hủy...') : uiText('Xác nhận hủy')}</Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Giữ đơn đặt chỗ"
+              accessibilityLabel={uiText("Giữ đơn đặt chỗ")}
               disabled={busy}
               onPress={onClose}
-              style={s.keep}
+              style={uiStyle(s.keep)}
             >
-              <Text style={s.keepLabel}>Giữ đặt phòng</Text>
+              <Text style={uiTextStyle(s.keepLabel)}>{uiText("Giữ đặt phòng")}</Text>
             </Pressable>
           </View>
         </View>

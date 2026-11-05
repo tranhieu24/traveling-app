@@ -1,3 +1,4 @@
+import { useUiPreferences, uiStyle } from '../../preferences/ui';
 /**
  * SkeletonLoader — Animated shimmer placeholders for listing cards.
  *
@@ -8,6 +9,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, Animated, StyleSheet } from 'react-native';
 
 const SkeletonBox: React.FC<{ style?: object }> = ({ style }) => {
+  useUiPreferences();
   const opacity = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -29,30 +31,32 @@ const SkeletonBox: React.FC<{ style?: object }> = ({ style }) => {
     return () => pulse.stop();
   }, [opacity]);
 
-  return <Animated.View style={[styles.box, style, { opacity }]} />;
+  return <Animated.View style={uiStyle([styles.box, style, { opacity }])} />;
 };
 
 export const SkeletonCard: React.FC = () => {
+  useUiPreferences();
   return (
-    <View style={styles.card}>
+    <View style={uiStyle(styles.card)}>
       {/* Image placeholder */}
-      <SkeletonBox style={styles.image} />
+      <SkeletonBox style={uiStyle(styles.image)} />
       {/* Title and rating */}
-      <View style={styles.row}>
-        <SkeletonBox style={styles.lineHalf} />
-        <SkeletonBox style={styles.lineSmall} />
+      <View style={uiStyle(styles.row)}>
+        <SkeletonBox style={uiStyle(styles.lineHalf)} />
+        <SkeletonBox style={uiStyle(styles.lineSmall)} />
       </View>
-      <View style={styles.row}>
-        <SkeletonBox style={styles.lineQuarter} />
-        <SkeletonBox style={styles.lineSmall} />
+      <View style={uiStyle(styles.row)}>
+        <SkeletonBox style={uiStyle(styles.lineQuarter)} />
+        <SkeletonBox style={uiStyle(styles.lineSmall)} />
       </View>
     </View>
   );
 };
 
 export const SkeletonListingList: React.FC<{ count?: number }> = ({ count = 3 }) => {
+  useUiPreferences();
   return (
-    <View style={styles.listContainer}>
+    <View style={uiStyle(styles.listContainer)}>
       {Array.from({ length: count }).map((_, idx) => (
         <SkeletonCard key={idx} />
       ))}

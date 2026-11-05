@@ -15,7 +15,7 @@ const startServer = async () => {
     await pool.query('SELECT id FROM public.support_tickets LIMIT 0');
     await pool.query('SELECT body FROM public.support_messages LIMIT 0');
     await pool.query('SELECT revision FROM public.booking_arrival_guides LIMIT 0');
-    await pool.query('SELECT status,attempts FROM public.notification_outbox LIMIT 0');
+    await pool.query('SELECT status,attempts,read_at FROM public.notification_outbox LIMIT 0');
     if(aiAvailable()) await pool.query('SELECT requests,reserved_tokens FROM public.ai_usage_daily LIMIT 0');
     const schema = await pool.query("SELECT to_regprocedure('public.enforce_refund_state()') AS guard");
     const mediaSchema = await pool.query("SELECT to_regprocedure('public.is_listing_media_publishable(uuid)') AS guard");

@@ -108,7 +108,7 @@ export const reviewStats = (reviews: Review[]) => {
   return { counts, total, average: total ? sum / total : 0 };
 };
 
-export const reviewDate = (value: string): string => {
+export const reviewDate = (value: string, locale = 'vi-VN'): string => {
   const date = Date.parse(value);
   if (!Number.isFinite(date)) return '--';
   const days = Math.floor((Date.now() - date) / 86400000);
@@ -116,5 +116,5 @@ export const reviewDate = (value: string): string => {
     ? 'Hôm nay'
     : days > 0 && days < 30
       ? `${days} ngày trước`
-      : new Date(date).toLocaleDateString('vi-VN', { month: 'short', year: 'numeric' });
+      : new Date(date).toLocaleDateString(locale, { month: 'short', year: 'numeric' });
 };
